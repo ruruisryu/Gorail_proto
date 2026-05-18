@@ -9,7 +9,7 @@ EditorBuildSettings:
     path: Assets/_Project/Scenes/Main/StartScene.unity
     guid: 834abc462a320534eac617e917e83a15
   - enabled: 1
-    path: Assets/_Project/Scenes/Levels/GameScene.unity
+    path: Assets/_Project/Scenes/Levels/SubwayScene.unity
     guid: 1f878e7b04bacd748b789613ee373ca4
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}

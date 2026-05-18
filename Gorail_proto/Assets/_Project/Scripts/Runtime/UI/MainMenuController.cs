@@ -7,7 +7,7 @@ namespace Game.UI
     {
         public void OnStartButtonClicked()
         {
-            SceneManager.LoadScene("GameScene");
+            SceneManager.LoadScene("SubwayScene");
         }
     }
 }

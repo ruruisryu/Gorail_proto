@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 229f3861dc3f4c547979e4e829ad1b92, type: 3}
+  m_Name: SubwayNetwork
+  m_EditorClassIdentifier: Game.Runtime::Game.Subway.SubwayNetworkData
+  lines:
+  - {fileID: 11400000, guid: 011b68a151239804386d311d9e12ce8e, type: 2}
+  - {fileID: 11400000, guid: 22910cd90ee160542b1640273fc8ec1c, type: 2}
+  - {fileID: 11400000, guid: 0c21cf9e0bfd3a441bf121fd77ddd7c3, type: 2}

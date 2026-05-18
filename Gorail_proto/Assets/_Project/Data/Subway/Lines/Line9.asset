@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1808966cf24aa6c49b1baaf7dc680128, type: 3}
+  m_Name: Line9
+  m_EditorClassIdentifier: Game.Runtime::Game.Subway.LineData
+  lineId: line9
+  displayName: "9\uD638\uC120"
+  lineColor: {r: 0.74, g: 0.72, b: 0.17, a: 1}
+  stations:
+  - {fileID: 11400000, guid: e8c26b1afd113c14cb553baa20ee2b24, type: 2}
+  - {fileID: 11400000, guid: 2f7629fbff1e8ae449ef2003044a2c90, type: 2}
+  - {fileID: 11400000, guid: 6ed132ff58a64634d8588a7b6f59da8b, type: 2}
+  - {fileID: 11400000, guid: 6fa711d1e97b34040805760cb61581db, type: 2}
+  - {fileID: 11400000, guid: fc8291ee490b697459e5db2228964840, type: 2}
+  - {fileID: 11400000, guid: 9bfaf08272c49724fb3ba1c830a588e6, type: 2}
+  - {fileID: 11400000, guid: 2fc97a8fea9d1f9498ae185b8e8f867d, type: 2}
+  - {fileID: 11400000, guid: 9493bf23d77550f4dae1e02a4a62119b, type: 2}
+  - {fileID: 11400000, guid: 41109bd2e6511ca40a21c3440191756d, type: 2}
+  - {fileID: 11400000, guid: 421bc186793f4d84b9d592409d9556e8, type: 2}
+  - {fileID: 11400000, guid: f2f9dd94f00d00f4dbc7a92e15515ace, type: 2}
+  - {fileID: 11400000, guid: c759c633162096442b91891a01043a73, type: 2}
+  - {fileID: 11400000, guid: 41ee17932e1e4404aa83d0190847f4db, type: 2}
+  - {fileID: 11400000, guid: 0a049c76b57e0ae45bc3a5727d496e28, type: 2}
+  - {fileID: 11400000, guid: 5b19bab06e68c884799798c5eb400424, type: 2}
+  isCircular: 0
