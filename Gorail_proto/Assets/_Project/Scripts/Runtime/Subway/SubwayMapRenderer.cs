@@ -8,6 +8,7 @@ namespace Game.Subway
     {
         [SerializeField] private SubwayNetworkData networkData;
         [SerializeField] private PlayerLocationData playerLocation;
+        [SerializeField] private EnemyLocationData enemyLocations;
         [SerializeField] private RectTransform mapContainer;
 
         private const float RefWidth       = 860f;
@@ -20,10 +21,13 @@ namespace Game.Subway
         private const float StationSize    = 12f;
         private const float TransferDot    = 11f;
         private const float TransferPad    = 3f;
-        private const float PlayerSize     = 16f;
+        private const float PlayerSize     = 18f;
+        private const float EnemySize      = 18f;
 
         private static readonly Color PlayerColor     = new Color(0.22f, 0.92f, 0.42f);
-        private static readonly Color PlayerRingColor = new Color(0.22f, 0.92f, 0.42f, 0.35f);
+        private static readonly Color PlayerRingColor = new Color(0.22f, 0.92f, 0.42f, 0.30f);
+        private static readonly Color EnemyColor      = new Color(0.95f, 0.18f, 0.18f);
+        private static readonly Color EnemyRingColor  = new Color(0.95f, 0.18f, 0.18f, 0.30f);
 
         // Render() 후 채워지는 역 UI 좌표 경계 (MapContent 로컬 기준)
         public Vector2 StationBoundsMin { get; private set; }
@@ -108,7 +112,20 @@ namespace Game.Subway
                 }
             }
 
-            // 3. 플레이어 마커
+            // 3. 적 마커
+            if (enemyLocations != null)
+            {
+                int enemyIndex = 0;
+                foreach (var id in enemyLocations.enemyStationIds)
+                {
+                    if (string.IsNullOrEmpty(id)) continue;
+                    var stn = FindStation(id);
+                    if (stn != null) DrawEnemy(stn.mapPosition, enemyIndex);
+                    enemyIndex++;
+                }
+            }
+
+            // 4. 플레이어 마커 (항상 최상단)
             if (playerLocation != null && !string.IsNullOrEmpty(playerLocation.currentStationId))
             {
                 var stn = FindStation(playerLocation.currentStationId);
@@ -213,8 +230,20 @@ namespace Game.Subway
 
         void DrawPlayer(Vector2 mapPos)
         {
-            Circ("PlayerRing", mapContainer, UI(mapPos), PlayerSize + 8f, PlayerRingColor);
-            Circ("Player",     mapContainer, UI(mapPos), PlayerSize,      PlayerColor);
+            Vector2 uiPos = UI(mapPos);
+            Circ("PlayerRing",    mapContainer, uiPos, PlayerSize + 12f, PlayerRingColor);
+            Circ("PlayerOutline", mapContainer, uiPos, PlayerSize + 4f,  Color.white);
+            Circ("Player",        mapContainer, uiPos, PlayerSize,        PlayerColor);
+        }
+
+        // ── 적 마커 ───────────────────────────────────────────────────
+
+        void DrawEnemy(Vector2 mapPos, int index)
+        {
+            Vector2 uiPos = UI(mapPos);
+            Circ($"EnemyRing_{index}",    mapContainer, uiPos, EnemySize + 12f, EnemyRingColor);
+            Circ($"EnemyOutline_{index}", mapContainer, uiPos, EnemySize + 4f,  Color.white);
+            Circ($"Enemy_{index}",        mapContainer, uiPos, EnemySize,        EnemyColor);
         }
 
         // ── 공통 유틸 ──────────────────────────────────────────────────
