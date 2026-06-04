@@ -17,6 +17,8 @@ namespace Game.Gameplay
         [SerializeField] private TrackerManager trackerManager;
         [SerializeField] private GameManager    gameManager;
         [SerializeField] private ChaseConfig    config;
+        [Tooltip("시드 고정 난수(선택). 미할당이면 UnityEngine.Random 폴백.")]
+        [SerializeField] private RngService     rng;
 
         /// <summary>검문이 발동·판정될 때 발생(stationId, 통과여부). 통계·연출용.</summary>
         public event System.Action<string, bool> InspectionResolved;
@@ -28,7 +30,8 @@ namespace Game.Gameplay
             if (!trackerManager.HasTrackerAt(stationId)) return false; // 같은 역 아님 → 검문 없음
 
             float passRate = config != null ? config.inspectionPassRate : 0.7f;
-            bool passed = Random.value <= passRate;
+            float roll = rng != null ? rng.Value01() : Random.value;
+            bool passed = roll <= passRate;
 
             if (passed)
             {

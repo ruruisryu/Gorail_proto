@@ -23,6 +23,8 @@ namespace Game.Gameplay
         [SerializeField] private GameManager        gameManager;
         [SerializeField] private EnemyLocationData  enemyLocations;
         [SerializeField] private SubwayMapRenderer  mapRenderer;
+        [Tooltip("시드 고정 난수(선택). 미할당이면 UnityEngine.Random 폴백.")]
+        [SerializeField] private RngService         rng;
 
         private readonly List<Tracker> _trackers = new List<Tracker>();
         private float _chaseDebt; // 체증 보정으로 생긴 소수 추격량 누적(정수 스텝으로 환산)
@@ -119,6 +121,9 @@ namespace Game.Gameplay
 
         int CountOnLine(string line) => _trackers.Count(t => t.LineId == line);
 
+        /// <summary>[a,b) 정수 — RngService 있으면 시드 기반, 없으면 UnityEngine.Random.</summary>
+        int RandInt(int a, int b) => rng != null ? rng.RangeInt(a, b) : Random.Range(a, b);
+
         void SpawnOnLine(string line)
         {
             string station = PickSpawnStation(line);
@@ -145,7 +150,7 @@ namespace Game.Gameplay
                 .ToList();
 
             if (inRange.Count > 0)
-                return inRange[Random.Range(0, inRange.Count)];
+                return inRange[RandInt(0, inRange.Count)];
 
             // 폴백: 플레이어로부터 가장 먼 역(연결 없으면 아무 역)
             return stations
@@ -178,7 +183,7 @@ namespace Game.Gameplay
                 var band = bands[bi % bands.Count];
                 if (band.Count > 0)
                 {
-                    int idx = Random.Range(0, band.Count);
+                    int idx = RandInt(0, band.Count);
                     picked.Add(band[idx]);
                     band.RemoveAt(idx);
                 }
