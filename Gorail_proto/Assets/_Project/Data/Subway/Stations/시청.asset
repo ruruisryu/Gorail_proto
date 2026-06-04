@@ -15,3 +15,4 @@ MonoBehaviour:
   stationId: "\uC2DC\uCCAD"
   displayName: "\uC2DC\uCCAD"
   mapPosition: {x: 394.82462, y: 285.9745}
+  featureType: 1

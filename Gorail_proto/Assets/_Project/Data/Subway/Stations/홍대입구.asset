@@ -15,3 +15,4 @@ MonoBehaviour:
   stationId: "\uD64D\uB300\uC785\uAD6C"
   displayName: "\uD64D\uB300\uC785\uAD6C"
   mapPosition: {x: 296.59598, y: 302.35556}
+  featureType: 1
