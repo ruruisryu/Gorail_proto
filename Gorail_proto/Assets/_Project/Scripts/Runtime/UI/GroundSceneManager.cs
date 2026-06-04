@@ -31,6 +31,13 @@ namespace Game.UI
             if (core == null) return;
             float limit = core.SceneConfig != null ? core.SceneConfig.forceExitMinutes : 30f;
 
+            // 전체화면 배경 — 지하철·승강장과 구분되는 '지상' 공간(어두운 청록).
+            var prevC = GUI.color;
+            GUI.color = new Color(0.10f, 0.17f, 0.16f, 0.97f);
+            GUI.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), Texture2D.whiteTexture);
+            GUI.color = prevC;
+            GUI.Label(new Rect(0, 24f, Screen.width, 30f), "■ 지상 (Ground)");
+
             GUILayout.BeginArea(new Rect(Screen.width / 2f - 190f, 70f, 380f, 380f), GUI.skin.box);
             GUILayout.Label($"=== 지상 @ {core.Space?.CurrentStationId} ===");
             GUILayout.Label($"체류 {_stayMinutes:0.0}분 / 강제도주 {limit}분");

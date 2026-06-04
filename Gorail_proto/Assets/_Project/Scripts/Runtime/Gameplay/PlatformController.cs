@@ -15,6 +15,7 @@ namespace Game.Gameplay
         [SerializeField] private Player           player;
         [SerializeField] private MapGraphProvider graphProvider;
         [SerializeField] private SpaceManager     spaceManager;
+        [SerializeField] private TrackerManager   trackerManager;
 
         public string CurrentStation { get; private set; }
 
@@ -34,7 +35,7 @@ namespace Game.Gameplay
             }
         }
 
-        // ── 도착 → 승강장 공간 진입(§7-1) ────────────────────────────────
+        // ── 하차 → 승강장 공간 진입(§7-1) ────────────────────────────────
         public void OpenAt(string stationId)
         {
             CurrentStation = stationId;
@@ -42,6 +43,9 @@ namespace Game.Gameplay
             if (Graph != null && player != null)
                 foreach (var line in Graph.GetLineIds(stationId))
                     if (line != player.CurrentLineId) _transferLines.Add(line);
+
+            // 하차 시 추격자 개체수 갱신(§5-1) — 도착이 아니라 실제 하차 시점.
+            if (trackerManager != null) trackerManager.OnPlayerDisembark();
 
             if (spaceManager != null) spaceManager.EnterPlatform(stationId);
         }

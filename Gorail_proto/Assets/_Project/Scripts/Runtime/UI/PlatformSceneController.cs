@@ -17,6 +17,13 @@ namespace Game.UI
             var plat = core.Platform;
             var player = core.Player;
 
+            // 전체화면 배경 — 지하철과 시각적으로 분리된 '승강장' 공간(어두운 청회색).
+            var prevC = GUI.color;
+            GUI.color = new Color(0.10f, 0.13f, 0.18f, 0.97f);
+            GUI.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), Texture2D.whiteTexture);
+            GUI.color = prevC;
+            GUI.Label(new Rect(0, 24f, Screen.width, 30f), "■ 승강장 (Platform)");
+
             GUILayout.BeginArea(new Rect(Screen.width / 2f - 160f, 70f, 320f, 360f), GUI.skin.box);
             GUILayout.Label($"=== 승강장 @ {plat.CurrentStation} ===");
             if (player != null)

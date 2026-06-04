@@ -116,9 +116,8 @@ namespace Game.Gameplay
                 if (wait > 0f) yield return new WaitForSeconds(wait);
             }
 
-            // 목적지 도달 → 승강장(§7-1)
+            // 목적지 도달 — 지하철 공간 유지. 승강장 진입은 '하차' 버튼으로 명시적으로만(자동 아님).
             IsMoving = false;
-            _platform.OpenAt(player.CurrentStationId);
             MoveCompleted?.Invoke(player.CurrentStationId, false);
         }
 
