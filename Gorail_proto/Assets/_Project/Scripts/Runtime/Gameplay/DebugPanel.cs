@@ -14,6 +14,7 @@ namespace Game.Gameplay
     public class DebugPanel : MonoBehaviour
     {
         [SerializeField] private GameManager        gameManager;
+        [SerializeField] private FameSystem         fameSystem;
         [SerializeField] private ChaseConfig        config;
         [SerializeField] private TrackerManager     trackerManager;
         [SerializeField] private PlatformController platform;
@@ -65,17 +66,34 @@ namespace Game.Gameplay
 
         void DrawWanted()
         {
-            if (gameManager == null) return;
-            if (_lastWanted < 0) _lastWanted = gameManager.WantedLevel;
+            GUILayout.Label("── 명성·수배도 ──");
 
-            GUILayout.Label($"수배도: {gameManager.WantedLevel}  (노선당 상한 {Cap()})");
-            int w = Mathf.RoundToInt(GUILayout.HorizontalSlider(gameManager.WantedLevel, 0, GameManager.MaxWantedLevel));
-            if (w != _lastWanted)
+            // 수배도는 명성 구간으로 자동 결정(scene_system_spec §4) — 디버그는 명성으로 통일.
+            if (fameSystem != null)
             {
-                gameManager.SetWantedLevel(w);
-                // 하락 시 즉시 상한 초과분 제거(§5-5), 상승은 다음 하차 스폰(§5-1)에서 반영
-                if (w < _lastWanted && trackerManager != null) trackerManager.TrimToCaps();
-                _lastWanted = w;
+                int wanted = gameManager != null ? gameManager.WantedLevel : 0;
+                GUILayout.Label($"명성: {fameSystem.CurrentFame:0.0}  → 수배도 {wanted} (노선당 상한 {Cap()})");
+                float f = GUILayout.HorizontalSlider(fameSystem.CurrentFame, 0f, 250f);
+                if (!Mathf.Approximately(f, fameSystem.CurrentFame)) fameSystem.SetFame(f);
+
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("작품 상")) fameSystem.OnArtworkResult(ArtworkGrade.High, true);
+                if (GUILayout.Button("중"))     fameSystem.OnArtworkResult(ArtworkGrade.Mid, true);
+                if (GUILayout.Button("하"))     fameSystem.OnArtworkResult(ArtworkGrade.Low, true);
+                GUILayout.EndHorizontal();
+            }
+            else if (gameManager != null)
+            {
+                // 폴백: FameSystem 미연결 시 수배도 직접 슬라이더
+                if (_lastWanted < 0) _lastWanted = gameManager.WantedLevel;
+                GUILayout.Label($"수배도: {gameManager.WantedLevel} (노선당 상한 {Cap()})");
+                int w = Mathf.RoundToInt(GUILayout.HorizontalSlider(gameManager.WantedLevel, 0, GameManager.MaxWantedLevel));
+                if (w != _lastWanted)
+                {
+                    gameManager.SetWantedLevel(w);
+                    if (w < _lastWanted && trackerManager != null) trackerManager.TrimToCaps();
+                    _lastWanted = w;
+                }
             }
         }
 
