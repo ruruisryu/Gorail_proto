@@ -62609,6 +62609,129 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 8832374887176007148, guid: 81444a0e8aaf22b43a9103db62cc1b96, type: 3}
   m_PrefabInstance: {fileID: 1195631649}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1196569263
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1196569270}
+  - component: {fileID: 1196569269}
+  - component: {fileID: 1196569268}
+  - component: {fileID: 1196569267}
+  - component: {fileID: 1196569266}
+  - component: {fileID: 1196569265}
+  - component: {fileID: 1196569264}
+  m_Layer: 0
+  m_Name: ChaseSystems
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1196569264
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1196569263}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b5aa8afad4e14d04e9c6022adc826e26, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Runtime::Game.Gameplay.StationClickRouter
+  turnResolver: {fileID: 1196569266}
+--- !u!114 &1196569265
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1196569263}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b116732cd83fbb142afc2a7dadcf04af, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Runtime::Game.Gameplay.DebugMover
+  player: {fileID: 1196569267}
+  turnResolver: {fileID: 1196569266}
+  graphProvider: {fileID: 1196569269}
+  playerLocation: {fileID: 11400000, guid: 9934aafba853f2f41a44f6b3a053de5f, type: 2}
+  startLineIdOverride: 
+  destinationStationId: 
+--- !u!114 &1196569266
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1196569263}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dade027b986e43a42b1e181ec2976fdf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Runtime::Game.Gameplay.TurnResolver
+  player: {fileID: 1196569267}
+  graphProvider: {fileID: 1196569269}
+  mapRenderer: {fileID: 388388996}
+  config: {fileID: 11400000, guid: 98cd8a0ad780e5643b9d3a85a672a9fb, type: 2}
+--- !u!114 &1196569267
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1196569263}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b1843febc8b85ba4c9ad16d33186a9c8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Runtime::Game.Gameplay.Player
+  locationData: {fileID: 11400000, guid: 9934aafba853f2f41a44f6b3a053de5f, type: 2}
+--- !u!114 &1196569268
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1196569263}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 967989c941bb19f47b5a4cdb75a962a6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Runtime::Game.Core.GameManager
+  wantedLevel: 0
+--- !u!114 &1196569269
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1196569263}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6158b39bab6b42e49833319e753e4920, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Runtime::Game.Subway.MapGraphProvider
+  networkData: {fileID: 11400000, guid: 489797380090f734a9d774c4957d3a08, type: 2}
+--- !u!4 &1196569270
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1196569263}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1202892756
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -109104,3 +109227,4 @@ SceneRoots:
   - {fileID: 1786846727}
   - {fileID: 1061870276561418599}
   - {fileID: 1488138072}
+  - {fileID: 1196569270}

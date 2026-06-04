@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 
 namespace Game.Subway
 {
@@ -16,8 +17,14 @@ namespace Game.Subway
     /// 점 개수·색은 본질적으로 데이터(어느 노선이 지나는가)라서,
     /// 환승역은 DotTemplate를 노선 수만큼 복제해 인스턴스에 생성한다.
     /// </summary>
-    public class StationView : MonoBehaviour
+    public class StationView : MonoBehaviour, IPointerClickHandler
     {
+        /// <summary>
+        /// 역이 클릭됐을 때 그 stationId를 알린다(렌더링 레이어는 발신만, 게임플레이가 구독).
+        /// 이동 입력(②)을 위해 StationClickRouter가 이 이벤트를 받아 TurnResolver로 넘긴다.
+        /// </summary>
+        public static event System.Action<string> StationClicked;
+
         // 어떤 역인지 / 지나는 노선 색 — 데이터 주도(인스턴스 고유)
         [HideInInspector] public StationData stationData;
         [HideInInspector] public List<Color> lineColors = new List<Color>();
@@ -87,12 +94,19 @@ namespace Game.Subway
                 label.font = transfer ? fontTransfer : fontNormal;
             }
 
-            // 히트 영역 — 점 묶음을 덮는 크기. 저작 중엔 클릭 가능, 런타임엔 통과.
+            // 히트 영역 — 점 묶음을 덮는 크기. 저작 중(역 선택)·런타임(이동 입력) 모두 클릭 가능.
             if (hitArea != null)
             {
                 hitArea.rectTransform.sizeDelta = new Vector2(totalW + hitPadding, dotSize + hitPadding);
-                hitArea.raycastTarget = !Application.isPlaying;
+                hitArea.raycastTarget = true;
             }
+        }
+
+        /// <summary>역 클릭 → stationId를 이벤트로 알림(②이동 입력). 빈 stationId는 무시.</summary>
+        public void OnPointerClick(PointerEventData eventData)
+        {
+            if (stationData != null && !string.IsNullOrEmpty(stationData.stationId))
+                StationClicked?.Invoke(stationData.stationId);
         }
 
         void DestroySafe(GameObject go)
