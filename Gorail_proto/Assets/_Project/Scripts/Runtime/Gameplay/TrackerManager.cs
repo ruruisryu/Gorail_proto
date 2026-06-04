@@ -194,13 +194,24 @@ namespace Game.Gameplay
             return Graph.Distance(t.StationId, playerStn);
         }
 
+        /// <summary>
+        /// 마커 동기화 — ⑦ 가시화 규칙(§6): 활성 노선 위의 추격자만 표시한다.
+        /// 추격자가 2규칙으로 비활성 노선 구간에 들어가 있으면 숨고, 그 노선으로 환승하면 드러난다.
+        /// </summary>
         void SyncMarkers()
         {
             if (enemyLocations != null)
             {
-                enemyLocations.enemyStationIds = _trackers.Select(t => t.StationId).ToList();
+                enemyLocations.enemyStationIds = _trackers
+                    .Where(t => IsLineVisible(t.LineId))
+                    .Select(t => t.StationId)
+                    .ToList();
             }
             if (mapRenderer != null) mapRenderer.RefreshMarkers();
         }
+
+        /// <summary>플레이어가 한 번이라도 탑승한 노선인지(활성 노선만 가시 §6).</summary>
+        bool IsLineVisible(string lineId) =>
+            player != null && !string.IsNullOrEmpty(lineId) && player.HasVisitedLine(lineId);
     }
 }

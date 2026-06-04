@@ -62627,6 +62627,7 @@ GameObject:
   - component: {fileID: 1196569271}
   - component: {fileID: 1196569272}
   - component: {fileID: 1196569273}
+  - component: {fileID: 1196569274}
   m_Layer: 0
   m_Name: ChaseSystems
   m_TagString: Untagged
@@ -62782,6 +62783,26 @@ MonoBehaviour:
   m_EditorClassIdentifier: Game.Runtime::Game.Gameplay.PlatformController
   player: {fileID: 1196569267}
   graphProvider: {fileID: 1196569269}
+--- !u!114 &1196569274
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1196569263}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 57ac29256de8578469ae37463cca024b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Runtime::Game.Gameplay.DebugPanel
+  gameManager: {fileID: 1196569268}
+  config: {fileID: 11400000, guid: 98cd8a0ad780e5643b9d3a85a672a9fb, type: 2}
+  trackerManager: {fileID: 1196569271}
+  platform: {fileID: 1196569273}
+  player: {fileID: 1196569267}
+  turnResolver: {fileID: 1196569266}
+  debugMover: {fileID: 1196569265}
+  show: 1
 --- !u!1001 &1202892756
 PrefabInstance:
   m_ObjectHideFlags: 0
