@@ -18,6 +18,10 @@ namespace Game.Gameplay
         [SerializeField] private MapGraphProvider   graphProvider;
         [SerializeField] private PlayerLocationData playerLocation;
 
+        [Tooltip("세션 시작 역(안정적 단일 소스). 비우면 PlayerLocation의 현재 역을 사용. " +
+                 "주의: PlayerLocation은 플레이 중 현재 위치로 덮여쓰기되므로 시작역 소스로 쓰지 않는다.")]
+        [SerializeField] private string startStationId = "시청";
+
         [Tooltip("시작 노선을 직접 지정(비우면 시작 역의 첫 노선 자동 선택).")]
         [SerializeField] private string startLineIdOverride = "";
 
@@ -33,13 +37,18 @@ namespace Game.Gameplay
         public void BootstrapSession()
         {
             if (player == null || graphProvider == null || graphProvider.Graph == null) return;
-            if (playerLocation == null || string.IsNullOrEmpty(playerLocation.currentStationId))
+
+            // 시작역의 단일 소스 = startStationId(안정). PlayerLocation은 플레이 중 현재 위치로
+            // 덮여쓰이므로 시작역 소스로 쓰지 않는다(비었을 때만 폴백).
+            string startStation = !string.IsNullOrEmpty(startStationId)
+                ? startStationId
+                : (playerLocation != null ? playerLocation.currentStationId : null);
+            if (string.IsNullOrEmpty(startStation))
             {
-                Debug.LogWarning("[DebugMover] PlayerLocation 미설정 — 시작 역을 정할 수 없음");
+                Debug.LogWarning("[DebugMover] 시작 역 미설정 — startStationId를 지정하세요");
                 return;
             }
 
-            string startStation = playerLocation.currentStationId;
             string startLine = !string.IsNullOrEmpty(startLineIdOverride)
                 ? startLineIdOverride
                 : FirstLineOf(startStation);

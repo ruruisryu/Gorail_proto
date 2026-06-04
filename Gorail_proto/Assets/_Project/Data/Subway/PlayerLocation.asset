@@ -12,4 +12,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 90b7bb01afbfc664aa1a1146f5a593b0, type: 3}
   m_Name: PlayerLocation
   m_EditorClassIdentifier: Game.Runtime::Game.Subway.PlayerLocationData
-  currentStationId: cityhall
+  currentStationId: "\uC2DC\uCCAD"

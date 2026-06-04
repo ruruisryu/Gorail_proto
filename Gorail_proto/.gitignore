@@ -124,3 +124,6 @@ $RECYCLE.BIN/
 *.orig
 *.swp
 *.swo
+# 플레이테스트 스크린샷(자동 생성, 추적 제외)
+/[Aa]ssets/Screenshots/
+/[Aa]ssets/Screenshots.meta

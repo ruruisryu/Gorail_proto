@@ -10,7 +10,20 @@ namespace Game.Subway
     {
         [SerializeField] private SubwayNetworkData networkData;
 
-        public MapGraph Graph { get; private set; }
+        private MapGraph _graph;
+
+        /// <summary>
+        /// 그래프 접근점. 아직 안 만들어졌으면 첫 접근 때 빌드한다(self-healing).
+        /// Awake 타이밍·실행 순서에 상관없이 어떤 소비자가 먼저 접근해도 항상 유효한 그래프를 받는다.
+        /// </summary>
+        public MapGraph Graph
+        {
+            get
+            {
+                if (_graph == null) Rebuild();
+                return _graph;
+            }
+        }
 
         void Awake()
         {
@@ -20,7 +33,7 @@ namespace Game.Subway
         public void Rebuild()
         {
             if (networkData != null)
-                Graph = new MapGraph(networkData);
+                _graph = new MapGraph(networkData);
             else
                 Debug.LogWarning("[MapGraphProvider] NetworkData가 할당되지 않았습니다.");
         }
