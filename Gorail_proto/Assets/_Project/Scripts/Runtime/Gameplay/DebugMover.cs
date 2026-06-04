@@ -1,5 +1,6 @@
 using UnityEngine;
 using Game.Subway;
+using Game.Core;
 
 namespace Game.Gameplay
 {
@@ -60,6 +61,12 @@ namespace Game.Gameplay
             }
 
             player.Initialize(startStation, startLine);
+
+            // 세션 시작 = 추격자 0(§1). 이전 플레이/에셋의 잔재 추격자·마커(EnemyLocationData)를 비운다.
+            // (이게 없으면 수배도 0인데도 '유령' 적 마커가 남아 보임)
+            var trackers = GameCore.Instance != null ? GameCore.Instance.Trackers : null;
+            if (trackers != null) trackers.ResetAll();
+
             Debug.Log($"[DebugMover] 세션 시작 — 역:{startStation} 노선:{startLine}");
         }
 

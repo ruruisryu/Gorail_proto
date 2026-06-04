@@ -12,7 +12,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0280dbb6988799840b58b0a6d489b872, type: 3}
   m_Name: EnemyLocations
   m_EditorClassIdentifier: Game.Runtime::Game.Subway.EnemyLocationData
-  enemyStationIds:
-  - gangnam
-  - hongdae
-  - jamsil
+  enemyStationIds: []

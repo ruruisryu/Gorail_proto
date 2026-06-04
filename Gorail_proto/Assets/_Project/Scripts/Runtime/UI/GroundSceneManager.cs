@@ -76,8 +76,10 @@ namespace Game.UI
             if (steps > 0 && core.Trackers != null) core.Trackers.AdvanceAll(steps);
             Debug.Log($"[Ground] 복귀({(forced ? "강제도주" : "자발")}) 체류 {_stayMinutes:0.0}분 → 추격 {steps}스텝");
 
-            // 나간 역 승강장으로 복귀
-            if (core.Space != null) core.Space.EnterPlatform(station);
+            // 나간 역 승강장으로 복귀. OpenAt은 '하차'와 동일하게 추격자 개체수 갱신(§5-1)까지 수행 —
+            // 작품활동으로 오른 수배도가 복귀 시점에 비로소 상한까지 스폰된다(EnterPlatform 직접 호출은 스폰을 건너뜀).
+            if (core.Platform != null) core.Platform.OpenAt(station);
+            else if (core.Space != null) core.Space.EnterPlatform(station);
 
             // §9-1: 같은 역에 추격자면 즉시 검문(확률 게이트)
             if (core.Inspection != null && !string.IsNullOrEmpty(station))
