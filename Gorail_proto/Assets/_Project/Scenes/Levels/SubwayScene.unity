@@ -62624,6 +62624,7 @@ GameObject:
   - component: {fileID: 1196569266}
   - component: {fileID: 1196569265}
   - component: {fileID: 1196569264}
+  - component: {fileID: 1196569271}
   m_Layer: 0
   m_Name: ChaseSystems
   m_TagString: Untagged
@@ -62732,6 +62733,24 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1196569271
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1196569263}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c55bbdafc4d6894c8690e98b36fd292, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Runtime::Game.Gameplay.TrackerManager
+  graphProvider: {fileID: 1196569269}
+  player: {fileID: 1196569267}
+  config: {fileID: 11400000, guid: 98cd8a0ad780e5643b9d3a85a672a9fb, type: 2}
+  gameManager: {fileID: 1196569268}
+  enemyLocations: {fileID: 11400000, guid: a4b58dcc712e73a45b5300e90c610651, type: 2}
+  mapRenderer: {fileID: 388388996}
 --- !u!1001 &1202892756
 PrefabInstance:
   m_ObjectHideFlags: 0
