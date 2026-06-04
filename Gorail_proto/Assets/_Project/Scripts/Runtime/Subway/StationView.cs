@@ -17,13 +17,18 @@ namespace Game.Subway
     /// 점 개수·색은 본질적으로 데이터(어느 노선이 지나는가)라서,
     /// 환승역은 DotTemplate를 노선 수만큼 복제해 인스턴스에 생성한다.
     /// </summary>
-    public class StationView : MonoBehaviour, IPointerClickHandler
+    public class StationView : MonoBehaviour, IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler
     {
         /// <summary>
         /// 역이 클릭됐을 때 그 stationId를 알린다(렌더링 레이어는 발신만, 게임플레이가 구독).
         /// 이동 입력(②)을 위해 StationClickRouter가 이 이벤트를 받아 TurnResolver로 넘긴다.
         /// </summary>
         public static event System.Action<string> StationClicked;
+
+        /// <summary>역에 마우스를 올렸을 때(stationId). 적 이동 프리뷰(D10) 등에 사용.</summary>
+        public static event System.Action<string> StationHovered;
+        /// <summary>역에서 마우스가 벗어났을 때.</summary>
+        public static event System.Action StationHoverExited;
 
         // 어떤 역인지 / 지나는 노선 색 — 데이터 주도(인스턴스 고유)
         [HideInInspector] public StationData stationData;
@@ -155,6 +160,14 @@ namespace Game.Subway
             if (stationData != null && !string.IsNullOrEmpty(stationData.stationId))
                 StationClicked?.Invoke(stationData.stationId);
         }
+
+        public void OnPointerEnter(PointerEventData eventData)
+        {
+            if (stationData != null && !string.IsNullOrEmpty(stationData.stationId))
+                StationHovered?.Invoke(stationData.stationId);
+        }
+
+        public void OnPointerExit(PointerEventData eventData) => StationHoverExited?.Invoke();
 
         /// <summary>[D1] 이미 생성된 점들의 색만 갈아끼운다(활성=고유색/비활성=회색 재색칠용).</summary>
         public void SetDotColors(System.Collections.Generic.IReadOnlyList<Color> colors)

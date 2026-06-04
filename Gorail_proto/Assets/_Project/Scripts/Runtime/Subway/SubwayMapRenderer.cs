@@ -54,6 +54,7 @@ namespace Game.Subway
             _activeLines == null || _activeLines.Contains(line.lineId) ? line.lineColor : inactiveLineColor;
         private const string LinesTag    = "[Lines]";
         private const string StationsTag = "[Stations]";
+        private const string PreviewTag  = "[Preview]"; // [D10] 적 이동 프리뷰 고스트
 
         public Vector2 StationBoundsMin { get; private set; }
         public Vector2 StationBoundsMax { get; private set; }
@@ -115,7 +116,7 @@ namespace Game.Subway
             for (int i = mapContainer.childCount - 1; i >= 0; i--)
             {
                 var child = mapContainer.GetChild(i);
-                if (child.name == LinesTag || child.name == StationsTag) continue;
+                if (child.name == LinesTag || child.name == StationsTag || child.name == PreviewTag) continue;
                 if (Application.isPlaying) Destroy(child.gameObject);
                 else DestroyImmediate(child.gameObject);
             }
@@ -172,10 +173,33 @@ namespace Game.Subway
             for (int i = 0; i < mapContainer.childCount; i++)
             {
                 var child = mapContainer.GetChild(i);
-                if (child.name == LinesTag || child.name == StationsTag) continue;
+                if (child.name == LinesTag || child.name == StationsTag || child.name == PreviewTag) continue;
                 child.localScale = Vector3.one * _zoomComp;
             }
         }
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // [D10] 적 이동 프리뷰 — 호버 시 추격자 예측 위치를 고스트로
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        /// <summary>예측된 추격자 위치(역 ID들)에 반투명 고스트 마커를 표시한다.</summary>
+        public void ShowChasePreview(IEnumerable<string> predictedTrackerStations)
+        {
+            ClearChasePreview();
+            if (predictedTrackerStations == null) return;
+            var prev = CreateContainer(PreviewTag, mapContainer.childCount); // 최상위
+            foreach (var id in predictedTrackerStations)
+            {
+                var p = GetStationUIPos(id);
+                if (!p.HasValue) continue;
+                Circ("PreviewRing", prev, p.Value, EnemySize + 16f, new Color(0.95f, 0.18f, 0.18f, 0.22f));
+                Circ("Preview",     prev, p.Value, EnemySize + 4f,  new Color(0.95f, 0.18f, 0.18f, 0.55f));
+            }
+            for (int i = 0; i < prev.childCount; i++)
+                prev.GetChild(i).localScale = Vector3.one * _zoomComp;
+        }
+
+        public void ClearChasePreview() => DestroyContainer(PreviewTag);
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // [D1] 활성 노선 색 / 비활성 회색
