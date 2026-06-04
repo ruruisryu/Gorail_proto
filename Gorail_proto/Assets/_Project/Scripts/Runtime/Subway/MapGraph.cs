@@ -13,6 +13,10 @@ namespace Game.Subway
         private readonly Dictionary<string, StationData> _stations = new();
         // stationId -> [lineId, ...]
         private readonly Dictionary<string, List<string>> _stationLines = new();
+        // lineId -> 순서대로의 역 ID 리스트 (노선 위 경로 산출용)
+        private readonly Dictionary<string, List<string>> _lineStations = new();
+        // lineId -> 순환 여부
+        private readonly Dictionary<string, bool> _lineCircular = new();
 
         public MapGraph(SubwayNetworkData network)
         {
@@ -25,6 +29,14 @@ namespace Game.Subway
             {
                 if (line == null) continue;
                 var s = line.stations;
+
+                // 노선 순서·순환 여부 보존 (GetLineOrderedPath용)
+                var ordered = new List<string>();
+                foreach (var stn in s)
+                    if (stn != null) ordered.Add(stn.stationId);
+                _lineStations[line.lineId] = ordered;
+                _lineCircular[line.lineId] = line.isCircular;
+
                 for (int i = 0; i < s.Count; i++)
                 {
                     if (s[i] == null) continue;
@@ -82,6 +94,64 @@ namespace Game.Subway
             return result;
         }
 
+        /// <summary>해당 노선이 순환선인지 여부.</summary>
+        public bool IsLineCircular(string lineId) =>
+            _lineCircular.TryGetValue(lineId, out var c) && c;
+
+        /// <summary>해당 노선이 지나는 역인지 여부.</summary>
+        public bool LineHasStation(string lineId, string stationId) =>
+            _lineStations.TryGetValue(lineId, out var s) && s.Contains(stationId);
+
+        /// <summary>해당 노선의 순서대로의 역 ID 리스트(읽기 전용 복사본). 없으면 빈 리스트.</summary>
+        public List<string> GetLineStations(string lineId) =>
+            _lineStations.TryGetValue(lineId, out var s) ? new List<string>(s) : new List<string>();
+
+        /// <summary>
+        /// 한 노선 위에서 from → to 경로(역 ID 리스트, from·to 포함)를 반환한다(§2-2 노선 내 이동).
+        /// 두 역이 모두 같은 노선에 있어야 하며, 아니면 빈 리스트(환승은 ③ 승강장에서만).
+        /// 비순환선: 인덱스 사이 구간을 방향에 맞게 슬라이스.
+        /// 순환선(2호선): 시계/반시계 두 호(弧) 중 짧은 쪽을 자동 선택.
+        /// </summary>
+        public List<string> GetLineOrderedPath(string lineId, string from, string to)
+        {
+            var empty = new List<string>();
+            if (string.IsNullOrEmpty(lineId)) return empty;
+            if (!_lineStations.TryGetValue(lineId, out var stations)) return empty;
+
+            int iFrom = stations.IndexOf(from);
+            int iTo   = stations.IndexOf(to);
+            if (iFrom < 0 || iTo < 0) return empty;        // 둘 중 하나라도 이 노선에 없음
+            if (iFrom == iTo) return new List<string> { from };
+
+            int n = stations.Count;
+            bool circular = _lineCircular.TryGetValue(lineId, out var c) && c;
+
+            if (!circular)
+            {
+                // 비순환: from→to 한 방향 슬라이스
+                var path = new List<string>();
+                int step = iTo > iFrom ? 1 : -1;
+                for (int i = iFrom; i != iTo; i += step) path.Add(stations[i]);
+                path.Add(stations[iTo]);
+                return path;
+            }
+
+            // 순환: 정방향(+1)·역방향(-1) 호 길이를 비교해 짧은 쪽 채택
+            int fwdLen = (iTo - iFrom + n) % n;            // +1로 도달하는 칸 수
+            int bwdLen = n - fwdLen;                        // -1로 도달하는 칸 수
+            int dir    = fwdLen <= bwdLen ? 1 : -1;
+            int len    = fwdLen <= bwdLen ? fwdLen : bwdLen;
+
+            var cpath = new List<string> { stations[iFrom] };
+            int idx = iFrom;
+            for (int k = 0; k < len; k++)
+            {
+                idx = (idx + dir + n) % n;
+                cpath.Add(stations[idx]);
+            }
+            return cpath;
+        }
+
         // ── BFS (노선 제약 없음 — Tracker 추격용) ────────────────────────
 
         /// <summary>두 역 사이 최단 거리(역 수)를 반환. 연결 없으면 int.MaxValue.</summary>
@@ -137,6 +207,15 @@ namespace Game.Subway
         {
             var path = ShortestPath(from, to);
             return path.Count >= 2 ? path[1] : from;
+        }
+
+        /// <summary>인접한 두 역 a-b를 잇는 노선 ID(여럿이면 첫 번째). 인접이 아니면 null.</summary>
+        public string GetConnectingLineId(string a, string b)
+        {
+            if (!_adj.TryGetValue(a, out var edges)) return null;
+            foreach (var (nbr, lid) in edges)
+                if (nbr == b) return lid;
+            return null;
         }
     }
 }
