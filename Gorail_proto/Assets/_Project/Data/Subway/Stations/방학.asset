@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: Game.Runtime::Game.Subway.StationData
   stationId: "\uBC29\uD559"
   displayName: "\uBC29\uD559"
-  mapPosition: {x: 524.3138, y: 68.64712}
+  mapPosition: {x: 524.3138, y: 68.647125}

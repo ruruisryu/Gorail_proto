@@ -28,7 +28,7 @@ namespace Game.UI
         public void Show()
         {
             gameObject.SetActive(true);
-            mapRenderer?.Render();
+            mapRenderer?.RefreshMarkers();
         }
 
         public void Hide()

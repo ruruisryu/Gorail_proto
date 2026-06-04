@@ -5,79 +5,140 @@ using UnityEngine.UI;
 
 namespace Game.Subway
 {
+    /// <summary>
+    /// 서울 지하철 노선도를 uGUI 위에 렌더링한다.
+    ///
+    /// ── 에디터 워크플로 ──
+    ///   ① Build Map     : 역 GameObject + 선을 전부 새로 생성한다. 기존 배치 초기화.
+    ///   ② (역 이동)     : 기획자가 Hierarchy에서 역 GameObject를 드래그해 위치 조정.
+    ///   ③ Update Lines  : 현재 역 위치 기준으로 선만 다시 그린다.
+    ///   ④ Save Positions: 조정된 역 위치를 StationData.mapPosition에 저장한다.
+    /// </summary>
     public class SubwayMapRenderer : MonoBehaviour
     {
-        [SerializeField] private SubwayNetworkData networkData;
+        // ── 참조 ────────────────────────────────────────────────────────
+        [SerializeField] private SubwayNetworkData  networkData;
         [SerializeField] private PlayerLocationData playerLocation;
-        [SerializeField] private EnemyLocationData enemyLocations;
-        [SerializeField] private RectTransform mapContainer;
+        [SerializeField] private EnemyLocationData  enemyLocations;
+        [SerializeField] private RectTransform      mapContainer;
+        [SerializeField] private StationView        stationNodePrefab;
 
-        private const float RefWidth       = 860f;
-        private const float RefHeight      = 550f;
+        // ── 레이아웃 ─────────────────────────────────────────────────────
+        private const float RefWidth  = 860f;
+        private const float RefHeight = 550f;
 
         [Header("Layout")]
         [Tooltip("역 간 간격 배율. 1 = 원본, 0.5 = 절반으로 압축.")]
         [SerializeField][Range(0.1f, 1f)] private float stationSpread = 0.4f;
-        private const float LineThickness  = 6f;
-        private const float StationSize    = 12f;
-        private const float TransferDot    = 11f;
-        private const float TransferPad    = 3f;
-        private const float PlayerSize     = 18f;
-        private const float EnemySize      = 18f;
+
+        private const float LineThickness = 6f;
+        private const float PlayerSize    = 18f;
+        private const float EnemySize     = 18f;
 
         private static readonly Color PlayerColor     = new Color(0.22f, 0.92f, 0.42f);
         private static readonly Color PlayerRingColor = new Color(0.22f, 0.92f, 0.42f, 0.30f);
         private static readonly Color EnemyColor      = new Color(0.95f, 0.18f, 0.18f);
         private static readonly Color EnemyRingColor  = new Color(0.95f, 0.18f, 0.18f, 0.30f);
 
-        // Render() 후 채워지는 역 UI 좌표 경계 (MapContent 로컬 기준)
+        // ── 내부 ─────────────────────────────────────────────────────────
+        private Sprite _circle;
+        private const string LinesTag    = "[Lines]";
+        private const string StationsTag = "[Stations]";
+
         public Vector2 StationBoundsMin { get; private set; }
         public Vector2 StationBoundsMax { get; private set; }
 
-        [Header("Fonts")]
-        [SerializeField] private TMP_FontAsset fontBold;    // 환승역 — Korail B SDF
-        [SerializeField] private TMP_FontAsset fontMedium;  // 일반역 — Korail M SDF
-
-        private Sprite circle;
-
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 런타임
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         void Awake()
         {
-            circle = MakeCircleSprite(128);
+            _circle = MakeCircleSprite(128);
+            // SO 위치 + 현재 stationSpread 기준으로 역을 재배치하고 선·마커를 갱신한다.
+            ApplyLayout();
         }
 
+#if UNITY_EDITOR
+        // 에디터에서 stationSpread 슬라이더 등 값이 바뀌면 즉시 재배치한다.
+        // OnValidate 중에는 GameObject 생성/파괴가 금지되므로 delayCall로 미룬다.
         void OnValidate()
         {
-#if UNITY_EDITOR
-            if (mapContainer == null || networkData == null) return;
+            if (Application.isPlaying) return;
             UnityEditor.EditorApplication.delayCall += () =>
             {
-                if (this == null || mapContainer == null || networkData == null) return;
-                circle = MakeCircleSprite(128);
-                Render();
+                if (this == null || mapContainer == null) return;
+                if (FindContainer(StationsTag) == null) return; // 아직 Build 전이면 건너뜀
+                ApplyLayout();
             };
+        }
 #endif
+
+        /// <summary>
+        /// 역 위치의 단일 소스(StationData.mapPosition) + 현재 stationSpread 기준으로
+        /// 모든 역 GameObject를 다시 배치한 뒤, 그 위치로 선과 마커를 갱신한다.
+        /// stationSpread 슬라이더·런타임 시작이 모두 이 한 경로를 탄다.
+        /// </summary>
+        public void ApplyLayout()
+        {
+            if (networkData == null || mapContainer == null) return;
+            if (_circle == null) _circle = MakeCircleSprite(128);
+
+            var stationsRT = FindContainer(StationsTag);
+            if (stationsRT == null) { BuildMap(); return; } // 아직 역이 없으면 최초 생성
+
+            // SO(mapPosition) → 현재 spread 적용한 UI 좌표로 모든 역을 재배치
+            foreach (var view in stationsRT.GetComponentsInChildren<StationView>())
+            {
+                if (view.stationData == null) continue;
+                var rt = view.GetComponent<RectTransform>();
+                if (rt != null) rt.anchoredPosition = UI(view.stationData.mapPosition);
+            }
+
+            UpdateLines();    // 재배치된 위치 기준으로 선 갱신
+            RefreshMarkers(); // 플레이어·적 마커 갱신
         }
 
-        static Sprite MakeCircleSprite(int radius)
+        /// <summary>플레이어·적 마커를 현재 역 위치 기준으로 다시 그린다.</summary>
+        public void RefreshMarkers()
         {
-            int size = radius * 2;
-            var tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
-            var pixels = new Color[size * size];
-            float cr = radius - 0.5f;
-            var center = new Vector2(radius, radius);
-            for (int y = 0; y < size; y++)
-                for (int x = 0; x < size; x++)
+            // Lines, Stations 컨테이너가 아닌 직접 자식(마커)만 제거
+            for (int i = mapContainer.childCount - 1; i >= 0; i--)
+            {
+                var child = mapContainer.GetChild(i);
+                if (child.name == LinesTag || child.name == StationsTag) continue;
+                if (Application.isPlaying) Destroy(child.gameObject);
+                else DestroyImmediate(child.gameObject);
+            }
+
+            if (enemyLocations != null)
+            {
+                int idx = 0;
+                foreach (var id in enemyLocations.enemyStationIds)
                 {
-                    float dist = Vector2.Distance(new Vector2(x + 0.5f, y + 0.5f), center);
-                    pixels[y * size + x] = dist <= cr ? Color.white : Color.clear;
+                    if (string.IsNullOrEmpty(id)) continue;
+                    var pos = GetStationUIPos(id);
+                    if (pos.HasValue) DrawEnemy(pos.Value, idx++);
                 }
-            tex.SetPixels(pixels);
-            tex.Apply();
-            return Sprite.Create(tex, new Rect(0, 0, size, size), Vector2.one * 0.5f);
+            }
+
+            if (playerLocation != null && !string.IsNullOrEmpty(playerLocation.currentStationId))
+            {
+                var pos = GetStationUIPos(playerLocation.currentStationId);
+                if (pos.HasValue) DrawPlayer(pos.Value);
+            }
         }
 
-        public void Render()
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 에디터 진입점 (Inspector 버튼에서 호출)
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        /// <summary>역 GameObject + 선을 전부 새로 만든다. 기존 배치가 초기화된다.</summary>
+        public void BuildMap()
         {
+            if (networkData == null || mapContainer == null) return;
+            _circle = MakeCircleSprite(128);
+
+            // mapContainer 전체 클리어 (이전 Render() 잔재 포함)
             for (int i = mapContainer.childCount - 1; i >= 0; i--)
             {
                 var child = mapContainer.GetChild(i).gameObject;
@@ -85,191 +146,226 @@ namespace Game.Subway
                 else DestroyImmediate(child);
             }
 
-            if (networkData == null) return;
+            var linesRT    = CreateContainer(LinesTag,    siblingIndex: 0);
+            var stationsRT = CreateContainer(StationsTag, siblingIndex: 1);
 
-            // 역별 노선 색상 목록 수집
-            var stationLines = new Dictionary<string, List<Color>>();
+            var stationColors = CollectStationColors();
+
+            // 선 그리기 (StationData.mapPosition 사용)
             foreach (var line in networkData.lines)
-            {
-                foreach (var stn in line.stations)
-                {
-                    if (stn == null) continue;
-                    if (!stationLines.ContainsKey(stn.stationId))
-                        stationLines[stn.stationId] = new List<Color>();
-                    if (!stationLines[stn.stationId].Contains(line.lineColor))
-                        stationLines[stn.stationId].Add(line.lineColor);
-                }
-            }
+                DrawLineSegmentsFromData(line, linesRT);
 
-            // 역 UI 좌표 경계 계산
-            var bMin = new Vector2(float.MaxValue,  float.MaxValue);
-            var bMax = new Vector2(float.MinValue, float.MinValue);
-            var seenForBounds = new HashSet<string>();
-            foreach (var line in networkData.lines)
-                foreach (var stn in line.stations)
-                {
-                    if (stn == null || seenForBounds.Contains(stn.stationId)) continue;
-                    seenForBounds.Add(stn.stationId);
-                    var p = UI(stn.mapPosition);
-                    bMin = Vector2.Min(bMin, p);
-                    bMax = Vector2.Max(bMax, p);
-                }
-            StationBoundsMin = bMin;
-            StationBoundsMax = bMax;
-
-            // 1. 노선 선분
-            foreach (var line in networkData.lines)
-                DrawLineSegments(line);
-
-            // 2. 역 마커 (중복 없이)
+            // 역 GameObject 생성
             var drawn = new HashSet<string>();
             foreach (var line in networkData.lines)
-            {
                 foreach (var stn in line.stations)
                 {
                     if (stn == null || drawn.Contains(stn.stationId)) continue;
                     drawn.Add(stn.stationId);
-                    var colors = stationLines[stn.stationId];
-                    DrawStation(stn, colors);
+                    CreateStationGO(stn, stationColors[stn.stationId], stationsRT);
                 }
-            }
 
-            // 3. 적 마커
-            if (enemyLocations != null)
+            Debug.Log($"[SubwayMapRenderer] Build Map 완료 — 역:{drawn.Count}개");
+        }
+
+        /// <summary>역 위치는 유지하고, 현재 StationView 위치 기준으로 선만 다시 그린다.</summary>
+        public void UpdateLines()
+        {
+            if (networkData == null || mapContainer == null) return;
+            _circle = MakeCircleSprite(128);
+
+            // Stations가 없으면 BuildMap으로 초기 생성
+            if (FindContainer(StationsTag) == null) { BuildMap(); return; }
+
+            DestroyContainer(LinesTag);
+            var linesRT = CreateContainer(LinesTag, siblingIndex: 0);
+
+            // StationView → anchoredPosition 딕셔너리
+            var posMap = BuildPosMap();
+
+            foreach (var line in networkData.lines)
             {
-                int enemyIndex = 0;
-                foreach (var id in enemyLocations.enemyStationIds)
+                var s = line.stations;
+                for (int i = 0; i < s.Count - 1; i++)
                 {
-                    if (string.IsNullOrEmpty(id)) continue;
-                    var stn = FindStation(id);
-                    if (stn != null) DrawEnemy(stn.mapPosition, enemyIndex);
-                    enemyIndex++;
+                    if (s[i] == null || s[i + 1] == null) continue;
+                    if (!posMap.TryGetValue(s[i].stationId,     out var from)) continue;
+                    if (!posMap.TryGetValue(s[i + 1].stationId, out var to))   continue;
+                    SegmentDirect(from, to, line.lineColor, LineThickness, linesRT);
                 }
-            }
-
-            // 4. 플레이어 마커 (항상 최상단)
-            if (playerLocation != null && !string.IsNullOrEmpty(playerLocation.currentStationId))
-            {
-                var stn = FindStation(playerLocation.currentStationId);
-                if (stn != null) DrawPlayer(stn.mapPosition);
+                if (line.isCircular && s.Count > 1 && s[0] != null && s[s.Count - 1] != null)
+                {
+                    if (posMap.TryGetValue(s[s.Count - 1].stationId, out var from) &&
+                        posMap.TryGetValue(s[0].stationId,            out var to))
+                        SegmentDirect(from, to, line.lineColor, LineThickness, linesRT);
+                }
             }
         }
 
-        // ── 선분 ──────────────────────────────────────────────────────
+        /// <summary>현재 StationView 위치를 StationData.mapPosition에 저장한다.</summary>
+        public void SavePositions()
+        {
+            var stationsRT = FindContainer(StationsTag);
+            if (stationsRT == null)
+            {
+                Debug.LogWarning("[SubwayMapRenderer] Build Map을 먼저 실행하세요.");
+                return;
+            }
 
-        void DrawLineSegments(LineData line)
+            Rect  r  = mapContainer.rect;
+            float sx = r.width  / RefWidth;
+            float sy = r.height / RefHeight;
+            float cx = RefWidth  * 0.5f;
+            float cy = RefHeight * 0.5f;
+
+            int count = 0;
+            foreach (var view in stationsRT.GetComponentsInChildren<StationView>())
+            {
+                var rt = view.GetComponent<RectTransform>();
+                if (rt == null || view.stationData == null) continue;
+
+                // UI 좌표 → mapPosition 역변환
+                Vector2 ui     = rt.anchoredPosition;
+                float scaledX  = (ui.x + r.width  * 0.5f) / sx;
+                float scaledY  = (r.height * 0.5f  - ui.y) / sy;
+                float mapX     = (scaledX - cx) / stationSpread + cx;
+                float mapY     = (scaledY - cy) / stationSpread + cy;
+
+                view.stationData.mapPosition = new Vector2(mapX, mapY);
+#if UNITY_EDITOR
+                UnityEditor.EditorUtility.SetDirty(view.stationData);
+#endif
+                count++;
+            }
+#if UNITY_EDITOR
+            UnityEditor.AssetDatabase.SaveAssets();
+#endif
+            Debug.Log($"[SubwayMapRenderer] {count}개 역 위치를 SO에 저장했습니다.");
+        }
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 내부 헬퍼
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        Dictionary<string, List<Color>> CollectStationColors()
+        {
+            var result = new Dictionary<string, List<Color>>();
+            foreach (var line in networkData.lines)
+                foreach (var stn in line.stations)
+                {
+                    if (stn == null) continue;
+                    if (!result.ContainsKey(stn.stationId))
+                        result[stn.stationId] = new List<Color>();
+                    if (!result[stn.stationId].Contains(line.lineColor))
+                        result[stn.stationId].Add(line.lineColor);
+                }
+            return result;
+        }
+
+        Dictionary<string, Vector2> BuildPosMap()
+        {
+            var posMap = new Dictionary<string, Vector2>();
+            var stationsRT = FindContainer(StationsTag);
+            if (stationsRT == null) return posMap;
+            foreach (var view in stationsRT.GetComponentsInChildren<StationView>())
+            {
+                var rt = view.GetComponent<RectTransform>();
+                if (rt != null && view.stationData != null)
+                    posMap[view.stationData.stationId] = rt.anchoredPosition;
+            }
+            return posMap;
+        }
+
+        void CreateStationGO(StationData stn, List<Color> lineColors, RectTransform parent)
+        {
+            if (stationNodePrefab == null)
+            {
+                Debug.LogError("[SubwayMapRenderer] stationNodePrefab가 비어 있습니다. StationNode 프리팹을 할당하세요.");
+                return;
+            }
+
+            Vector2 uiPos = UI(stn.mapPosition);
+
+            // 프리팹 인스턴스화
+            // 에디터 Edit 모드: PrefabUtility.InstantiatePrefab → 프리팹 연결 유지
+            // Play 모드 / 빌드: Instantiate
+            StationView view;
+#if UNITY_EDITOR
+            if (!Application.isPlaying)
+            {
+                var go2 = UnityEditor.PrefabUtility.InstantiatePrefab(
+                    stationNodePrefab.gameObject, parent) as GameObject;
+                view = go2.GetComponent<StationView>();
+            }
+            else
+#endif
+            {
+                view = Instantiate(stationNodePrefab, parent);
+            }
+
+            var go = view.gameObject;
+            go.name = "Stn_" + stn.stationId;
+
+            var rt = view.GetComponent<RectTransform>();
+            rt.anchorMin = rt.anchorMax = rt.pivot = Vector2.one * 0.5f;
+            rt.anchoredPosition = uiPos;
+
+            // 시각 구성은 프리팹+StationView가 담당
+            view.Configure(stn, lineColors);
+        }
+
+        void DrawLineSegmentsFromData(LineData line, RectTransform container)
         {
             var s = line.stations;
             for (int i = 0; i < s.Count - 1; i++)
             {
                 if (s[i] == null || s[i + 1] == null) continue;
-                Segment(s[i].mapPosition, s[i + 1].mapPosition, line.lineColor, LineThickness);
+                SegmentDirect(UI(s[i].mapPosition), UI(s[i + 1].mapPosition),
+                              line.lineColor, LineThickness, container);
             }
             if (line.isCircular && s.Count > 1 && s[0] != null && s[s.Count - 1] != null)
-                Segment(s[s.Count - 1].mapPosition, s[0].mapPosition, line.lineColor, LineThickness);
+                SegmentDirect(UI(s[s.Count - 1].mapPosition), UI(s[0].mapPosition),
+                              line.lineColor, LineThickness, container);
         }
 
-        void Segment(Vector2 from, Vector2 to, Color color, float thickness)
+        void SegmentDirect(Vector2 from, Vector2 to, Color color, float thickness, RectTransform container)
         {
             var go  = new GameObject("Seg");
-            go.transform.SetParent(mapContainer, false);
+            go.transform.SetParent(container, false);
             var img = go.AddComponent<Image>();
             img.color         = color;
             img.raycastTarget = false;
 
-            var rt = img.GetComponent<RectTransform>();
+            var rt  = img.GetComponent<RectTransform>();
             rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
-            rt.pivot      = new Vector2(0f, 0.5f);
-
-            Vector2 uiFrom = UI(from), uiTo = UI(to);
-            Vector2 dir    = uiTo - uiFrom;
-            rt.anchoredPosition = uiFrom;
+            rt.pivot     = new Vector2(0f, 0.5f);
+            Vector2 dir  = to - from;
+            rt.anchoredPosition = from;
             rt.sizeDelta        = new Vector2(dir.magnitude, thickness);
             rt.localRotation    = Quaternion.Euler(0, 0, Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg);
         }
 
-        // ── 역 마커 ───────────────────────────────────────────────────
-
-        void DrawStation(StationData stn, List<Color> lineColors)
+        void DrawPlayer(Vector2 uiPos)
         {
-            Vector2 uiPos      = UI(stn.mapPosition);
-            bool    isTransfer = lineColors.Count > 1;
-
-            GameObject markerGO;
-
-            if (!isTransfer)
-            {
-                // 흰 테두리 + 색상 원
-                Circ("StnBg_" + stn.stationId, mapContainer, uiPos, StationSize + 4f, Color.white);
-                markerGO = Circ("Stn_" + stn.stationId, mapContainer, uiPos, StationSize, lineColors[0]);
-            }
-            else
-            {
-                int   n       = lineColors.Count;
-                float spacing = TransferDot * 0.85f;
-                float totalW  = TransferDot + (n - 1) * spacing;
-                float startX  = -(totalW * 0.5f) + TransferDot * 0.5f;
-
-                // 사각형 배경 없이 각 점마다 흰 테두리 원 + 색상 원
-                markerGO = new GameObject("Stn_" + stn.stationId);
-                markerGO.transform.SetParent(mapContainer, false);
-                var rt = markerGO.AddComponent<RectTransform>();
-                rt.anchorMin = rt.anchorMax = rt.pivot = Vector2.one * 0.5f;
-                rt.anchoredPosition = uiPos;
-                rt.sizeDelta        = Vector2.zero;
-
-                for (int i = 0; i < n; i++)
-                {
-                    var offset = new Vector2(startX + i * spacing, 0f);
-                    Circ($"DotBg_{i}", markerGO.transform, offset, TransferDot + 4f, Color.white);
-                    Circ($"Dot_{i}",   markerGO.transform, offset, TransferDot, lineColors[i]);
-                }
-            }
-
-            DrawLabel(stn, markerGO.transform, isTransfer);
-        }
-
-        void DrawLabel(StationData stn, Transform parent, bool isTransfer)
-        {
-            var lbl = new GameObject("Label");
-            lbl.transform.SetParent(parent, false);
-            var lrt = lbl.AddComponent<RectTransform>();
-            lrt.anchorMin        = lrt.anchorMax = new Vector2(0.5f, 0f);
-            lrt.pivot            = new Vector2(0.5f, 1f);
-            lrt.anchoredPosition = new Vector2(0f, -2f);
-            lrt.sizeDelta        = new Vector2(80f, 24f);
-
-            var txt = lbl.AddComponent<TextMeshProUGUI>();
-            txt.text              = stn.displayName;
-            txt.font              = isTransfer ? fontBold : fontMedium;
-            txt.fontSize          = isTransfer ? 7f : 6f;
-            txt.color             = new Color(0.1f, 0.1f, 0.1f);
-            txt.alignment         = TextAlignmentOptions.Top;
-            txt.enableWordWrapping = false;
-            txt.raycastTarget     = false;
-        }
-
-        // ── 플레이어 마커 ──────────────────────────────────────────────
-
-        void DrawPlayer(Vector2 mapPos)
-        {
-            Vector2 uiPos = UI(mapPos);
             Circ("PlayerRing",    mapContainer, uiPos, PlayerSize + 12f, PlayerRingColor);
             Circ("PlayerOutline", mapContainer, uiPos, PlayerSize + 4f,  Color.white);
             Circ("Player",        mapContainer, uiPos, PlayerSize,        PlayerColor);
         }
 
-        // ── 적 마커 ───────────────────────────────────────────────────
-
-        void DrawEnemy(Vector2 mapPos, int index)
+        void DrawEnemy(Vector2 uiPos, int index)
         {
-            Vector2 uiPos = UI(mapPos);
             Circ($"EnemyRing_{index}",    mapContainer, uiPos, EnemySize + 12f, EnemyRingColor);
             Circ($"EnemyOutline_{index}", mapContainer, uiPos, EnemySize + 4f,  Color.white);
             Circ($"Enemy_{index}",        mapContainer, uiPos, EnemySize,        EnemyColor);
         }
 
-        // ── 공통 유틸 ──────────────────────────────────────────────────
+        Vector2? GetStationUIPos(string stationId)
+        {
+            var posMap = BuildPosMap();
+            if (posMap.TryGetValue(stationId, out var pos)) return pos;
+            var stn = FindStationData(stationId);
+            return stn != null ? (Vector2?)UI(stn.mapPosition) : null;
+        }
 
         GameObject Circ(string name, Transform parent, Vector2 anchoredPos, float size, Color color)
         {
@@ -280,35 +376,75 @@ namespace Game.Subway
             rt.anchoredPosition = anchoredPos;
             rt.sizeDelta        = Vector2.one * size;
             var img = go.AddComponent<Image>();
-            img.sprite        = circle;
+            img.sprite        = _circle;
             img.color         = color;
             img.raycastTarget = false;
             return go;
         }
 
-        // 맵 좌표(860×550 기준, y↓) → uGUI 좌표(중앙 앵커, y↑), 실제 컨테이너 크기로 스케일
-        // stationSpread: 1=원본 간격, 0.5=절반으로 중앙 압축
         Vector2 UI(Vector2 mapPos)
         {
-            Rect r   = mapContainer.rect;
+            Rect  r  = mapContainer.rect;
             float sx = r.width  / RefWidth;
             float sy = r.height / RefHeight;
-
             float cx = RefWidth  * 0.5f;
             float cy = RefHeight * 0.5f;
             float scaledX = cx + (mapPos.x - cx) * stationSpread;
             float scaledY = cy + (mapPos.y - cy) * stationSpread;
-
             return new Vector2(scaledX * sx - r.width  * 0.5f,
                               -(scaledY * sy) + r.height * 0.5f);
         }
 
-        StationData FindStation(string id)
+        RectTransform CreateContainer(string containerName, int siblingIndex)
+        {
+            var go = new GameObject(containerName);
+            go.transform.SetParent(mapContainer, false);
+            var rt = go.AddComponent<RectTransform>();
+            rt.anchorMin = rt.anchorMax = rt.pivot = Vector2.one * 0.5f;
+            rt.anchoredPosition = Vector2.zero;
+            rt.sizeDelta        = Vector2.zero;
+            go.transform.SetSiblingIndex(siblingIndex);
+            return rt;
+        }
+
+        RectTransform FindContainer(string containerName)
+        {
+            var t = mapContainer.Find(containerName);
+            return t != null ? t.GetComponent<RectTransform>() : null;
+        }
+
+        void DestroyContainer(string containerName)
+        {
+            var t = mapContainer.Find(containerName);
+            if (t == null) return;
+            if (Application.isPlaying) Destroy(t.gameObject);
+            else DestroyImmediate(t.gameObject);
+        }
+
+        StationData FindStationData(string id)
         {
             foreach (var line in networkData.lines)
                 foreach (var stn in line.stations)
                     if (stn != null && stn.stationId == id) return stn;
             return null;
+        }
+
+        static Sprite MakeCircleSprite(int radius)
+        {
+            int size = radius * 2;
+            var tex  = new Texture2D(size, size, TextureFormat.RGBA32, false);
+            var pixels = new Color[size * size];
+            float cr   = radius - 0.5f;
+            var center = new Vector2(radius, radius);
+            for (int y = 0; y < size; y++)
+                for (int x = 0; x < size; x++)
+                {
+                    float dist = Vector2.Distance(new Vector2(x + 0.5f, y + 0.5f), center);
+                    pixels[y * size + x] = dist <= cr ? Color.white : Color.clear;
+                }
+            tex.SetPixels(pixels);
+            tex.Apply();
+            return Sprite.Create(tex, new Rect(0, 0, size, size), Vector2.one * 0.5f);
         }
     }
 }
