@@ -52,6 +52,23 @@ namespace Game.Subway
         // Configure가 생성한 점들 (재구성 시 제거 대상)
         private readonly List<GameObject> _spawnedDots = new List<GameObject>();
 
+        // baked 인스턴스(이미 씬에 생성돼 Configure가 다시 안 불리는 역)에도 D3가 적용되도록
+        // 매 활성화 시 라벨을 최상위로 보장한다.
+        void Awake() => EnsureLabelTopmost();
+
+        /// <summary>
+        /// [D3] 역명 라벨이 어떤 경우에도 동그라미·선 위에 렌더되도록 overrideSorting 캔버스를 부여.
+        /// 자식 순서(라벨이 점보다 먼저 그려지는 문제)와 무관하게 항상 최상위.
+        /// </summary>
+        void EnsureLabelTopmost()
+        {
+            if (label == null) return;
+            var lc = label.GetComponent<Canvas>();
+            if (lc == null) lc = label.gameObject.AddComponent<Canvas>();
+            lc.overrideSorting = true;
+            lc.sortingOrder = 100;
+        }
+
         /// <summary>역 데이터·노선색에 맞게 점·라벨·히트 영역을 설정한다.</summary>
         public void Configure(StationData data, List<Color> colors)
         {
@@ -92,13 +109,8 @@ namespace Game.Subway
             {
                 label.text = data != null ? data.displayName : "";
                 label.font = transfer ? fontTransfer : fontNormal;
-
-                // [D3] 역명은 어떤 경우에도 동그라미·선 위에 렌더 — overrideSorting 캔버스로 강제.
-                var lc = label.GetComponent<Canvas>();
-                if (lc == null) lc = label.gameObject.AddComponent<Canvas>();
-                lc.overrideSorting = true;
-                lc.sortingOrder = 100;
             }
+            EnsureLabelTopmost();
 
             // 히트 영역 — 점 묶음을 덮는 크기. 저작 중(역 선택)·런타임(이동 입력) 모두 클릭 가능.
             if (hitArea != null)
