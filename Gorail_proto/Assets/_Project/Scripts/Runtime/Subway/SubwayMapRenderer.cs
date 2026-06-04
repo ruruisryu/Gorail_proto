@@ -47,6 +47,11 @@ namespace Game.Subway
         // ── 내부 ─────────────────────────────────────────────────────────
         private Sprite _circle;
         private float _zoomComp = 1f; // [D2] 현재 줌 역보정 배율(1 = 보정 없음)
+        private HashSet<string> _activeLines; // [D1] null = 전부 고유색(에디터/초기), 아니면 이 집합만 고유색·나머지 회색
+
+        /// <summary>[D1] 활성 집합 기준 노선 색 — 모든 선 그리기가 이걸 통해 칠해 어떤 재그리기에도 활성색 유지.</summary>
+        Color LineColorFor(LineData line) =>
+            _activeLines == null || _activeLines.Contains(line.lineId) ? line.lineColor : inactiveLineColor;
         private const string LinesTag    = "[Lines]";
         private const string StationsTag = "[Stations]";
 
@@ -185,8 +190,9 @@ namespace Game.Subway
             if (networkData == null || mapContainer == null) return;
             var active = new HashSet<string>(activeLines ?? Enumerable.Empty<string>());
 
-            // 선: 활성=고유색 / 비활성=회색
-            RedrawLinesColored(line => active.Contains(line.lineId) ? line.lineColor : inactiveLineColor);
+            // 활성 집합을 저장 → 이후 모든 선 그리기(UpdateLines/BuildMap)가 LineColorFor로 이 색을 쓴다.
+            _activeLines = active;
+            UpdateLines(); // 활성=고유색/비활성=회색으로 선 다시 그림
 
             // 역 점: 그 점(색)을 쓰는 노선 중 하나라도 활성이면 고유색, 아니면 회색
             var stationsRT = FindContainer(StationsTag);
@@ -203,37 +209,6 @@ namespace Game.Subway
                     .ToList();
                 view.SetDotColors(colors);
             }
-        }
-
-        /// <summary>선택 색 함수로 [Lines]를 다시 그린다(현재 역 위치 기준, 줌 굵기 보정 재적용).</summary>
-        void RedrawLinesColored(System.Func<LineData, Color> colorOf)
-        {
-            if (FindContainer(StationsTag) == null) return;
-            DestroyContainer(LinesTag);
-            var linesRT = CreateContainer(LinesTag, siblingIndex: 0);
-            var posMap  = BuildPosMap();
-
-            foreach (var line in networkData.lines)
-            {
-                if (line == null) continue;
-                var s = line.stations;
-                var col = colorOf(line);
-                for (int i = 0; i < s.Count - 1; i++)
-                {
-                    if (s[i] == null || s[i + 1] == null) continue;
-                    if (!posMap.TryGetValue(s[i].stationId,     out var from)) continue;
-                    if (!posMap.TryGetValue(s[i + 1].stationId, out var to))   continue;
-                    SegmentDirect(from, to, col, LineThickness, linesRT);
-                }
-                if (line.isCircular && s.Count > 1 && s[0] != null && s[s.Count - 1] != null)
-                {
-                    if (posMap.TryGetValue(s[s.Count - 1].stationId, out var from) &&
-                        posMap.TryGetValue(s[0].stationId,            out var to))
-                        SegmentDirect(from, to, col, LineThickness, linesRT);
-                }
-            }
-            for (int i = 0; i < linesRT.childCount; i++)
-                linesRT.GetChild(i).localScale = new Vector3(1f, _zoomComp, 1f);
         }
 
         /// <summary>역별 distinct 색(Configure와 같은 순서) + 각 색을 쓰는 lineId 목록.</summary>
@@ -313,21 +288,26 @@ namespace Game.Subway
 
             foreach (var line in networkData.lines)
             {
+                if (line == null) continue;
                 var s = line.stations;
+                var col = LineColorFor(line); // [D1] 활성=고유색/비활성=회색
                 for (int i = 0; i < s.Count - 1; i++)
                 {
                     if (s[i] == null || s[i + 1] == null) continue;
                     if (!posMap.TryGetValue(s[i].stationId,     out var from)) continue;
                     if (!posMap.TryGetValue(s[i + 1].stationId, out var to))   continue;
-                    SegmentDirect(from, to, line.lineColor, LineThickness, linesRT);
+                    SegmentDirect(from, to, col, LineThickness, linesRT);
                 }
                 if (line.isCircular && s.Count > 1 && s[0] != null && s[s.Count - 1] != null)
                 {
                     if (posMap.TryGetValue(s[s.Count - 1].stationId, out var from) &&
                         posMap.TryGetValue(s[0].stationId,            out var to))
-                        SegmentDirect(from, to, line.lineColor, LineThickness, linesRT);
+                        SegmentDirect(from, to, col, LineThickness, linesRT);
                 }
             }
+            // [D2] 새로 그린 선 굵기에 현재 줌 보정 재적용
+            for (int i = 0; i < linesRT.childCount; i++)
+                linesRT.GetChild(i).localScale = new Vector3(1f, _zoomComp, 1f);
         }
 
         /// <summary>현재 StationView 위치를 StationData.mapPosition에 저장한다.</summary>
@@ -445,15 +425,16 @@ namespace Game.Subway
         void DrawLineSegmentsFromData(LineData line, RectTransform container)
         {
             var s = line.stations;
+            var col = LineColorFor(line); // [D1] 활성=고유색/비활성=회색
             for (int i = 0; i < s.Count - 1; i++)
             {
                 if (s[i] == null || s[i + 1] == null) continue;
                 SegmentDirect(UI(s[i].mapPosition), UI(s[i + 1].mapPosition),
-                              line.lineColor, LineThickness, container);
+                              col, LineThickness, container);
             }
             if (line.isCircular && s.Count > 1 && s[0] != null && s[s.Count - 1] != null)
                 SegmentDirect(UI(s[s.Count - 1].mapPosition), UI(s[0].mapPosition),
-                              line.lineColor, LineThickness, container);
+                              col, LineThickness, container);
         }
 
         void SegmentDirect(Vector2 from, Vector2 to, Color color, float thickness, RectTransform container)

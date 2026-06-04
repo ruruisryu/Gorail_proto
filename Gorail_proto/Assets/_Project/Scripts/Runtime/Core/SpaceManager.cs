@@ -24,7 +24,7 @@ namespace Game.Core
 
         public event System.Action<Space> SpaceChanged;
 
-        void Start() => ApplyVisibility(); // 시작은 지하철 공간
+        void Start() => SetSpace(Space.Subway); // 시작은 지하철 공간(SpaceChanged 발행 → 색 등 초기 반영)
 
         /// <summary>도착역 하차 → 승강장 진입(§7-1).</summary>
         public void EnterPlatform(string stationId)
