@@ -24,6 +24,7 @@ namespace Game.Core
         [SerializeField] private MapGraphProvider   graphProvider;
         [SerializeField] private SpaceManager       spaceManager;
         [SerializeField] private PlatformController platformController;
+        [SerializeField] private TurnResolver       turnResolver;
         [SerializeField] private Game.Data.SceneConfig sceneConfig;
 
         public GameManager        Game       => gameManager;
@@ -34,6 +35,7 @@ namespace Game.Core
         public MapGraphProvider   Graph      => graphProvider;
         public SpaceManager       Space      => spaceManager;
         public PlatformController Platform   => platformController;
+        public TurnResolver       TurnResolver => turnResolver;
         public Game.Data.SceneConfig SceneConfig => sceneConfig;
 
         void Awake()
