@@ -37,6 +37,9 @@ namespace Game.Gameplay
         /// <summary>위치·노선·방향이 바뀌었을 때(초기화·전진·환승) 발생.</summary>
         public event System.Action StateChanged;
 
+        /// <summary>활성 노선 집합이 바뀌었을 때만 발생(초기화·환승). 노선 색/범례 갱신용(매 스텝 아님).</summary>
+        public event System.Action ActiveLinesChanged;
+
         /// <summary>세션 시작 위치·노선을 설정한다.</summary>
         public void Initialize(string startStationId, string startLineId)
         {
@@ -47,15 +50,17 @@ namespace Game.Gameplay
             if (!string.IsNullOrEmpty(startLineId)) _activeLines.Add(startLineId);
             SyncLocation();
             StateChanged?.Invoke();
+            ActiveLinesChanged?.Invoke();
         }
 
         /// <summary>현재 노선을 변경한다(환승, §2-2). 활성 노선 집합에 누적된다(§5-3).</summary>
         public void ChangeLine(string newLineId)
         {
             if (string.IsNullOrEmpty(newLineId)) return;
+            bool isNew = _activeLines.Add(newLineId);
             CurrentLineId = newLineId;
-            _activeLines.Add(newLineId);
             StateChanged?.Invoke();
+            if (isNew) ActiveLinesChanged?.Invoke();
         }
 
         /// <summary>역 1칸 전진(해소 단위, §2-1). dir은 현재 노선 인덱스 기준 진행 방향.</summary>

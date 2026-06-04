@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -30,6 +31,9 @@ namespace Game.Subway
         [Header("Layout")]
         [Tooltip("역 간 간격 배율. 1 = 원본, 0.5 = 절반으로 압축.")]
         [SerializeField][Range(0.1f, 1f)] private float stationSpread = 0.4f;
+
+        [Tooltip("[D1] 비활성(아직 안 탄) 노선의 선·역 점 색(회색). 활성화되면 각 노선 고유색으로.")]
+        [SerializeField] private Color inactiveLineColor = new Color(0.62f, 0.62f, 0.62f, 1f);
 
         private const float LineThickness = 6f;
         private const float PlayerSize    = 18f;
@@ -166,6 +170,90 @@ namespace Game.Subway
                 if (child.name == LinesTag || child.name == StationsTag) continue;
                 child.localScale = Vector3.one * _zoomComp;
             }
+        }
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // [D1] 활성 노선 색 / 비활성 회색
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        /// <summary>
+        /// 활성 노선은 고유색, 비활성(아직 안 탄) 노선은 회색으로 선·역 점을 다시 칠한다(§5-3 활성 상태 시각화).
+        /// 활성 노선 변경 시 외부(MapActivationView)에서 호출한다.
+        /// </summary>
+        public void ApplyActiveLineColors(IEnumerable<string> activeLines)
+        {
+            if (networkData == null || mapContainer == null) return;
+            var active = new HashSet<string>(activeLines ?? Enumerable.Empty<string>());
+
+            // 선: 활성=고유색 / 비활성=회색
+            RedrawLinesColored(line => active.Contains(line.lineId) ? line.lineColor : inactiveLineColor);
+
+            // 역 점: 그 점(색)을 쓰는 노선 중 하나라도 활성이면 고유색, 아니면 회색
+            var stationsRT = FindContainer(StationsTag);
+            if (stationsRT == null) return;
+            var views = new Dictionary<string, StationView>();
+            foreach (var v in stationsRT.GetComponentsInChildren<StationView>(true))
+                if (v.stationData != null) views[v.stationData.stationId] = v;
+
+            foreach (var kv in CollectStationColorInfo())
+            {
+                if (!views.TryGetValue(kv.Key, out var view)) continue;
+                var colors = kv.Value
+                    .Select(ci => ci.lineIds.Any(active.Contains) ? ci.color : inactiveLineColor)
+                    .ToList();
+                view.SetDotColors(colors);
+            }
+        }
+
+        /// <summary>선택 색 함수로 [Lines]를 다시 그린다(현재 역 위치 기준, 줌 굵기 보정 재적용).</summary>
+        void RedrawLinesColored(System.Func<LineData, Color> colorOf)
+        {
+            if (FindContainer(StationsTag) == null) return;
+            DestroyContainer(LinesTag);
+            var linesRT = CreateContainer(LinesTag, siblingIndex: 0);
+            var posMap  = BuildPosMap();
+
+            foreach (var line in networkData.lines)
+            {
+                if (line == null) continue;
+                var s = line.stations;
+                var col = colorOf(line);
+                for (int i = 0; i < s.Count - 1; i++)
+                {
+                    if (s[i] == null || s[i + 1] == null) continue;
+                    if (!posMap.TryGetValue(s[i].stationId,     out var from)) continue;
+                    if (!posMap.TryGetValue(s[i + 1].stationId, out var to))   continue;
+                    SegmentDirect(from, to, col, LineThickness, linesRT);
+                }
+                if (line.isCircular && s.Count > 1 && s[0] != null && s[s.Count - 1] != null)
+                {
+                    if (posMap.TryGetValue(s[s.Count - 1].stationId, out var from) &&
+                        posMap.TryGetValue(s[0].stationId,            out var to))
+                        SegmentDirect(from, to, col, LineThickness, linesRT);
+                }
+            }
+            for (int i = 0; i < linesRT.childCount; i++)
+                linesRT.GetChild(i).localScale = new Vector3(1f, _zoomComp, 1f);
+        }
+
+        /// <summary>역별 distinct 색(Configure와 같은 순서) + 각 색을 쓰는 lineId 목록.</summary>
+        Dictionary<string, List<(Color color, List<string> lineIds)>> CollectStationColorInfo()
+        {
+            var result = new Dictionary<string, List<(Color color, List<string> lineIds)>>();
+            foreach (var line in networkData.lines)
+            {
+                if (line == null) continue;
+                foreach (var stn in line.stations)
+                {
+                    if (stn == null) continue;
+                    if (!result.TryGetValue(stn.stationId, out var list))
+                        result[stn.stationId] = list = new List<(Color color, List<string> lineIds)>();
+                    int idx = list.FindIndex(e => e.color == line.lineColor);
+                    if (idx < 0) list.Add((line.lineColor, new List<string> { line.lineId }));
+                    else if (!list[idx].lineIds.Contains(line.lineId)) list[idx].lineIds.Add(line.lineId);
+                }
+            }
+            return result;
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

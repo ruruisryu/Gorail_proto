@@ -127,6 +127,21 @@ namespace Game.Subway
                 StationClicked?.Invoke(stationData.stationId);
         }
 
+        /// <summary>[D1] 이미 생성된 점들의 색만 갈아끼운다(활성=고유색/비활성=회색 재색칠용).</summary>
+        public void SetDotColors(System.Collections.Generic.IReadOnlyList<Color> colors)
+        {
+            if (colors == null || colors.Count == 0) return;
+            for (int i = 0; i < _spawnedDots.Count; i++)
+            {
+                var drt = _spawnedDots[i].GetComponent<RectTransform>();
+                if (drt != null && drt.childCount > 0)
+                {
+                    var fill = drt.GetChild(0).GetComponent<Image>();
+                    if (fill != null) fill.color = colors[Mathf.Min(i, colors.Count - 1)];
+                }
+            }
+        }
+
         void DestroySafe(GameObject go)
         {
             if (go == null) return;
