@@ -61,7 +61,8 @@ namespace Game.Gameplay
 
             var preds = new List<string>(sims.Count);
             foreach (var s in sims) preds.Add(s.StationId);
-            mapRenderer.ShowChasePreview(preds);
+            // 경로(루트)+도착역은 항상, 추격자 고스트는 있을 때만 표시.
+            mapRenderer.ShowChasePreview(path, preds);
         }
 
         void OnExit()

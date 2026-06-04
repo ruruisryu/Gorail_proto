@@ -182,21 +182,59 @@ namespace Game.Subway
         // [D10] 적 이동 프리뷰 — 호버 시 추격자 예측 위치를 고스트로
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-        /// <summary>예측된 추격자 위치(역 ID들)에 반투명 고스트 마커를 표시한다.</summary>
-        public void ShowChasePreview(IEnumerable<string> predictedTrackerStations)
+        private static readonly Color RouteColor = new Color(1f, 0.85f, 0.10f, 0.95f); // 이동 경로 강조(노랑)
+        private static readonly Color DestRingColor = new Color(1f, 0.85f, 0.10f, 0.45f);
+        private static readonly Color DestColor     = new Color(1f, 0.85f, 0.10f, 0.95f);
+
+        /// <summary>
+        /// [D10] 호버 이동 프리뷰: 이동 <b>경로</b>(노랑 강조선)+<b>도착역</b> 마커를 그리고,
+        /// 추격자 예측 위치가 있으면 반투명 빨강 고스트를 함께 표시한다.
+        /// 경로만 있고 추격자가 없어도(아직 미스폰) 경로·도착역은 항상 보인다.
+        /// </summary>
+        public void ShowChasePreview(IList<string> path, IEnumerable<string> predictedTrackerStations)
         {
             ClearChasePreview();
-            if (predictedTrackerStations == null) return;
+            if ((path == null || path.Count < 2) && predictedTrackerStations == null) return;
             var prev = CreateContainer(PreviewTag, mapContainer.childCount); // 최상위
-            foreach (var id in predictedTrackerStations)
+
+            // ① 이동 경로 강조선 (역과 역 사이를 굵은 노랑 선으로)
+            if (path != null && path.Count >= 2)
             {
-                var p = GetStationUIPos(id);
-                if (!p.HasValue) continue;
-                Circ("PreviewRing", prev, p.Value, EnemySize + 16f, new Color(0.95f, 0.18f, 0.18f, 0.22f));
-                Circ("Preview",     prev, p.Value, EnemySize + 4f,  new Color(0.95f, 0.18f, 0.18f, 0.55f));
+                for (int i = 0; i < path.Count - 1; i++)
+                {
+                    var a = GetStationUIPos(path[i]);
+                    var b = GetStationUIPos(path[i + 1]);
+                    if (!a.HasValue || !b.HasValue) continue;
+                    var seg = SegmentDirect(a.Value, b.Value, RouteColor, LineThickness + 5f, prev);
+                    seg.name = "RouteSeg";
+                }
+                // ② 도착역 마커
+                var dest = GetStationUIPos(path[path.Count - 1]);
+                if (dest.HasValue)
+                {
+                    Circ("DestRing", prev, dest.Value, PlayerSize + 16f, DestRingColor);
+                    Circ("Dest",     prev, dest.Value, PlayerSize + 2f,  DestColor);
+                }
             }
+
+            // ③ 추격자 예측 위치 고스트
+            if (predictedTrackerStations != null)
+                foreach (var id in predictedTrackerStations)
+                {
+                    var p = GetStationUIPos(id);
+                    if (!p.HasValue) continue;
+                    Circ("PreviewRing", prev, p.Value, EnemySize + 16f, new Color(0.95f, 0.18f, 0.18f, 0.22f));
+                    Circ("Preview",     prev, p.Value, EnemySize + 4f,  new Color(0.95f, 0.18f, 0.18f, 0.65f));
+                }
+
+            // 줌 보정: 마커는 균등, 경로선은 굵기축만(길이는 줌 따라 벌어짐)
             for (int i = 0; i < prev.childCount; i++)
-                prev.GetChild(i).localScale = Vector3.one * _zoomComp;
+            {
+                var ch = prev.GetChild(i);
+                ch.localScale = ch.name == "RouteSeg"
+                    ? new Vector3(1f, _zoomComp, 1f)
+                    : Vector3.one * _zoomComp;
+            }
         }
 
         public void ClearChasePreview() => DestroyContainer(PreviewTag);
@@ -461,7 +499,7 @@ namespace Game.Subway
                               col, LineThickness, container);
         }
 
-        void SegmentDirect(Vector2 from, Vector2 to, Color color, float thickness, RectTransform container)
+        GameObject SegmentDirect(Vector2 from, Vector2 to, Color color, float thickness, RectTransform container)
         {
             var go  = new GameObject("Seg");
             go.transform.SetParent(container, false);
@@ -476,6 +514,7 @@ namespace Game.Subway
             rt.anchoredPosition = from;
             rt.sizeDelta        = new Vector2(dir.magnitude, thickness);
             rt.localRotation    = Quaternion.Euler(0, 0, Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg);
+            return go;
         }
 
         void DrawPlayer(Vector2 uiPos)
