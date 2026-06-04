@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -32,6 +33,10 @@ namespace Game.Subway
         // Render() 후 채워지는 역 UI 좌표 경계 (MapContent 로컬 기준)
         public Vector2 StationBoundsMin { get; private set; }
         public Vector2 StationBoundsMax { get; private set; }
+
+        [Header("Fonts")]
+        [SerializeField] private TMP_FontAsset fontBold;    // 환승역 — Korail B SDF
+        [SerializeField] private TMP_FontAsset fontMedium;  // 일반역 — Korail M SDF
 
         private Sprite circle;
 
@@ -232,14 +237,16 @@ namespace Game.Subway
             lrt.anchorMin        = lrt.anchorMax = new Vector2(0.5f, 0f);
             lrt.pivot            = new Vector2(0.5f, 1f);
             lrt.anchoredPosition = new Vector2(0f, -2f);
-            lrt.sizeDelta        = new Vector2(80f, 22f);
-            var txt = lbl.AddComponent<Text>();
-            txt.text           = stn.displayName;
-            txt.font           = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            txt.fontSize       = isTransfer ? 10 : 9;
-            txt.color          = new Color(0.1f, 0.1f, 0.1f);
-            txt.alignment      = TextAnchor.UpperCenter;
-            txt.raycastTarget  = false;
+            lrt.sizeDelta        = new Vector2(80f, 24f);
+
+            var txt = lbl.AddComponent<TextMeshProUGUI>();
+            txt.text              = stn.displayName;
+            txt.font              = isTransfer ? fontBold : fontMedium;
+            txt.fontSize          = isTransfer ? 7f : 6f;
+            txt.color             = new Color(0.1f, 0.1f, 0.1f);
+            txt.alignment         = TextAlignmentOptions.Top;
+            txt.enableWordWrapping = false;
+            txt.raycastTarget     = false;
         }
 
         // ── 플레이어 마커 ──────────────────────────────────────────────

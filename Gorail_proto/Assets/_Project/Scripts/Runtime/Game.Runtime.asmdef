@@ -1,7 +1,9 @@
 {
     "name": "Game.Runtime",
     "rootNamespace": "Game",
-    "references": [],
+    "references": [
+        "Unity.TextMeshPro"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
