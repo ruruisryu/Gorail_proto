@@ -62625,6 +62625,7 @@ GameObject:
   - component: {fileID: 1196569265}
   - component: {fileID: 1196569264}
   - component: {fileID: 1196569271}
+  - component: {fileID: 1196569272}
   m_Layer: 0
   m_Name: ChaseSystems
   m_TagString: Untagged
@@ -62751,6 +62752,21 @@ MonoBehaviour:
   gameManager: {fileID: 1196569268}
   enemyLocations: {fileID: 11400000, guid: a4b58dcc712e73a45b5300e90c610651, type: 2}
   mapRenderer: {fileID: 388388996}
+--- !u!114 &1196569272
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1196569263}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eb8da92b51ed2df4f89a75f3c7601179, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Runtime::Game.Gameplay.InspectionSystem
+  trackerManager: {fileID: 1196569271}
+  gameManager: {fileID: 1196569268}
+  config: {fileID: 11400000, guid: 98cd8a0ad780e5643b9d3a85a672a9fb, type: 2}
 --- !u!1001 &1202892756
 PrefabInstance:
   m_ObjectHideFlags: 0

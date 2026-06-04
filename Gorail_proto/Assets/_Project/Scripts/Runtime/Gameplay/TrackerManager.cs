@@ -101,6 +101,20 @@ namespace Game.Gameplay
             SyncMarkers();
         }
 
+        // ── 검문 연동 (⑧ InspectionSystem이 사용) ────────────────────────
+
+        /// <summary>해당 역에 추격자가 있는지(같은 역 검문 발동 조건 §8-1).</summary>
+        public bool HasTrackerAt(string stationId) =>
+            !string.IsNullOrEmpty(stationId) && _trackers.Any(t => t.StationId == stationId);
+
+        /// <summary>해당 역의 추격자를 모두 제거(검문 통과 시 어그로 해제 §8-2). 제거 수 반환.</summary>
+        public int RemoveTrackersAt(string stationId)
+        {
+            int removed = _trackers.RemoveAll(t => t.StationId == stationId);
+            if (removed > 0) SyncMarkers();
+            return removed;
+        }
+
         // ── 내부 헬퍼 ────────────────────────────────────────────────────
 
         int CountOnLine(string line) => _trackers.Count(t => t.LineId == line);
