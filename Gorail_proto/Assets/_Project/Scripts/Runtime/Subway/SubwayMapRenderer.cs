@@ -468,7 +468,8 @@ namespace Game.Subway
             Circ($"Enemy_{index}",        mapContainer, uiPos, EnemySize,        EnemyColor);
         }
 
-        Vector2? GetStationUIPos(string stationId)
+        /// <summary>역의 현재 UI 좌표(MapContent 로컬 anchoredPosition). 없으면 null. (중앙 정렬 등에 사용)</summary>
+        public Vector2? GetStationUIPos(string stationId)
         {
             var posMap = BuildPosMap();
             if (posMap.TryGetValue(stationId, out var pos)) return pos;

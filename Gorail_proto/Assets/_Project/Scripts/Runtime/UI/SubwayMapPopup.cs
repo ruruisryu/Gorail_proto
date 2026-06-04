@@ -33,7 +33,7 @@ namespace Game.UI
 
         public void Hide()
         {
-            mapZoom?.ResetZoom();
+            // [D11] 닫아도 배율 리셋하지 않음 — 재오픈 시 이전 배율 유지(SubwayMapZoom.OnEnable).
             gameObject.SetActive(false);
         }
     }

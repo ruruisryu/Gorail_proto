@@ -32,7 +32,22 @@ namespace Game.UI
 
         void OnEnable()
         {
-            ApplyZoom(minZoom);
+            // [D11] 재오픈 시 이전 배율 유지(리셋 안 함) + 플레이어 역을 중앙으로
+            ApplyZoom(currentZoom);
+            CenterOnPlayer();
+        }
+
+        /// <summary>[D11] 플레이어가 위치한 역이 뷰 중앙에 오도록 맵을 이동.</summary>
+        public void CenterOnPlayer()
+        {
+            if (zoomTarget == null || mapRenderer == null) return;
+            var core = Game.Core.GameCore.Instance;
+            string id = core != null && core.Player != null ? core.Player.CurrentStationId : null;
+            if (string.IsNullOrEmpty(id)) return;
+            var pos = mapRenderer.GetStationUIPos(id);
+            if (!pos.HasValue) return;
+            zoomTarget.anchoredPosition = -pos.Value * currentZoom; // 역 → (0,0) 중앙
+            ClampPosition();
         }
 
         public void OnScroll(PointerEventData eventData)
@@ -74,13 +89,14 @@ namespace Game.UI
             ClampPosition();
         }
 
-        // 드래그 범위 = panMargin × 줌 배율 (비례 증가)
+        // 드래그/중앙정렬 범위 = 콘텐츠 절반 크기 × 줌 + 여유(panMargin). 맵 전체를 훑고 임의 역을 중앙에 둘 수 있음.
         void ClampPosition()
         {
             if (zoomTarget == null) return;
 
-            float maxX = panMargin * currentZoom;
-            float maxY = panMargin * currentZoom;
+            var size = zoomTarget.rect.size;
+            float maxX = size.x * 0.5f * currentZoom + panMargin;
+            float maxY = size.y * 0.5f * currentZoom + panMargin;
 
             var pos = zoomTarget.anchoredPosition;
             pos.x = Mathf.Clamp(pos.x, -maxX, maxX);
