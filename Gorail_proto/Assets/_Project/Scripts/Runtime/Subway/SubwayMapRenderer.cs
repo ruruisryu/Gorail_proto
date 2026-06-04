@@ -182,34 +182,59 @@ namespace Game.Subway
         // [D10] 적 이동 프리뷰 — 호버 시 추격자 예측 위치를 고스트로
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-        private static readonly Color RouteColor = new Color(1f, 0.85f, 0.10f, 0.95f); // 이동 경로 강조(노랑)
+        private static readonly Color RouteColor = new Color(1f, 0.85f, 0.10f, 0.95f); // 플레이어 이동 경로(노랑)
         private static readonly Color DestRingColor = new Color(1f, 0.85f, 0.10f, 0.45f);
         private static readonly Color DestColor     = new Color(1f, 0.85f, 0.10f, 0.95f);
+        private static readonly Color EnemyRouteColor = new Color(0.95f, 0.18f, 0.18f, 0.85f); // 적 이동 경로(빨강)
+
+        /// <summary>현재 지도에 표시 중인 적 마커의 역 ID들(프리뷰가 같은 적을 기준으로 시뮬하도록).</summary>
+        public IReadOnlyList<string> DisplayedEnemyStations =>
+            enemyLocations != null ? enemyLocations.enemyStationIds : null;
 
         /// <summary>
-        /// [D10] 호버 이동 프리뷰: 이동 <b>경로</b>(노랑 강조선)+<b>도착역</b> 마커를 그리고,
-        /// 추격자 예측 위치가 있으면 반투명 빨강 고스트를 함께 표시한다.
-        /// 경로만 있고 추격자가 없어도(아직 미스폰) 경로·도착역은 항상 보인다.
+        /// [D10] 호버 이동 프리뷰: 플레이어 이동 <b>경로</b>(노랑)+<b>도착역</b>과 함께,
+        /// 각 적의 <b>이동 경로</b>(빨강 루트)+<b>예측 도착 위치</b>(고스트)를 그린다.
+        /// 적이 없어도(미스폰) 플레이어 경로·도착역은 항상 보인다.
         /// </summary>
-        public void ShowChasePreview(IList<string> path, IEnumerable<string> predictedTrackerStations)
+        public void ShowChasePreview(IList<string> playerPath, IList<IReadOnlyList<string>> enemyPaths)
         {
             ClearChasePreview();
-            if ((path == null || path.Count < 2) && predictedTrackerStations == null) return;
+            bool hasPlayer = playerPath != null && playerPath.Count >= 2;
+            bool hasEnemy  = enemyPaths != null && enemyPaths.Count > 0;
+            if (!hasPlayer && !hasEnemy) return;
             var prev = CreateContainer(PreviewTag, mapContainer.childCount); // 최상위
 
-            // ① 이동 경로 강조선 (역과 역 사이를 굵은 노랑 선으로)
-            if (path != null && path.Count >= 2)
-            {
-                for (int i = 0; i < path.Count - 1; i++)
+            // ① 적 이동 경로(빨강 루트) + 예측 도착 고스트 — 플레이어 경로 아래에 깔리도록 먼저 그림
+            if (hasEnemy)
+                foreach (var ep in enemyPaths)
                 {
-                    var a = GetStationUIPos(path[i]);
-                    var b = GetStationUIPos(path[i + 1]);
-                    if (!a.HasValue || !b.HasValue) continue;
-                    var seg = SegmentDirect(a.Value, b.Value, RouteColor, LineThickness + 5f, prev);
-                    seg.name = "RouteSeg";
+                    if (ep == null || ep.Count == 0) continue;
+                    for (int i = 0; i < ep.Count - 1; i++)
+                    {
+                        var a = GetStationUIPos(ep[i]);
+                        var b = GetStationUIPos(ep[i + 1]);
+                        if (!a.HasValue || !b.HasValue) continue;
+                        SegmentDirect(a.Value, b.Value, EnemyRouteColor, LineThickness + 1f, prev).name = "EnemyRouteSeg";
+                    }
+                    var end = GetStationUIPos(ep[ep.Count - 1]);
+                    if (end.HasValue)
+                    {
+                        Circ("PreviewRing", prev, end.Value, EnemySize + 16f, new Color(0.95f, 0.18f, 0.18f, 0.22f));
+                        Circ("Preview",     prev, end.Value, EnemySize + 4f,  new Color(0.95f, 0.18f, 0.18f, 0.70f));
+                    }
                 }
-                // ② 도착역 마커
-                var dest = GetStationUIPos(path[path.Count - 1]);
+
+            // ② 플레이어 이동 경로(노랑) + 도착역 — 적 경로 위에 그림
+            if (hasPlayer)
+            {
+                for (int i = 0; i < playerPath.Count - 1; i++)
+                {
+                    var a = GetStationUIPos(playerPath[i]);
+                    var b = GetStationUIPos(playerPath[i + 1]);
+                    if (!a.HasValue || !b.HasValue) continue;
+                    SegmentDirect(a.Value, b.Value, RouteColor, LineThickness + 5f, prev).name = "RouteSeg";
+                }
+                var dest = GetStationUIPos(playerPath[playerPath.Count - 1]);
                 if (dest.HasValue)
                 {
                     Circ("DestRing", prev, dest.Value, PlayerSize + 16f, DestRingColor);
@@ -217,21 +242,11 @@ namespace Game.Subway
                 }
             }
 
-            // ③ 추격자 예측 위치 고스트
-            if (predictedTrackerStations != null)
-                foreach (var id in predictedTrackerStations)
-                {
-                    var p = GetStationUIPos(id);
-                    if (!p.HasValue) continue;
-                    Circ("PreviewRing", prev, p.Value, EnemySize + 16f, new Color(0.95f, 0.18f, 0.18f, 0.22f));
-                    Circ("Preview",     prev, p.Value, EnemySize + 4f,  new Color(0.95f, 0.18f, 0.18f, 0.65f));
-                }
-
             // 줌 보정: 마커는 균등, 경로선은 굵기축만(길이는 줌 따라 벌어짐)
             for (int i = 0; i < prev.childCount; i++)
             {
                 var ch = prev.GetChild(i);
-                ch.localScale = ch.name == "RouteSeg"
+                ch.localScale = (ch.name == "RouteSeg" || ch.name == "EnemyRouteSeg")
                     ? new Vector3(1f, _zoomComp, 1f)
                     : Vector3.one * _zoomComp;
             }

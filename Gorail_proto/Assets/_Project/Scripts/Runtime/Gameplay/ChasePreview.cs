@@ -47,22 +47,34 @@ namespace Game.Gameplay
             int   k     = path.Count - 1;
             float mult  = config != null ? Mathf.Max(0.01f, config.congestionCurve.Evaluate(k)) : 1f;
 
-            // 현재 보이는(활성 노선) 추격자만 복사해 시뮬레이션
-            var sims = new List<Tracker>();
-            foreach (var t in core.Trackers.Trackers)
-                if (player.HasVisitedLine(t.LineId)) sims.Add(new Tracker(t.StationId, t.LineId));
-
+            // 한 이동 동안 적이 플레이어 경로 각 칸을 좇으며 전진할 스텝 스케줄(모든 적 공통, 체증 반영).
+            var schedule = new int[path.Count];
             float debt = 0f;
             for (int i = 1; i < path.Count; i++)
-            {
-                int steps = TrackerManager.ComputeAdvanceSteps(baseM, mult, 1, ref debt);
-                foreach (var s in sims) s.ChaseToward(graph, path[i], steps);
-            }
+                schedule[i] = TrackerManager.ComputeAdvanceSteps(baseM, mult, 1, ref debt);
 
-            var preds = new List<string>(sims.Count);
-            foreach (var s in sims) preds.Add(s.StationId);
-            // 경로(루트)+도착역은 항상, 추격자 고스트는 있을 때만 표시.
-            mapRenderer.ShowChasePreview(path, preds);
+            // 적 출처 = 지도에 실제 표시 중인 적 마커(런타임 추격자=디버그 정적 적 모두 동일 경로).
+            var enemyStarts = mapRenderer.DisplayedEnemyStations;
+            var enemyPaths = new List<IReadOnlyList<string>>();
+            if (enemyStarts != null)
+                foreach (var startId in enemyStarts)
+                {
+                    if (string.IsNullOrEmpty(startId)) continue;
+                    var sim  = new Tracker(startId, player.CurrentLineId);
+                    var traj = new List<string> { startId };
+                    for (int i = 1; i < path.Count; i++)
+                        for (int s = 0; s < schedule[i]; s++)
+                        {
+                            string before = sim.StationId;
+                            sim.ChaseToward(graph, path[i], 1);
+                            if (sim.StationId == before) break;   // 더 못 감(따라잡음/경로없음)
+                            traj.Add(sim.StationId);
+                        }
+                    enemyPaths.Add(traj);
+                }
+
+            // 플레이어 경로(노랑)는 항상, 적 경로(빨강)는 표시 중인 적이 있을 때.
+            mapRenderer.ShowChasePreview(path, enemyPaths);
         }
 
         void OnExit()
