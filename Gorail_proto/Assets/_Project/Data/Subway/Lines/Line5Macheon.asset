@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1808966cf24aa6c49b1baaf7dc680128, type: 3}
+  m_Name: Line5Macheon
+  m_EditorClassIdentifier: Game.Runtime::Game.Subway.LineData
+  lineId: Line5Macheon
+  displayName: "5\uD638\uC120 \uB9C8\uCC9C\uC9C0\uC120"
+  lineColor: {r: 0.59, g: 0.35, b: 0.69, a: 1}
+  stations:
+  - {fileID: 11400000, guid: 1d1c17659986c074a8337f9bc2377885, type: 2}
+  - {fileID: 11400000, guid: 54cd812a7b7788e468a280c3fe7a37c6, type: 2}
+  - {fileID: 11400000, guid: baabd9b7083d08d4da90b44b4a2968e7, type: 2}
+  - {fileID: 11400000, guid: 8a37ac853e6c1964ea584e9bee76bbd5, type: 2}
+  - {fileID: 11400000, guid: 87649438e37cced4d97563f80faddfc3, type: 2}
+  - {fileID: 11400000, guid: 5e97a2457cf0fb14dbb3874deed74505, type: 2}
+  - {fileID: 11400000, guid: 547495d35005c234c8f5d03e7b9171be, type: 2}
+  - {fileID: 11400000, guid: b4bc1a8ccf19507418aeb3b487abbd64, type: 2}
+  isCircular: 0

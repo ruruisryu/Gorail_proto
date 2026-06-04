@@ -37,7 +37,20 @@ namespace Game.Subway
 
         void Awake()
         {
-            circle = MakeCircleSprite(32);
+            circle = MakeCircleSprite(128);
+        }
+
+        void OnValidate()
+        {
+#if UNITY_EDITOR
+            if (mapContainer == null || networkData == null) return;
+            UnityEditor.EditorApplication.delayCall += () =>
+            {
+                if (this == null || mapContainer == null || networkData == null) return;
+                circle = MakeCircleSprite(128);
+                Render();
+            };
+#endif
         }
 
         static Sprite MakeCircleSprite(int radius)
@@ -61,7 +74,11 @@ namespace Game.Subway
         public void Render()
         {
             for (int i = mapContainer.childCount - 1; i >= 0; i--)
-                Destroy(mapContainer.GetChild(i).gameObject);
+            {
+                var child = mapContainer.GetChild(i).gameObject;
+                if (Application.isPlaying) Destroy(child);
+                else DestroyImmediate(child);
+            }
 
             if (networkData == null) return;
 
@@ -177,32 +194,31 @@ namespace Game.Subway
 
             if (!isTransfer)
             {
+                // 흰 테두리 + 색상 원
+                Circ("StnBg_" + stn.stationId, mapContainer, uiPos, StationSize + 4f, Color.white);
                 markerGO = Circ("Stn_" + stn.stationId, mapContainer, uiPos, StationSize, lineColors[0]);
             }
             else
             {
-                int   n          = lineColors.Count;
-                float spacing    = TransferDot * 0.85f;
-                float totalW     = TransferDot + (n - 1) * spacing;
-                float bgW        = totalW + TransferPad * 2f;
-                float bgH        = TransferDot + TransferPad * 2f;
+                int   n       = lineColors.Count;
+                float spacing = TransferDot * 0.85f;
+                float totalW  = TransferDot + (n - 1) * spacing;
+                float startX  = -(totalW * 0.5f) + TransferDot * 0.5f;
 
-                // 흰 배경 사각형
+                // 사각형 배경 없이 각 점마다 흰 테두리 원 + 색상 원
                 markerGO = new GameObject("Stn_" + stn.stationId);
                 markerGO.transform.SetParent(mapContainer, false);
-                var bgRT = markerGO.AddComponent<RectTransform>();
-                bgRT.anchorMin = bgRT.anchorMax = bgRT.pivot = Vector2.one * 0.5f;
-                bgRT.anchoredPosition = uiPos;
-                bgRT.sizeDelta        = new Vector2(bgW, bgH);
-                var bgImg = markerGO.AddComponent<Image>();
-                bgImg.color         = Color.white;
-                bgImg.raycastTarget = false;
+                var rt = markerGO.AddComponent<RectTransform>();
+                rt.anchorMin = rt.anchorMax = rt.pivot = Vector2.one * 0.5f;
+                rt.anchoredPosition = uiPos;
+                rt.sizeDelta        = Vector2.zero;
 
-                // 각 노선 색상 원
-                float startX = -(totalW * 0.5f) + TransferDot * 0.5f;
                 for (int i = 0; i < n; i++)
-                    Circ($"Dot_{i}", markerGO.transform, new Vector2(startX + i * spacing, 0f),
-                         TransferDot, lineColors[i]);
+                {
+                    var offset = new Vector2(startX + i * spacing, 0f);
+                    Circ($"DotBg_{i}", markerGO.transform, offset, TransferDot + 4f, Color.white);
+                    Circ($"Dot_{i}",   markerGO.transform, offset, TransferDot, lineColors[i]);
+                }
             }
 
             DrawLabel(stn, markerGO.transform, isTransfer);
@@ -213,17 +229,17 @@ namespace Game.Subway
             var lbl = new GameObject("Label");
             lbl.transform.SetParent(parent, false);
             var lrt = lbl.AddComponent<RectTransform>();
-            lrt.anchorMin = lrt.anchorMax = new Vector2(0.5f, 0f);
-            lrt.pivot               = new Vector2(0.5f, 1f);
-            lrt.anchoredPosition    = new Vector2(0f, -2f);
-            lrt.sizeDelta           = new Vector2(80f, 22f);
+            lrt.anchorMin        = lrt.anchorMax = new Vector2(0.5f, 0f);
+            lrt.pivot            = new Vector2(0.5f, 1f);
+            lrt.anchoredPosition = new Vector2(0f, -2f);
+            lrt.sizeDelta        = new Vector2(80f, 22f);
             var txt = lbl.AddComponent<Text>();
-            txt.text            = stn.displayName;
-            txt.font            = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            txt.fontSize        = isTransfer ? 10 : 9;
-            txt.color           = new Color(0.1f, 0.1f, 0.1f);
-            txt.alignment       = TextAnchor.UpperCenter;
-            txt.raycastTarget   = false;
+            txt.text           = stn.displayName;
+            txt.font           = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            txt.fontSize       = isTransfer ? 10 : 9;
+            txt.color          = new Color(0.1f, 0.1f, 0.1f);
+            txt.alignment      = TextAnchor.UpperCenter;
+            txt.raycastTarget  = false;
         }
 
         // ── 플레이어 마커 ──────────────────────────────────────────────

@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1808966cf24aa6c49b1baaf7dc680128, type: 3}
+  m_Name: Line2Sinjeong
+  m_EditorClassIdentifier: Game.Runtime::Game.Subway.LineData
+  lineId: Line2Sinjeong
+  displayName: "2\uD638\uC120 \uC2E0\uC815\uC9C0\uC120"
+  lineColor: {r: 0.2, g: 0.7, b: 0.29, a: 1}
+  stations:
+  - {fileID: 11400000, guid: e2096041f607caf4c98b5f6d28bec7ad, type: 2}
+  - {fileID: 11400000, guid: 5b67cb7d5d6361c4697a511a0860c07e, type: 2}
+  - {fileID: 11400000, guid: 3d11ff886814e7047a30a90413dc15be, type: 2}
+  - {fileID: 11400000, guid: d3cdb5f448bf0654da316e2d6fbe3638, type: 2}
+  - {fileID: 11400000, guid: d2919c1f3e50300409dad41c98f5c918, type: 2}
+  isCircular: 0
