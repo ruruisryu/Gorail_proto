@@ -8,6 +8,8 @@ namespace Game.UI
         IScrollHandler, IBeginDragHandler, IDragHandler, IEndDragHandler
     {
         [SerializeField] private RectTransform zoomTarget;
+        [Tooltip("[D2] 줌 변경 시 역 점·선 크기 고정 보정을 받을 렌더러.")]
+        [SerializeField] private Game.Subway.SubwayMapRenderer mapRenderer;
 
         [Header("Zoom Settings")]
         [Tooltip("스크롤 한 칸당 배율 변화량 (1~20 권장). 높을수록 한 번에 크게 확대/축소됩니다.")]
@@ -64,6 +66,8 @@ namespace Game.UI
             currentZoom = Mathf.Clamp(zoom, minZoom, maxZoom);
             if (zoomTarget != null)
                 zoomTarget.localScale = Vector3.one * currentZoom;
+            if (mapRenderer != null)
+                mapRenderer.ApplyZoomCompensation(currentZoom); // [D2] 점·선 크기 고정
             ClampPosition();
         }
 

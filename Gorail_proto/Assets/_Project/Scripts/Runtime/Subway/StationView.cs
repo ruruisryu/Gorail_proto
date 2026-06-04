@@ -92,6 +92,12 @@ namespace Game.Subway
             {
                 label.text = data != null ? data.displayName : "";
                 label.font = transfer ? fontTransfer : fontNormal;
+
+                // [D3] 역명은 어떤 경우에도 동그라미·선 위에 렌더 — overrideSorting 캔버스로 강제.
+                var lc = label.GetComponent<Canvas>();
+                if (lc == null) lc = label.gameObject.AddComponent<Canvas>();
+                lc.overrideSorting = true;
+                lc.sortingOrder = 100;
             }
 
             // 히트 영역 — 점 묶음을 덮는 크기. 저작 중(역 선택)·런타임(이동 입력) 모두 클릭 가능.

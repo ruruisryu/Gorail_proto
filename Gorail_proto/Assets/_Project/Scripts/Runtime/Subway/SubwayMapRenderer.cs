@@ -31,6 +31,10 @@ namespace Game.Subway
         [Tooltip("역 간 간격 배율. 1 = 원본, 0.5 = 절반으로 압축.")]
         [SerializeField][Range(0.1f, 1f)] private float stationSpread = 0.4f;
 
+        [Tooltip("[D2] 이 화면 배율을 넘어서 확대하면 역 점·선 굵기를 역보정해 화면상 크기를 고정한다. " +
+                 "예: 1 = 1배율 이상에서 점·선이 더 커지지 않음.")]
+        [SerializeField] private float zoomSizeLockThreshold = 1f;
+
         private const float LineThickness = 6f;
         private const float PlayerSize    = 18f;
         private const float EnemySize     = 18f;
@@ -42,6 +46,7 @@ namespace Game.Subway
 
         // ── 내부 ─────────────────────────────────────────────────────────
         private Sprite _circle;
+        private float _zoomComp = 1f; // [D2] 현재 줌 역보정 배율(1 = 보정 없음)
         private const string LinesTag    = "[Lines]";
         private const string StationsTag = "[Stations]";
 
@@ -125,6 +130,44 @@ namespace Game.Subway
             {
                 var pos = GetStationUIPos(playerLocation.currentStationId);
                 if (pos.HasValue) DrawPlayer(pos.Value);
+            }
+
+            ApplyCompToMarkers(); // [D2] 새로 그린 마커에도 현재 줌 보정 반영
+        }
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // [D2] 줌 크기 고정 — SubwayMapZoom이 배율 변경 시 호출
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        /// <summary>
+        /// 줌(부모 localScale)으로 커지는 역 점·선·마커를 역보정해, 임계 배율 이상에서 화면상 크기를 고정한다.
+        /// 역(역명 라벨 포함)·마커는 균등 역보정, 선은 굵기 축만 역보정(길이는 줌 따라 벌어짐).
+        /// </summary>
+        public void ApplyZoomCompensation(float zoom)
+        {
+            _zoomComp = zoom > zoomSizeLockThreshold && zoom > 0f ? zoomSizeLockThreshold / zoom : 1f;
+
+            var stationsRT = FindContainer(StationsTag);
+            if (stationsRT != null)
+                foreach (var view in stationsRT.GetComponentsInChildren<StationView>(true))
+                    view.transform.localScale = Vector3.one * _zoomComp;
+
+            var linesRT = FindContainer(LinesTag);
+            if (linesRT != null)
+                for (int i = 0; i < linesRT.childCount; i++)
+                    linesRT.GetChild(i).localScale = new Vector3(1f, _zoomComp, 1f); // 굵기만 고정
+
+            ApplyCompToMarkers();
+        }
+
+        /// <summary>마커(컨테이너가 아닌 직접 자식)에 현재 줌 보정 배율을 적용한다.</summary>
+        void ApplyCompToMarkers()
+        {
+            for (int i = 0; i < mapContainer.childCount; i++)
+            {
+                var child = mapContainer.GetChild(i);
+                if (child.name == LinesTag || child.name == StationsTag) continue;
+                child.localScale = Vector3.one * _zoomComp;
             }
         }
 
