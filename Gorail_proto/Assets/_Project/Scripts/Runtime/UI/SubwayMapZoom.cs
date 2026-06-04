@@ -16,6 +16,9 @@ namespace Game.UI
         [SerializeField][Range(1, 20)] private int zoomSensitivity = 5;
         [SerializeField] private float minZoom = 0.4f;
         [SerializeField] private float maxZoom = 4f;
+        [Tooltip("이 배율 이상으로 확대하면 역 동그라미·선 굵기가 화면상 더 커지지 않고 고정됩니다. " +
+                 "(예: 1 = 1배율부터 고정 / 2 = 2배율까지는 같이 커지다 그 이후 고정)")]
+        [SerializeField] private float sizeLockThreshold = 1f;
 
         [Header("Pan Settings")]
         [Tooltip("우클릭 드래그로 지도를 이동합니다.")]
@@ -67,7 +70,7 @@ namespace Game.UI
             if (zoomTarget != null)
                 zoomTarget.localScale = Vector3.one * currentZoom;
             if (mapRenderer != null)
-                mapRenderer.ApplyZoomCompensation(currentZoom); // [D2] 점·선 크기 고정
+                mapRenderer.ApplyZoomCompensation(currentZoom, sizeLockThreshold); // [D2] 점·선 크기 고정
             ClampPosition();
         }
 

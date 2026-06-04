@@ -31,10 +31,6 @@ namespace Game.Subway
         [Tooltip("역 간 간격 배율. 1 = 원본, 0.5 = 절반으로 압축.")]
         [SerializeField][Range(0.1f, 1f)] private float stationSpread = 0.4f;
 
-        [Tooltip("[D2] 이 화면 배율을 넘어서 확대하면 역 점·선 굵기를 역보정해 화면상 크기를 고정한다. " +
-                 "예: 1 = 1배율 이상에서 점·선이 더 커지지 않음.")]
-        [SerializeField] private float zoomSizeLockThreshold = 1f;
-
         private const float LineThickness = 6f;
         private const float PlayerSize    = 18f;
         private const float EnemySize     = 18f;
@@ -142,10 +138,11 @@ namespace Game.Subway
         /// <summary>
         /// 줌(부모 localScale)으로 커지는 역 점·선·마커를 역보정해, 임계 배율 이상에서 화면상 크기를 고정한다.
         /// 역(역명 라벨 포함)·마커는 균등 역보정, 선은 굵기 축만 역보정(길이는 줌 따라 벌어짐).
+        /// lockThreshold(고정 시작 배율)는 SubwayMapZoom이 인스펙터 값으로 전달한다.
         /// </summary>
-        public void ApplyZoomCompensation(float zoom)
+        public void ApplyZoomCompensation(float zoom, float lockThreshold)
         {
-            _zoomComp = zoom > zoomSizeLockThreshold && zoom > 0f ? zoomSizeLockThreshold / zoom : 1f;
+            _zoomComp = zoom > lockThreshold && zoom > 0f ? lockThreshold / zoom : 1f;
 
             var stationsRT = FindContainer(StationsTag);
             if (stationsRT != null)
