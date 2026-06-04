@@ -55,6 +55,7 @@ namespace Game.Subway
         private const string LinesTag    = "[Lines]";
         private const string StationsTag = "[Stations]";
         private const string PreviewTag  = "[Preview]"; // [D10] 적 이동 프리뷰 고스트
+        private const string FxTag       = "[Fx]";      // [H6] 연출 오버레이(깜빡임·강조 등, ChaseFx 소유)
 
         public Vector2 StationBoundsMin { get; private set; }
         public Vector2 StationBoundsMax { get; private set; }
@@ -116,7 +117,7 @@ namespace Game.Subway
             for (int i = mapContainer.childCount - 1; i >= 0; i--)
             {
                 var child = mapContainer.GetChild(i);
-                if (child.name == LinesTag || child.name == StationsTag || child.name == PreviewTag) continue;
+                if (child.name == LinesTag || child.name == StationsTag || child.name == PreviewTag || child.name == FxTag) continue;
                 if (Application.isPlaying) Destroy(child.gameObject);
                 else DestroyImmediate(child.gameObject);
             }
@@ -173,7 +174,7 @@ namespace Game.Subway
             for (int i = 0; i < mapContainer.childCount; i++)
             {
                 var child = mapContainer.GetChild(i);
-                if (child.name == LinesTag || child.name == StationsTag || child.name == PreviewTag) continue;
+                if (child.name == LinesTag || child.name == StationsTag || child.name == PreviewTag || child.name == FxTag) continue;
                 child.localScale = Vector3.one * _zoomComp;
             }
         }
@@ -253,6 +254,34 @@ namespace Game.Subway
         }
 
         public void ClearChasePreview() => DestroyContainer(PreviewTag);
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // [H6] 연출 오버레이 레이어 — ChaseFx가 깜빡임·강조 마커를 여기에 그린다.
+        //      RefreshMarkers/줌보정이 건드리지 않는 영속 컨테이너.
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        /// <summary>현재 줌 역보정 배율(연출 마커도 화면상 크기를 맞추는 데 사용).</summary>
+        public float ZoomComp => _zoomComp;
+
+        /// <summary>연출 마커용 공유 원형 스프라이트.</summary>
+        public Sprite CircleSprite => _circle != null ? _circle : (_circle = MakeCircleSprite(128));
+
+        /// <summary>연출 오버레이 컨테이너([Fx])를 얻거나 만든다(최상위, 마커 갱신에 안 지워짐).</summary>
+        public RectTransform GetOrCreateFxLayer()
+        {
+            var rt = FindContainer(FxTag);
+            if (rt == null) rt = CreateContainer(FxTag, mapContainer.childCount);
+            else rt.SetSiblingIndex(mapContainer.childCount - 1); // 항상 최상위 유지
+            return rt;
+        }
+
+        /// <summary>[Fx] 레이어에 원형 연출 마커 1개를 만들어 반환(색·크기 지정, 줌 보정 적용).</summary>
+        public Image CreateFxCircle(RectTransform fxLayer, Vector2 anchoredPos, float size, Color color)
+        {
+            var go = Circ("Fx", fxLayer, anchoredPos, size, color);
+            go.transform.localScale = Vector3.one * _zoomComp;
+            return go.GetComponent<Image>();
+        }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // [D1] 활성 노선 색 / 비활성 회색
