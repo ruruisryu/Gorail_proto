@@ -54,7 +54,26 @@ namespace Game.Subway
 
         // baked 인스턴스(이미 씬에 생성돼 Configure가 다시 안 불리는 역)에도 D3가 적용되도록
         // 매 활성화 시 라벨을 최상위로 보장한다.
-        void Awake() => EnsureLabelTopmost();
+        void Awake() { EnsureLabelTopmost(); RefreshSpecialMarker(); }
+
+        /// <summary>[임시] baked 인스턴스(Configure 재호출 안 됨)에도 특별역 별 마커를 적용.</summary>
+        void RefreshSpecialMarker()
+        {
+            if (stationData == null || !stationData.AllowsOutside || dotTemplate == null) return;
+            var parent = dotTemplate.parent;
+            if (parent == null) return;
+            foreach (Transform ch in parent)
+            {
+                if (!ch.name.StartsWith("Dot_")) continue;
+                var rootImg = ch.GetComponent<Image>();
+                if (rootImg != null) rootImg.sprite = StarSprite();
+                if (ch.childCount > 0)
+                {
+                    var f = ch.GetChild(0).GetComponent<Image>();
+                    if (f != null) f.sprite = StarSprite();
+                }
+            }
+        }
 
         /// <summary>
         /// [D3] 역명 라벨이 어떤 경우에도 동그라미·선 위에 렌더되도록 overrideSorting 캔버스를 부여.
@@ -77,6 +96,7 @@ namespace Game.Subway
 
             int   n        = Mathf.Max(1, lineColors.Count);
             bool  transfer = lineColors.Count > 1;
+            bool  special  = data != null && data.AllowsOutside; // [임시] 특별역(랜드마크/상점)은 별 마커
             float spacing  = dotSize * dotSpacingRatio;
             float totalW   = dotSize + (n - 1) * spacing;
             float startX   = -(totalW * 0.5f) + dotSize * 0.5f;
@@ -95,10 +115,19 @@ namespace Game.Subway
                     dot.SetActive(true);
                     var drt = dot.GetComponent<RectTransform>();
                     drt.anchoredPosition = new Vector2(startX + i * spacing, 0f);
+                    if (special)
+                    {
+                        var rootImg = dot.GetComponent<Image>(); // 흰 배경원 → 별
+                        if (rootImg != null) rootImg.sprite = StarSprite();
+                    }
                     if (drt.childCount > 0)
                     {
                         var fill = drt.GetChild(0).GetComponent<Image>(); // 색상원(자식)
-                        if (fill != null) fill.color = lineColors[Mathf.Min(i, lineColors.Count - 1)];
+                        if (fill != null)
+                        {
+                            fill.color = lineColors[Mathf.Min(i, lineColors.Count - 1)];
+                            if (special) fill.sprite = StarSprite(); // [임시] 별 마커
+                        }
                     }
                     _spawnedDots.Add(dot);
                 }
@@ -140,6 +169,42 @@ namespace Game.Subway
                     if (fill != null) fill.color = colors[Mathf.Min(i, colors.Count - 1)];
                 }
             }
+        }
+
+        // [임시] 특별역 별 마커용 스프라이트(절차적 5각 별, 1회 생성·공유).
+        private static Sprite _starSprite;
+        static Sprite StarSprite()
+        {
+            if (_starSprite != null) return _starSprite;
+            int size = 128;
+            var tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
+            var px  = new Color[size * size];
+            var c   = new Vector2(size * 0.5f, size * 0.5f);
+            float outer = size * 0.48f, inner = outer * 0.42f;
+            var pts = new Vector2[10];
+            for (int i = 0; i < 10; i++)
+            {
+                float r   = (i % 2 == 0) ? outer : inner;
+                float ang = Mathf.Deg2Rad * (-90f + i * 36f);
+                pts[i] = c + new Vector2(Mathf.Cos(ang) * r, Mathf.Sin(ang) * r);
+            }
+            for (int y = 0; y < size; y++)
+                for (int x = 0; x < size; x++)
+                    px[y * size + x] = PointInPoly(new Vector2(x + 0.5f, y + 0.5f), pts) ? Color.white : Color.clear;
+            tex.SetPixels(px);
+            tex.Apply();
+            _starSprite = Sprite.Create(tex, new Rect(0, 0, size, size), Vector2.one * 0.5f);
+            return _starSprite;
+        }
+
+        static bool PointInPoly(Vector2 p, Vector2[] poly)
+        {
+            bool inside = false;
+            for (int i = 0, j = poly.Length - 1; i < poly.Length; j = i++)
+                if (((poly[i].y > p.y) != (poly[j].y > p.y)) &&
+                    (p.x < (poly[j].x - poly[i].x) * (p.y - poly[i].y) / (poly[j].y - poly[i].y) + poly[i].x))
+                    inside = !inside;
+            return inside;
         }
 
         void DestroySafe(GameObject go)
