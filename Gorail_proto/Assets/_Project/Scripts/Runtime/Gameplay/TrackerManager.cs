@@ -85,6 +85,15 @@ namespace Game.Gameplay
             SyncMarkers();
         }
 
+        /// <summary>외부 체류 등으로 모든 추격자를 steps역 일괄 전진(§9-1 체류→추격 전진). 체증 없음.</summary>
+        public void AdvanceAll(int steps)
+        {
+            if (Graph == null || player == null || steps <= 0 || _trackers.Count == 0) return;
+            foreach (var t in _trackers)
+                t.ChaseToward(Graph, player.CurrentStationId, steps);
+            SyncMarkers();
+        }
+
         /// <summary>체증 누적을 정수 스텝으로 환산(소수분은 다음 호출로 이월). 순수 함수 — 테스트 대상.</summary>
         public static int ComputeAdvanceSteps(float basePerStep, float congestionMult, int playerSteps, ref float debt)
         {

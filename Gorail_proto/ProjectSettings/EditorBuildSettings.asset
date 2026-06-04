@@ -11,6 +11,12 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/_Project/Scenes/Levels/SubwayScene.unity
     guid: 1f878e7b04bacd748b789613ee373ca4
+  - enabled: 1
+    path: Assets/_Project/Scenes/Levels/PlatformScene.unity
+    guid: d8fb56009099f3a4aa9419d2aa3d37f2
+  - enabled: 1
+    path: Assets/_Project/Scenes/Levels/OutsideScene.unity
+    guid: c2e61ca0e3766e0498c84f9b0174f5e5
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0

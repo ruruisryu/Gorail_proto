@@ -43,8 +43,6 @@ namespace Game.Gameplay
             GUILayout.Space(6);
             DrawConfigSliders();
             GUILayout.Space(6);
-            DrawPlatform();
-            GUILayout.Space(6);
             DrawSession();
 
             GUILayout.EndScrollView();
@@ -112,20 +110,6 @@ namespace Game.Gameplay
 
             config.inspectAtMidStations =
                 GUILayout.Toggle(config.inspectAtMidStations, "중간역 검문(§8-1)");
-        }
-
-        void DrawPlatform()
-        {
-            if (platform == null) return;
-            GUILayout.Label("── 승강장 ──");
-            if (!platform.IsOpen) { GUILayout.Label("(닫힘 — 도착 시 열림)"); return; }
-
-            GUILayout.Label($"승강장 @ {platform.CurrentStation}");
-            if (GUILayout.Button("반대방향 재탑승")) platform.ReverseDirection();
-            if (GUILayout.Button("가던 방향 재탑승")) platform.ContinueForward();
-            foreach (var line in platform.AvailableTransferLines)
-                if (GUILayout.Button($"환승 → {line}")) platform.Transfer(line);
-            if (GUILayout.Button("야외로(stub)")) platform.GoOutside();
         }
 
         void DrawSession()
