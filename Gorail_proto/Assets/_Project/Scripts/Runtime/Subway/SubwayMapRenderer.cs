@@ -56,6 +56,12 @@ namespace Game.Subway
         private const string StationsTag = "[Stations]";
         private const string PreviewTag  = "[Preview]"; // [D10] 적 이동 프리뷰 고스트
         private const string FxTag       = "[Fx]";      // [H6] 연출 오버레이(깜빡임·강조 등, ChaseFx 소유)
+        private const string PlayerTag   = "[Player]";   // [H6] 영속 플레이어 마커(역간 부드러운 글라이드)
+
+        // [H6] 플레이어 마커 글라이드 — 재생성 대신 영속 컨테이너를 목표 위치로 보간(플레이 모드 한정).
+        private const float PlayerGlideSharpness = 14f;  // 클수록 빠르게 따라붙음(프레임 독립)
+        private RectTransform _playerMarker;
+        private Vector2 _playerTarget;
 
         public Vector2 StationBoundsMin { get; private set; }
         public Vector2 StationBoundsMax { get; private set; }
@@ -117,7 +123,7 @@ namespace Game.Subway
             for (int i = mapContainer.childCount - 1; i >= 0; i--)
             {
                 var child = mapContainer.GetChild(i);
-                if (child.name == LinesTag || child.name == StationsTag || child.name == PreviewTag || child.name == FxTag) continue;
+                if (child.name == LinesTag || child.name == StationsTag || child.name == PreviewTag || child.name == FxTag || child.name == PlayerTag) continue;
                 if (Application.isPlaying) Destroy(child.gameObject);
                 else DestroyImmediate(child.gameObject);
             }
@@ -174,7 +180,7 @@ namespace Game.Subway
             for (int i = 0; i < mapContainer.childCount; i++)
             {
                 var child = mapContainer.GetChild(i);
-                if (child.name == LinesTag || child.name == StationsTag || child.name == PreviewTag || child.name == FxTag) continue;
+                if (child.name == LinesTag || child.name == StationsTag || child.name == PreviewTag || child.name == FxTag || child.name == PlayerTag) continue;
                 child.localScale = Vector3.one * _zoomComp;
             }
         }
@@ -563,9 +569,40 @@ namespace Game.Subway
 
         void DrawPlayer(Vector2 uiPos)
         {
-            Circ("PlayerRing",    mapContainer, uiPos, PlayerSize + 12f, PlayerRingColor);
-            Circ("PlayerOutline", mapContainer, uiPos, PlayerSize + 4f,  Color.white);
-            Circ("Player",        mapContainer, uiPos, PlayerSize,        PlayerColor);
+            // 에디터 미리보기: 기존처럼 transient(매번 재생성). 글라이드는 플레이 모드 전용.
+            if (!Application.isPlaying)
+            {
+                Circ("PlayerRing",    mapContainer, uiPos, PlayerSize + 12f, PlayerRingColor);
+                Circ("PlayerOutline", mapContainer, uiPos, PlayerSize + 4f,  Color.white);
+                Circ("Player",        mapContainer, uiPos, PlayerSize,        PlayerColor);
+                return;
+            }
+
+            // 플레이: 영속 [Player] 컨테이너를 만들어 두고, 목표 위치만 갱신(Update가 보간 이동).
+            if (_playerMarker == null)
+            {
+                var existing = mapContainer.Find(PlayerTag) as RectTransform;
+                if (existing != null) _playerMarker = existing;
+            }
+            if (_playerMarker == null)
+            {
+                _playerMarker = CreateContainer(PlayerTag, mapContainer.childCount);
+                Circ("PlayerRing",    _playerMarker, Vector2.zero, PlayerSize + 12f, PlayerRingColor);
+                Circ("PlayerOutline", _playerMarker, Vector2.zero, PlayerSize + 4f,  Color.white);
+                Circ("Player",        _playerMarker, Vector2.zero, PlayerSize,        PlayerColor);
+                _playerMarker.anchoredPosition = uiPos; // 최초엔 스냅
+            }
+            _playerMarker.SetSiblingIndex(mapContainer.childCount - 1); // 적·선 위
+            _playerTarget = uiPos;
+        }
+
+        // [H6] 플레이어 마커를 목표 역 위치로 프레임 독립 보간 + 줌 보정.
+        void Update()
+        {
+            if (!Application.isPlaying || _playerMarker == null) return;
+            float k = 1f - Mathf.Exp(-PlayerGlideSharpness * Time.deltaTime);
+            _playerMarker.anchoredPosition = Vector2.Lerp(_playerMarker.anchoredPosition, _playerTarget, k);
+            _playerMarker.localScale = Vector3.one * _zoomComp;
         }
 
         void DrawEnemy(Vector2 uiPos, int index)
