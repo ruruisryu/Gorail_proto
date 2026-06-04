@@ -1,6 +1,7 @@
 using UnityEngine;
 using Game.Core;
 using Game.Data;
+using Game.Subway;
 
 namespace Game.Gameplay
 {
@@ -40,6 +41,8 @@ namespace Game.Gameplay
             DrawStatus();
             GUILayout.Space(6);
             DrawWanted();
+            GUILayout.Space(6);
+            DrawSpace();
             GUILayout.Space(6);
             DrawConfigSliders();
             GUILayout.Space(6);
@@ -110,6 +113,20 @@ namespace Game.Gameplay
 
             config.inspectAtMidStations =
                 GUILayout.Toggle(config.inspectAtMidStations, "중간역 검문(§8-1)");
+        }
+
+        void DrawSpace()
+        {
+            var core = GameCore.Instance;
+            if (core == null || core.Space == null) return;
+            GUILayout.Label($"── 공간: {core.Space.Current} ──");
+            string stn = core.Player != null ? core.Player.CurrentStationId : "?";
+            if (GUILayout.Button($"승강장 진입 (현재역 {stn})"))
+                core.Platform?.OpenAt(stn);
+            if (GUILayout.Button("지상 강제 진입 (현재역)"))
+                core.Space.EnterGround(stn);
+            if (GUILayout.Button("지하철 복귀"))
+                core.Space.EnterSubway();
         }
 
         void DrawSession()
