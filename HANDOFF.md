@@ -1,54 +1,69 @@
-# 인수인계 — 다음 세션 Claude Code에게
+# 인수인계 — 추격 슬라이스 ②~⑧ 구현 세션
 
-작성: 2026-06-04 세션. 대상: 이어서 개발할 Claude Code.
-이 문서를 먼저 읽고 시작해라. 프로젝트 전체 맥락은 `game_design_documents/chase_prototype_spec_v2_patched.pdf`(추격 슬라이스 기획서 v0.1)에 있다 — **반드시 정독**할 것.
+작성: 2026-06-04 세션. 브랜치: **`feature/chase-slice`** (main 아님). 기획서: `game_design_documents/chase_prototype_spec_v2_patched.docx`(v0.1) — PDF는 한글 추출이 깨지니 docx로 읽어라.
 
 ---
 
-## 1. 프로젝트 정체성
-**지하철 추격 생존 게임** (Unity 6000.3.5f1, URP, 2D).
-플레이어가 작품 활동으로 수배도를 올리면 Tracker(기자)가 지하철 노선망을 따라 추격 → 환승·방향전환으로 따돌리며 검문을 통과해 생존. 이번 프로토타입의 목표는 **"추격 루프 자체가 재미있는가"** 검증.
+## 1. 이번 세션에 한 일 — ②~⑧ + ④⑦ 코드·씬배선 완료
+기획서 §10-4 빌드 순서 ①~⑧ 중 **①(이전 세션 완료)에 이어 ②~⑧을 전부 구현**했다.
+**모두 컴파일 0에러 · EditMode 테스트 23개 통과 · SubwayScene 배선 완료.**
+단 **Play 모드 시각검증은 아직 안 함**(자율 범위가 "씬 배선까지"였음) → **저녁에 함께 할 일**(§4).
 
-Unity 프로젝트 루트: `Gorail_proto/Gorail_proto/`. 코드는 `Assets/_Project/Scripts/`.
+### 단계별 커밋 (브랜치 `feature/chase-slice`)
+- `docs:` ① 인수인계 문서
+- `feat: 추격 기반` — ChaseConfig·Player·GameManager·경계 인터페이스 + MapGraph 확장
+- `feat: ②TurnResolver` — 역단위 순차 해소 + 디버그/역클릭 입력
+- `feat: ⑤⑥ Tracker·TrackerManager` — 스폰·추격·체증
+- `feat: ⑧ InspectionSystem` — 확률 게이트 검문
+- `feat: ③ PlatformController` — 승강장 4갈래
+- `feat: ④DebugPanel + ⑦가시화`
+- `feat: 추격 루프 통합 배선` (이 커밋)
 
-## 2. 기획서 빌드 순서 (§15)
-①MapGraph+MapRenderer → ②TurnResolver(목적지→역단위 순차해소 코루틴) → ③PlatformController(승강장 4갈래) → ④DebugPanel(수배도 슬라이더) → ⑤TrackerManager 스폰 → ⑥Tracker 추격(1+2규칙+체증) → ⑦가시화(활성노선만) → ⑧InspectionSystem(검문). 모든 튜닝값은 **ChaseConfig ScriptableObject**로 뺀다.
+## 2. 아키텍처 (깨지 말 것)
+- **경계 인터페이스로 단계 분리**: `IChaseStubs.cs`의 `ITrackerStep`/`IInspection`/`IPlatform`. TurnResolver는 이 인터페이스에만 의존하고, 미구현 땐 `Null*` 빈 구현으로 동작. **`ChaseSession`이 런타임(Awake)에 실물(TrackerManager·InspectionSystem·PlatformController)을 `SetSystems`로 주입**하고, `TurnResolver.MoveCompleted`(도착)→`TrackerManager.OnPlayerDisembark`(스폰 §5-1)를 잇는다.
+- **역 위치 단일 소스 = `StationData.mapPosition`(SO)** — 이전 세션 결정 유지. 게임플레이는 위치를 안 만지고 `SubwayMapRenderer.RefreshMarkers()`만 호출.
+- **플레이어 마커 재사용**: `Player`가 매 스텝 `PlayerLocationData.currentStationId`를 갱신 → 기존 렌더러 마커 그대로. 추격자는 `TrackerManager`가 `EnemyLocationData.enemyStationIds`를 갱신(⑦: 활성 노선 추격자만).
+- **모든 튜닝값 = `ChaseConfig`(SO)** — `Assets/_Project/Data/ScriptableObjects/ChaseConfig.asset`. 대부분 §16 [미확정] 자리표시자.
 
-## 3. 현재 상태 — ①단계 완료
-맵 그래프 + **프리팹 기반 역 렌더링** + 에디터 편집 도구까지 완성. 다음은 ②TurnResolver.
+### 핵심 파일 (`Scripts/Runtime/`)
+- `Gameplay/TurnResolver.cs` — ② 목적지→1역씩 코루틴 해소(매 스텝 전진+연출/추격/검문, 도착 시 승강장).
+- `Gameplay/Player.cs` — 현재 역·노선·방향·누적 활성노선(§5-3), `ReverseDirection`.
+- `Gameplay/Tracker.cs`·`TrackerManager.cs` — ⑤⑥ 1+2규칙 추격, 체증(§4-2), 노선당 상한 스폰(§5-2~5-5), `ITrackerStep`.
+- `Gameplay/InspectionSystem.cs` — ⑧ 같은 역 확률 게이트(§8-2), `IInspection`.
+- `Gameplay/PlatformController.cs` — ③ 승강장 4갈래(§7-2), `IPlatform`.
+- `Gameplay/DebugPanel.cs` — ④ IMGUI 디버그 패널(수배도·통과율·승강장·리셋).
+- `Gameplay/DebugMover.cs` — ② 디버그 입력 + 세션 부트스트랩(시작역=PlayerLocation, 시작노선=그 역 첫 노선).
+- `Gameplay/StationClickRouter.cs` + `Subway/StationView.cs`(클릭 이벤트) — 역 클릭 이동 입력.
+- `Gameplay/ChaseSession.cs` — 통합 배선.
+- `Core/GameManager.cs` — 수배도(0~5)·게임오버 세션 상태.
+- `Subway/MapGraph.cs` — `GetLineOrderedPath`(순환선 짧은쪽)·`GetConnectingLineId` 등 추가.
+- `Tests/EditMode/` — MapGraphTests(14)·TrackerTests(9). `Game.Tests.EditMode.asmdef`.
 
-### 이번 세션에 확정된 아키텍처 결정 (중요 — 깨지 말 것)
-- **역 위치의 단일 소스 = `StationData.mapPosition`(SO)** (모델①). 프리팹/인스턴스 위치가 아니라 SO가 진짜 주소다.
-- **역 시각요소는 `StationNode.prefab` 안에 존재**하고 `StationView.Configure(stationData, lineColors)`가 데이터로 설정만 한다. 공통 모양 변경 = 프리팹 1곳 수정. 점 개수·색만 데이터 주도로 인스턴스에 복제 생성(환승역=노선 수만큼).
-- 원 스프라이트는 `Assets/_Project/Art/Sprites/Circle.png` 에셋(런타임 생성 아님).
+### 씬 배선 (`SubwayScene`)
+루트 **`ChaseSystems`** GameObject에 위 컴포넌트 전부 부착 + 참조 배선 완료. 맵 렌더러는 `SubwaySceneUI/…/MapContent`(기존).
 
-### 핵심 파일
-- `Scripts/Runtime/Subway/SubwayMapRenderer.cs` — 렌더러. `ApplyLayout()`(SO+Spread→화면 재배치, 모든 경로의 단일 통로), `BuildMap()`, `UpdateLines()`, `SavePositions()`.
-- `Scripts/Runtime/Subway/StationView.cs` — 역 프리팹 자기구성 컴포넌트.
-- `Scripts/Editor/SubwayMapRendererEditor.cs` — 인스펙터 버튼 + **Scene 개별 위치 편집 도구**(`StationSceneEditTool`, `SceneView.duringSceneGui` 전역 콜백).
-- `Scripts/Runtime/Subway/MapGraph.cs` / `MapGraphProvider.cs` — ②단계용 그래프 인프라(BFS: Distance/ShortestPath/NextStepToward/GetNeighborsOnLine). **씬 미부착이지만 의도된 것, 지우지 말 것.**
-- 데이터 SO: `Assets/_Project/Data/Subway/` (SubwayNetwork, 9개 노선, 257역, PlayerLocation, EnemyLocations).
+## 3. 검증 방법
+- EditMode 테스트: UnityMCP `run_tests`(mode EditMode, assembly `Game.Tests.EditMode`). 현재 23/23 통과.
+- 컴파일 루틴: `refresh_unity`(force/scripts/compile=request, wait) → 한 번 더 wait → `read_console`(errors). **컴파일 후 씬 오브젝트 instanceID가 바뀌니, 배선 시 매번 `find_gameobjects`로 ID를 새로 잡을 것.**
 
-### 에디터 워크플로 (기획자용)
-인스펙터 버튼: **Build Map**(역+선 최초 생성) → **Apply Layout**(SO+Spread로 재배치) → **✋ Scene 위치 편집**(파란 점 드래그로 개별 역 이동) → **Update Lines** → **Save Positions**(SO 저장).
+## 4. ⚠️ 저녁에 함께 할 일 — Play 시각검증 체크리스트 (미검증 영역)
+씬 배선은 했지만 **실제로 화면에 도는지는 미확인**. Play 눌러 아래 순서로 확인:
+1. **맵이 보이는가** — `SubwayScene`의 맵은 `MapContent`(SubwaySceneUI 캔버스 아래). 팝업(`SubwayMapPopup`)으로 가려/꺼져 있을 수 있음 → 노선도가 안 보이면 팝업을 열거나 MapContent를 활성화. (이게 1순위 확인)
+2. **DBG 패널** — 좌상단 `DBG ▼/▲` 버튼(IMGUI). 안 보이면 DebugPanel 동작 확인.
+3. **세션 시작** — 콘솔에 `[DebugMover] 세션 시작 — 역:cityhall 노선:…` 로그 확인. 없으면 PlayerLocation/노선 데이터 점검.
+4. **이동** — DBG에서 수배도 0 상태로 역 클릭(또는 DebugMover.destination 입력 후 Move) → 플레이어 마커가 **같은 노선 위 목적지까지 1역씩** 이동하는가(②). 다른 노선 역 클릭 시 "환승 필요" 로그.
+5. **추격** — DBG로 수배도 1~3 올리고 → 이동(도착) → 추격자 스폰(플레이어 뒤 6~8역) → 다시 이동마다 추격자가 따라붙는가(⑤⑥). 마커가 활성 노선만 보이는가(⑦).
+6. **검문** — 추격자와 같은 역 도달 시 검문 발동 → 통과율(DBG 슬라이더)대로 통과/게임오버 로그(⑧).
+7. **승강장** — 도착 시 DBG "승강장" 섹션에 환승/반대방향 버튼 → 환승 시 노선 바뀌고 새 노선 추격자 드러나는가(③).
+8. **튜닝** — 통과율·연출속도·수배도 곡선을 DBG/ChaseConfig에서 만지며 "추격이 재밌는가"(§0) 감각 확인.
 
-## 4. 함정 (반드시 인지)
-- 맵 Canvas가 **Screen Space - Overlay** → Scene 뷰에서 역을 **일반 클릭으로 선택 불가**(오버레이가 기즈모를 덮고 좌표계가 어긋남). 위치 편집은 반드시 **✋ Scene 위치 편집 도구**(GUI 오버레이에 점 그림)로 한다.
-- **stationSpread** 슬라이더는 이제 라이브 동작(OnValidate→ApplyLayout). 단 드래그 조정은 Spread 건드리기 전에 **Save Positions** 먼저.
-- **프리팹(DotTemplate 등) 수정 후엔 Build Map 재실행**해야 생성된 역에 반영됨(생성된 점은 인스턴스 복제본).
-- 역은 씬에 영구 저장 안 됨(Build/런타임 생성). StationView.stationData는 직렬화되어 인스턴스가 자기 역을 기억함.
+**가능성 있는 이슈**: 맵이 Screen Space-Overlay 팝업이라 런타임에 꺼져 있을 수 있음 / 역 클릭이 팝업 열려야 먹힘 / 시작 노선이 의도와 다를 수 있음(DebugMover.startLineIdOverride로 지정 가능).
 
-## 5. 다음 작업 — ②TurnResolver (선행 포함)
-선행: **Player 상태**(현재 역/노선/진행 방향, 누적 활성 노선) + **ChaseConfig SO**(역당 시간 X, n·m, 체증 곡선, 노선당 상한표, 통과확률 등 §15·§16 튜닝값).
-②본체: 목적지 역 선택 → 출발~목적지를 **1역씩 코루틴 순차 해소**, 매 스텝 (1)플레이어 1역 전진+연출 (2)추격 1스텝 (3)같은 역 검문 판정. 목적지 도달 시 PlatformController로. 이동은 **현재 노선 위에서만**(노선 변경은 환승역 승강장에서만). `Scripts/Runtime/Gameplay/` 폴더가 비어 있으니 거기에 둔다.
+## 5. 남은 작업 — 버퍼 백로그 (기획서 밖 편의, 우선순위 순) [미착수]
+사용자와 합의한 버퍼. 핵심 검증이 끝난 뒤/여유 시 진행. 전부 디버그 플래그 뒤, §13 정식 UI 불침범.
+- **H6 연출·그래픽**: 비활성 노선 디밍, 추격자 트레일, 최근접 강조, 검문 깜빡임, 이동경로 하이라이트, 거리 색밴드, 현재노선 강조, 마커 펄스 + 그래픽 품질(부드러운 글라이드★·둥근 선·글로우·바운스·페이드·팔레트).
+- **H1 계측**: ChaseMetrics(최근접 거리 등)·ChaseEvents 허브·상태 HUD·시드 고정 RNG.
+- **H2~H5**: 세션통계+CSV / 거리 스파크라인 / 맵 검증 에디터 도구 / 배속·일시정지·치트·config 프리셋.
 
-## 6. 정리 완료 (이번 세션)
-삭제: `Assets/_Recovery/`(크래시 복구본), `Assets/TutorialInfo/`+`Readme.asset`(URP 템플릿 샘플), `SubwaySceneSetup.cs`(1회성 씬생성 메뉴).
-유지: MapGraph(C1), Outside/Platform 씬(C2, placeholder), Korail L 폰트, 빈 .gitkeep 폴더.
-
-## 7. 미커밋 변경
-이번 세션 작업물이 아직 커밋 안 됨(main 브랜치). 제안 커밋명:
-`feat: 역 노드 프리팹화 + Scene 개별 위치 편집 도구 추가`. 정리 삭제분은 별도 커밋 권장: `chore: 레거시 에셋 정리(_Recovery·TutorialInfo·SubwaySceneSetup)`.
-
-## 8. 툴링
-UnityMCP 연결됨(MCP For Unity). 스크립트 수정 후 루틴: `validate_script`(standard) → `refresh_unity`(force/scripts/compile=request, wait) → `read_console`(errors). 프리팹/씬 조작·검증은 `execute_code`(메서드 본문, using 금지, 정규화 이름 사용)로 가능.
+## 6. 튜닝값은 전부 [미확정] (§16, D단계)
+n·m, 체증 곡선, 노선당 상한표, 통과율, 첫스폰 범위 등 ChaseConfig 기본값은 제안치. 플레이테스트로 확정.
