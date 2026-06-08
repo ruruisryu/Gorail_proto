@@ -52,6 +52,10 @@ namespace Game.Subway
         /// <summary>[D1] 활성 집합 기준 노선 색 — 모든 선 그리기가 이걸 통해 칠해 어떤 재그리기에도 활성색 유지.</summary>
         Color LineColorFor(LineData line) =>
             _activeLines == null || _activeLines.Contains(line.lineId) ? line.lineColor : inactiveLineColor;
+
+        /// <summary>[D1] lineId가 현재 활성(고유색)인지 여부. _activeLines==null이면 전부 활성으로 간주.</summary>
+        bool IsActiveLineId(string lineId) =>
+            _activeLines == null || _activeLines.Contains(lineId);
         private const string LinesTag    = "[Lines]";
         private const string StationsTag = "[Stations]";
         private const string PreviewTag  = "[Preview]"; // [D10] 적 이동 프리뷰 고스트
@@ -366,9 +370,11 @@ namespace Game.Subway
 
             var stationColors = CollectStationColors();
 
-            // 선 그리기 (StationData.mapPosition 사용)
+            // 선 그리기 (StationData.mapPosition 사용) — 비활성 먼저, 활성 나중
             foreach (var line in networkData.lines)
-                DrawLineSegmentsFromData(line, linesRT);
+                if (line != null && !IsActiveLineId(line.lineId)) DrawLineSegmentsFromData(line, linesRT);
+            foreach (var line in networkData.lines)
+                if (line != null &&  IsActiveLineId(line.lineId)) DrawLineSegmentsFromData(line, linesRT);
 
             // 역 GameObject 생성
             var drawn = new HashSet<string>();
@@ -398,11 +404,13 @@ namespace Game.Subway
             // StationView → anchoredPosition 딕셔너리
             var posMap = BuildPosMap();
 
-            foreach (var line in networkData.lines)
+            // [D1] 비활성 노선을 먼저, 활성 노선을 나중에 그린다.
+            // uGUI는 나중에 그린 오브젝트가 위에 렌더되므로, 겹치는 구간에서
+            // 활성 노선 색이 비활성 회색 위에 반드시 올라오게 된다.
+            void DrawLineSegments(LineData line)
             {
-                if (line == null) continue;
-                var s = line.stations;
-                var col = LineColorFor(line); // [D1] 활성=고유색/비활성=회색
+                var s   = line.stations;
+                var col = LineColorFor(line);
                 for (int i = 0; i < s.Count - 1; i++)
                 {
                     if (s[i] == null || s[i + 1] == null) continue;
@@ -417,6 +425,11 @@ namespace Game.Subway
                         SegmentDirect(from, to, col, LineThickness, linesRT);
                 }
             }
+
+            foreach (var line in networkData.lines)
+                if (line != null && !IsActiveLineId(line.lineId)) DrawLineSegments(line); // 비활성 먼저
+            foreach (var line in networkData.lines)
+                if (line != null &&  IsActiveLineId(line.lineId)) DrawLineSegments(line); // 활성 나중(위)
             // [D2] 새로 그린 선 굵기에 현재 줌 보정 재적용
             for (int i = 0; i < linesRT.childCount; i++)
                 linesRT.GetChild(i).localScale = new Vector3(1f, _zoomComp, 1f);

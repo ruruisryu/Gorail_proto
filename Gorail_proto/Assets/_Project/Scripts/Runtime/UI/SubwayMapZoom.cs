@@ -54,9 +54,26 @@ namespace Game.UI
         {
             if (zoomTarget == null) return;
 
-            float delta = eventData.scrollDelta.y;
-            float step  = zoomSensitivity * 0.01f;
-            ApplyZoom(currentZoom + delta * step);
+            float oldZoom = currentZoom;
+            float newZoom = Mathf.Clamp(oldZoom + eventData.scrollDelta.y * zoomSensitivity * 0.01f, minZoom, maxZoom);
+            if (Mathf.Approximately(newZoom, oldZoom)) return;
+
+            // 마우스 위치를 뷰포트 로컬 좌표로 변환
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                ViewportRT, eventData.position, eventData.pressEventCamera, out Vector2 mouseLocal);
+
+            // 줌 전 마우스 아래 콘텐츠 좌표 = (마우스 - 콘텐츠 위치) / 현재 배율
+            Vector2 pivotInContent = (mouseLocal - zoomTarget.anchoredPosition) / oldZoom;
+
+            // 배율 적용 후 동일 콘텐츠 좌표가 마우스 아래 오도록 위치 보정
+            // newPos = mouseLocal - pivotInContent * newZoom
+            currentZoom = newZoom;
+            zoomTarget.localScale      = Vector3.one * currentZoom;
+            zoomTarget.anchoredPosition = mouseLocal - pivotInContent * newZoom;
+
+            if (mapRenderer != null)
+                mapRenderer.ApplyZoomCompensation(currentZoom, sizeLockThreshold);
+            ClampPosition();
         }
 
         public void OnBeginDrag(PointerEventData eventData) { }
@@ -89,14 +106,25 @@ namespace Game.UI
             ClampPosition();
         }
 
-        // 드래그/중앙정렬 범위 = 콘텐츠 절반 크기 × 줌 + 여유(panMargin). 맵 전체를 훑고 임의 역을 중앙에 둘 수 있음.
+        // 드래그/중앙정렬 범위:
+        //   콘텐츠 절반(×줌) - 뷰포트 절반 + panMargin
+        // anchoredPosition=(0,0)이 뷰포트 중앙이므로, 이 값이 맵 끝이 뷰포트 끝에
+        // 딱 맞는 위치다. Mathf.Max(0) → 콘텐츠가 뷰포트보다 작을 땐 중앙 고정.
         void ClampPosition()
         {
             if (zoomTarget == null) return;
 
-            var size = zoomTarget.rect.size;
-            float maxX = size.x * 0.5f * currentZoom + panMargin;
-            float maxY = size.y * 0.5f * currentZoom + panMargin;
+            // 최소 줌에서는 완전 고정 — panMargin도 적용 안 함
+            if (Mathf.Approximately(currentZoom, minZoom))
+            {
+                zoomTarget.anchoredPosition = Vector2.zero;
+                return;
+            }
+
+            var contentSize  = zoomTarget.rect.size;
+            var viewportSize = ViewportRT.rect.size;
+            float maxX = Mathf.Max(0f, contentSize.x * 0.5f * currentZoom - viewportSize.x * 0.5f) + panMargin;
+            float maxY = Mathf.Max(0f, contentSize.y * 0.5f * currentZoom - viewportSize.y * 0.5f) + panMargin;
 
             var pos = zoomTarget.anchoredPosition;
             pos.x = Mathf.Clamp(pos.x, -maxX, maxX);

@@ -59,7 +59,23 @@ namespace Game.Subway
 
         // baked 인스턴스(이미 씬에 생성돼 Configure가 다시 안 불리는 역)에도 D3가 적용되도록
         // 매 활성화 시 라벨을 최상위로 보장한다.
-        void Awake() { EnsureLabelTopmost(); RefreshSpecialMarker(); }
+        void Awake()
+        {
+            // _spawnedDots는 [SerializeField]가 아니므로 씬 로드 시 비어 있다.
+            // Build Map으로 에디터에서 구워진 baked 인스턴스의 경우 dotTemplate 형제 중
+            // "Dot_"로 시작하는 오브젝트를 다시 수집해 SetDotColors가 동작하게 한다.
+            _spawnedDots.Clear();
+            if (dotTemplate != null)
+            {
+                var parent = dotTemplate.parent;
+                if (parent != null)
+                    foreach (Transform child in parent)
+                        if (child.name.StartsWith("Dot_"))
+                            _spawnedDots.Add(child.gameObject);
+            }
+            EnsureLabelTopmost();
+            RefreshSpecialMarker();
+        }
 
         /// <summary>[임시] baked 인스턴스(Configure 재호출 안 됨)에도 특별역 별 마커를 적용.</summary>
         void RefreshSpecialMarker()
