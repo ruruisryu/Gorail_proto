@@ -68,6 +68,13 @@ namespace Game.Subway
         private RectTransform _playerMarker;
         private Vector2 _playerTarget;
 
+        // ── 캐시 ─────────────────────────────────────────────────────────
+        private readonly Dictionary<string, RectTransform> _containerCache = new Dictionary<string, RectTransform>();
+        private readonly List<StationView>                 _stationViews   = new List<StationView>();
+        private readonly Dictionary<string, StationView>   _stationViewMap = new Dictionary<string, StationView>();
+        private readonly Dictionary<string, RectTransform> _stationRTMap   = new Dictionary<string, RectTransform>();
+        private Dictionary<string, Vector2>                _posMap;         // null = stale
+
         public Vector2 StationBoundsMin { get; private set; }
         public Vector2 StationBoundsMax { get; private set; }
 
@@ -110,12 +117,10 @@ namespace Game.Subway
             if (stationsRT == null) { BuildMap(); return; } // 아직 역이 없으면 최초 생성
 
             // SO(mapPosition) → 현재 spread 적용한 UI 좌표로 모든 역을 재배치
-            foreach (var view in stationsRT.GetComponentsInChildren<StationView>())
-            {
-                if (view.stationData == null) continue;
-                var rt = view.GetComponent<RectTransform>();
-                if (rt != null) rt.anchoredPosition = UI(view.stationData.mapPosition);
-            }
+            if (_stationViews.Count == 0) RebuildStationCache(stationsRT);
+            foreach (var kv in _stationRTMap)
+                kv.Value.anchoredPosition = UI(_stationViewMap[kv.Key].stationData.mapPosition);
+            _posMap = null; // 위치 갱신됐으므로 posMap 무효화
 
             UpdateLines();    // 재배치된 위치 기준으로 선 갱신
             RefreshMarkers(); // 플레이어·적 마커 갱신
@@ -166,10 +171,8 @@ namespace Game.Subway
         {
             _zoomComp = zoom > lockThreshold && zoom > 0f ? lockThreshold / zoom : 1f;
 
-            var stationsRT = FindContainer(StationsTag);
-            if (stationsRT != null)
-                foreach (var view in stationsRT.GetComponentsInChildren<StationView>(true))
-                    view.transform.localScale = Vector3.one * _zoomComp;
+            foreach (var view in _stationViews)
+                if (view != null) view.transform.localScale = Vector3.one * _zoomComp;
 
             var linesRT = FindContainer(LinesTag);
             if (linesRT != null)
@@ -317,11 +320,8 @@ namespace Game.Subway
             UpdateLines(); // 활성=고유색/비활성=회색으로 선 다시 그림
 
             // 역 점 색 결정
-            var stationsRT = FindContainer(StationsTag);
-            if (stationsRT == null) return;
-            var views = new Dictionary<string, StationView>();
-            foreach (var v in stationsRT.GetComponentsInChildren<StationView>(true))
-                if (v.stationData != null) views[v.stationData.stationId] = v;
+            if (_stationViewMap.Count == 0) return;
+            var views = _stationViewMap;
 
             var colorInfo = CollectStationColorInfo();
             foreach (var kv in colorInfo)
@@ -355,16 +355,10 @@ namespace Game.Subway
         {
             // 컨테이너를 파괴하지 않고 재사용(Destroy는 프레임 말에 실행되어 연속 호출 시 누적됨)
             var hlRT = FindContainer(LineHLTag);
+            var line = currentLineId != null && networkData != null
+                ? networkData.lines.FirstOrDefault(l => l != null && l.lineId == currentLineId)
+                : null;
 
-            if (currentLineId == null || networkData == null)
-            {
-                if (hlRT != null)
-                    for (int i = hlRT.childCount - 1; i >= 0; i--)
-                        Destroy(hlRT.GetChild(i).gameObject);
-                return;
-            }
-
-            var line = networkData.lines.FirstOrDefault(l => l != null && l.lineId == currentLineId);
             if (line == null)
             {
                 if (hlRT != null)
@@ -383,7 +377,7 @@ namespace Game.Subway
                     Destroy(hlRT.GetChild(i).gameObject);
             }
 
-            var posMap = BuildPosMap();
+            var posMap = GetPosMap();
             var hlColor = new Color(line.lineColor.r, line.lineColor.g, line.lineColor.b, 0.35f);
             const float hlThickness = LineThickness * 2f;
 
@@ -437,6 +431,9 @@ namespace Game.Subway
             if (networkData == null || mapContainer == null) return;
             _circle = MakeCircleSprite(128);
 
+            _containerCache.Clear();
+            _posMap = null;
+
             // mapContainer 전체 클리어 (이전 Render() 잔재 포함)
             for (int i = mapContainer.childCount - 1; i >= 0; i--)
             {
@@ -466,6 +463,7 @@ namespace Game.Subway
                     CreateStationGO(stn, stationColors[stn.stationId], stationsRT);
                 }
 
+            RebuildStationCache(stationsRT);
             Debug.Log($"[SubwayMapRenderer] Build Map 완료 — 역:{drawn.Count}개");
         }
 
@@ -473,7 +471,7 @@ namespace Game.Subway
         public void UpdateLines()
         {
             if (networkData == null || mapContainer == null) return;
-            _circle = MakeCircleSprite(128);
+            if (_circle == null) _circle = MakeCircleSprite(128);
 
             // Stations가 없으면 BuildMap으로 초기 생성
             if (FindContainer(StationsTag) == null) { BuildMap(); return; }
@@ -482,7 +480,7 @@ namespace Game.Subway
             var linesRT = CreateContainer(LinesTag, siblingIndex: 0);
 
             // StationView → anchoredPosition 딕셔너리
-            var posMap = BuildPosMap();
+            var posMap = GetPosMap();
 
             // [D1] 비활성 노선을 먼저, 활성 노선을 나중에 그린다.
             // uGUI는 나중에 그린 오브젝트가 위에 렌더되므로, 겹치는 구간에서
@@ -532,10 +530,13 @@ namespace Game.Subway
             float cy = RefHeight * 0.5f;
 
             int count = 0;
-            foreach (var view in stationsRT.GetComponentsInChildren<StationView>())
+            var saveViews = _stationViews.Count > 0
+                ? (IEnumerable<StationView>)_stationViews
+                : stationsRT.GetComponentsInChildren<StationView>();
+            foreach (var view in saveViews)
             {
-                var rt = view.GetComponent<RectTransform>();
-                if (rt == null || view.stationData == null) continue;
+                if (view.stationData == null) continue;
+                if (!_stationRTMap.TryGetValue(view.stationData.stationId, out var rt)) continue;
 
                 // UI 좌표 → mapPosition 역변환
                 Vector2 ui     = rt.anchoredPosition;
@@ -575,18 +576,34 @@ namespace Game.Subway
             return result;
         }
 
-        Dictionary<string, Vector2> BuildPosMap()
+        void RebuildStationCache(RectTransform stationsRT)
         {
-            var posMap = new Dictionary<string, Vector2>();
-            var stationsRT = FindContainer(StationsTag);
-            if (stationsRT == null) return posMap;
-            foreach (var view in stationsRT.GetComponentsInChildren<StationView>())
+            _stationViews.Clear();
+            _stationViewMap.Clear();
+            _stationRTMap.Clear();
+            foreach (var v in stationsRT.GetComponentsInChildren<StationView>())
             {
-                var rt = view.GetComponent<RectTransform>();
-                if (rt != null && view.stationData != null)
-                    posMap[view.stationData.stationId] = rt.anchoredPosition;
+                if (v == null || v.stationData == null) continue;
+                _stationViews.Add(v);
+                _stationViewMap[v.stationData.stationId] = v;
+                var rt = v.GetComponent<RectTransform>();
+                if (rt != null) _stationRTMap[v.stationData.stationId] = rt;
             }
-            return posMap;
+        }
+
+        Dictionary<string, Vector2> GetPosMap()
+        {
+            if (_posMap != null) return _posMap;
+            // _stationRTMap이 비어있으면(에디터 등 예외 경로) 한 번만 폴백 빌드
+            if (_stationRTMap.Count == 0)
+            {
+                var stationsRT = FindContainer(StationsTag);
+                if (stationsRT != null) RebuildStationCache(stationsRT);
+            }
+            _posMap = new Dictionary<string, Vector2>(_stationRTMap.Count);
+            foreach (var kv in _stationRTMap)
+                _posMap[kv.Key] = kv.Value.anchoredPosition;
+            return _posMap;
         }
 
         void CreateStationGO(StationData stn, List<Color> lineColors, RectTransform parent)
@@ -673,10 +690,7 @@ namespace Game.Subway
 
             // 플레이: 영속 [Player] 컨테이너를 만들어 두고, 목표 위치만 갱신(Update가 보간 이동).
             if (_playerMarker == null)
-            {
-                var existing = mapContainer.Find(PlayerTag) as RectTransform;
-                if (existing != null) _playerMarker = existing;
-            }
+                _playerMarker = FindContainer(PlayerTag);
             if (_playerMarker == null)
             {
                 _playerMarker = CreateContainer(PlayerTag, mapContainer.childCount);
@@ -708,7 +722,7 @@ namespace Game.Subway
         /// <summary>역의 현재 UI 좌표(MapContent 로컬 anchoredPosition). 없으면 null. (중앙 정렬 등에 사용)</summary>
         public Vector2? GetStationUIPos(string stationId)
         {
-            var posMap = BuildPosMap();
+            var posMap = GetPosMap();
             if (posMap.TryGetValue(stationId, out var pos)) return pos;
             var stn = FindStationData(stationId);
             return stn != null ? (Vector2?)UI(stn.mapPosition) : null;
@@ -751,21 +765,32 @@ namespace Game.Subway
             rt.anchoredPosition = Vector2.zero;
             rt.sizeDelta        = Vector2.zero;
             go.transform.SetSiblingIndex(siblingIndex);
+            _containerCache[containerName] = rt;
             return rt;
         }
 
         RectTransform FindContainer(string containerName)
         {
+            if (_containerCache.TryGetValue(containerName, out var cached) && cached != null)
+                return cached;
             var t = mapContainer.Find(containerName);
-            return t != null ? t.GetComponent<RectTransform>() : null;
+            var rt = t != null ? t.GetComponent<RectTransform>() : null;
+            if (rt != null) _containerCache[containerName] = rt;
+            return rt;
         }
 
         void DestroyContainer(string containerName)
         {
-            var t = mapContainer.Find(containerName);
-            if (t == null) return;
-            if (Application.isPlaying) Destroy(t.gameObject);
-            else DestroyImmediate(t.gameObject);
+            if (!_containerCache.TryGetValue(containerName, out var rt))
+            {
+                var t = mapContainer.Find(containerName);
+                if (t == null) return;
+                rt = t.GetComponent<RectTransform>();
+            }
+            _containerCache.Remove(containerName);
+            if (rt == null) return;
+            if (Application.isPlaying) Destroy(rt.gameObject);
+            else DestroyImmediate(rt.gameObject);
         }
 
         StationData FindStationData(string id)
