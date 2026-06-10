@@ -56,11 +56,12 @@ namespace Game.Subway
         /// <summary>[D1] lineId가 현재 활성(고유색)인지 여부. _activeLines==null이면 전부 활성으로 간주.</summary>
         bool IsActiveLineId(string lineId) =>
             _activeLines == null || _activeLines.Contains(lineId);
-        private const string LinesTag    = "[Lines]";
-        private const string StationsTag = "[Stations]";
-        private const string PreviewTag  = "[Preview]"; // [D10] 적 이동 프리뷰 고스트
-        private const string FxTag       = "[Fx]";      // [H6] 연출 오버레이(깜빡임·강조 등, ChaseFx 소유)
-        private const string PlayerTag   = "[Player]";   // [H6] 영속 플레이어 마커(역간 부드러운 글라이드)
+        private const string LinesTag       = "[Lines]";
+        private const string StationsTag   = "[Stations]";
+        private const string PreviewTag    = "[Preview]";    // [D10] 적 이동 프리뷰 고스트
+        private const string FxTag         = "[Fx]";         // [H6] 연출 오버레이(깜빡임·강조 등, ChaseFx 소유)
+        private const string PlayerTag     = "[Player]";     // [H6] 영속 플레이어 마커(역간 부드러운 글라이드)
+        private const string LineHLTag = "[LineHL]"; // 현재 노선 하이라이트
 
         // [H6] 플레이어 마커 글라이드 — 재생성 대신 영속 컨테이너를 목표 위치로 보간(플레이 모드 한정).
         private const float PlayerGlideSharpness = 14f;  // 클수록 빠르게 따라붙음(프레임 독립)
@@ -127,7 +128,7 @@ namespace Game.Subway
             for (int i = mapContainer.childCount - 1; i >= 0; i--)
             {
                 var child = mapContainer.GetChild(i);
-                if (child.name == LinesTag || child.name == StationsTag || child.name == PreviewTag || child.name == FxTag || child.name == PlayerTag) continue;
+                if (child.name == LinesTag || child.name == StationsTag || child.name == PreviewTag || child.name == FxTag || child.name == PlayerTag || child.name == LineHLTag) continue;
                 if (Application.isPlaying) Destroy(child.gameObject);
                 else DestroyImmediate(child.gameObject);
             }
@@ -175,6 +176,11 @@ namespace Game.Subway
                 for (int i = 0; i < linesRT.childCount; i++)
                     linesRT.GetChild(i).localScale = new Vector3(1f, _zoomComp, 1f); // 굵기만 고정
 
+            var lineHLRT = FindContainer(LineHLTag);
+            if (lineHLRT != null)
+                for (int i = 0; i < lineHLRT.childCount; i++)
+                    lineHLRT.GetChild(i).localScale = new Vector3(1f, _zoomComp, 1f);
+
             ApplyCompToMarkers();
         }
 
@@ -184,7 +190,7 @@ namespace Game.Subway
             for (int i = 0; i < mapContainer.childCount; i++)
             {
                 var child = mapContainer.GetChild(i);
-                if (child.name == LinesTag || child.name == StationsTag || child.name == PreviewTag || child.name == FxTag || child.name == PlayerTag) continue;
+                if (child.name == LinesTag || child.name == StationsTag || child.name == PreviewTag || child.name == FxTag || child.name == PlayerTag || child.name == LineHLTag) continue;
                 child.localScale = Vector3.one * _zoomComp;
             }
         }
@@ -299,9 +305,9 @@ namespace Game.Subway
 
         /// <summary>
         /// 활성 노선은 고유색, 비활성(아직 안 탄) 노선은 회색으로 선·역 점을 다시 칠한다(§5-3 활성 상태 시각화).
-        /// 활성 노선 변경 시 외부(MapActivationView)에서 호출한다.
+        /// currentLineId: 현재 플레이어가 탑승 중인 노선. 이 노선 위의 환승역은 비활성 노선 색도 그대로 표시한다.
         /// </summary>
-        public void ApplyActiveLineColors(IEnumerable<string> activeLines)
+        public void ApplyActiveLineColors(IEnumerable<string> activeLines, string currentLineId = null)
         {
             if (networkData == null || mapContainer == null) return;
             var active = new HashSet<string>(activeLines ?? Enumerable.Empty<string>());
@@ -310,21 +316,95 @@ namespace Game.Subway
             _activeLines = active;
             UpdateLines(); // 활성=고유색/비활성=회색으로 선 다시 그림
 
-            // 역 점: 그 점(색)을 쓰는 노선 중 하나라도 활성이면 고유색, 아니면 회색
+            // 역 점 색 결정
             var stationsRT = FindContainer(StationsTag);
             if (stationsRT == null) return;
             var views = new Dictionary<string, StationView>();
             foreach (var v in stationsRT.GetComponentsInChildren<StationView>(true))
                 if (v.stationData != null) views[v.stationData.stationId] = v;
 
-            foreach (var kv in CollectStationColorInfo())
+            var colorInfo = CollectStationColorInfo();
+            foreach (var kv in colorInfo)
             {
                 if (!views.TryGetValue(kv.Key, out var view)) continue;
+
+                // 현재 노선 위의 환승역: 연결된 모든 노선 색을 그대로 표시
+                // (환승 선택지를 노선도에서 미리 확인할 수 있도록)
+                bool isOnCurrentLine  = currentLineId != null &&
+                    kv.Value.Any(ci => ci.lineIds.Contains(currentLineId));
+                bool isTransferStation = kv.Value.Sum(ci => ci.lineIds.Count) > 1
+                    || kv.Value.Count > 1;
+
                 var colors = kv.Value
-                    .Select(ci => ci.lineIds.Any(active.Contains) ? ci.color : inactiveLineColor)
+                    .Select(ci => ci.lineIds.Any(active.Contains) || (isOnCurrentLine && isTransferStation)
+                        ? ci.color
+                        : inactiveLineColor)
                     .ToList();
                 view.SetDotColors(colors);
             }
+
+            // 현재 노선 하이라이트
+            RefreshLineHighlight(currentLineId);
+        }
+
+        /// <summary>
+        /// 현재 탑승 노선 전체 선분에 옅은 하이라이트를 그린다.
+        /// currentLineId가 null이면 하이라이트를 지운다.
+        /// </summary>
+        public void RefreshLineHighlight(string currentLineId)
+        {
+            // 컨테이너를 파괴하지 않고 재사용(Destroy는 프레임 말에 실행되어 연속 호출 시 누적됨)
+            var hlRT = FindContainer(LineHLTag);
+
+            if (currentLineId == null || networkData == null)
+            {
+                if (hlRT != null)
+                    for (int i = hlRT.childCount - 1; i >= 0; i--)
+                        Destroy(hlRT.GetChild(i).gameObject);
+                return;
+            }
+
+            var line = networkData.lines.FirstOrDefault(l => l != null && l.lineId == currentLineId);
+            if (line == null)
+            {
+                if (hlRT != null)
+                    for (int i = hlRT.childCount - 1; i >= 0; i--)
+                        Destroy(hlRT.GetChild(i).gameObject);
+                return;
+            }
+
+            // 컨테이너가 없으면 생성, 있으면 자식만 비움 — Lines/Stations 아래에 위치(index 0)
+            if (hlRT == null)
+                hlRT = CreateContainer(LineHLTag, siblingIndex: 0);
+            else
+            {
+                hlRT.SetSiblingIndex(0); // 항상 가장 아래
+                for (int i = hlRT.childCount - 1; i >= 0; i--)
+                    Destroy(hlRT.GetChild(i).gameObject);
+            }
+
+            var posMap = BuildPosMap();
+            var hlColor = new Color(line.lineColor.r, line.lineColor.g, line.lineColor.b, 0.35f);
+            const float hlThickness = LineThickness * 2f;
+
+            var s = line.stations;
+            for (int i = 0; i < s.Count - 1; i++)
+            {
+                if (s[i] == null || s[i + 1] == null) continue;
+                if (!posMap.TryGetValue(s[i].stationId,     out var from)) continue;
+                if (!posMap.TryGetValue(s[i + 1].stationId, out var to))   continue;
+                SegmentDirect(from, to, hlColor, hlThickness, hlRT);
+            }
+            if (line.isCircular && s.Count > 1 && s[0] != null && s[s.Count - 1] != null)
+            {
+                if (posMap.TryGetValue(s[s.Count - 1].stationId, out var from) &&
+                    posMap.TryGetValue(s[0].stationId,            out var to))
+                    SegmentDirect(from, to, hlColor, hlThickness, hlRT);
+            }
+
+            // 줌 보정 적용
+            for (int i = 0; i < hlRT.childCount; i++)
+                hlRT.GetChild(i).localScale = new Vector3(1f, _zoomComp, 1f);
         }
 
         /// <summary>역별 distinct 색(Configure와 같은 순서) + 각 색을 쓰는 lineId 목록.</summary>
