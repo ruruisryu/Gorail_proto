@@ -29,6 +29,13 @@ namespace Game.Gameplay
         /// </summary>
         public int Direction { get; private set; } = +1;
 
+        /// <summary>
+        /// 현재 방향이 고정되어 있는지 여부.
+        /// false이면 첫 이동에서 어느 방향이든 선택 가능 — 그 방향으로 즉시 고정된다.
+        /// Initialize 및 ChangeLine(환승) 시 false로 초기화된다.
+        /// </summary>
+        public bool DirectionLocked { get; private set; }
+
         private readonly HashSet<string> _activeLines = new HashSet<string>();
 
         /// <summary>세션 중 한 번이라도 탑승한 모든 노선의 누적 집합(§5-3). 비활성으로 돌아가지 않는다.</summary>
@@ -46,6 +53,7 @@ namespace Game.Gameplay
             CurrentStationId = startStationId;
             CurrentLineId    = startLineId;
             Direction        = +1;
+            DirectionLocked  = false; // 세션 시작: 첫 이동이 방향 결정
             _activeLines.Clear();
             if (!string.IsNullOrEmpty(startLineId)) _activeLines.Add(startLineId);
             SyncLocation();
@@ -58,7 +66,8 @@ namespace Game.Gameplay
         {
             if (string.IsNullOrEmpty(newLineId)) return;
             bool isNew = _activeLines.Add(newLineId);
-            CurrentLineId = newLineId;
+            CurrentLineId   = newLineId;
+            DirectionLocked = false; // 새 노선: 첫 이동이 방향 결정
             StateChanged?.Invoke();
             if (isNew) ActiveLinesChanged?.Invoke();
         }
@@ -68,6 +77,7 @@ namespace Game.Gameplay
         {
             CurrentStationId = nextStationId;
             if (dir != 0) Direction = dir;
+            DirectionLocked = true; // 첫 스텝부터 방향 고정
             SyncLocation();
             StateChanged?.Invoke();
         }

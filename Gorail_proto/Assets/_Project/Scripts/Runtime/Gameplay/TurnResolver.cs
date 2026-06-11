@@ -67,11 +67,26 @@ namespace Game.Gameplay
             if (string.IsNullOrEmpty(destStationId) || destStationId == player.CurrentStationId)
                 return false;
 
-            var path = Graph.GetLineOrderedPath(player.CurrentLineId, player.CurrentStationId, destStationId);
-            if (path == null || path.Count < 2)
+            List<string> path;
+            if (player.DirectionLocked)
             {
-                Debug.Log($"[TurnResolver] '{destStationId}'은(는) 현재 노선({player.CurrentLineId}) 위에 없음 — 환승 필요(§2-2)");
-                return false;
+                // 방향 고정 상태: 현재 방향으로만 이동 가능
+                path = Graph.GetDirectionalPath(player.CurrentLineId, player.CurrentStationId, destStationId, player.Direction);
+                if (path == null || path.Count < 2)
+                {
+                    Debug.Log($"[TurnResolver] '{destStationId}'은(는) 현재 진행 방향({(player.Direction > 0 ? "→" : "←")})의 반대 — 하차 후 재탑승 필요(§7-2)");
+                    return false;
+                }
+            }
+            else
+            {
+                // 방향 미고정: 어느 방향이든 허용, 첫 스텝에서 방향 고정됨
+                path = Graph.GetLineOrderedPath(player.CurrentLineId, player.CurrentStationId, destStationId);
+                if (path == null || path.Count < 2)
+                {
+                    Debug.Log($"[TurnResolver] '{destStationId}'은(는) 현재 노선({player.CurrentLineId}) 위에 없음 — 환승 필요(§2-2)");
+                    return false;
+                }
             }
 
             StartCoroutine(ResolveMove(path));

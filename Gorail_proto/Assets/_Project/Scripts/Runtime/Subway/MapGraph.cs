@@ -107,10 +107,54 @@ namespace Game.Subway
             _lineStations.TryGetValue(lineId, out var s) ? new List<string>(s) : new List<string>();
 
         /// <summary>
+        /// 지정 방향(+1/-1)으로만 이동하는 경로를 반환한다.
+        /// 비순환선에서 direction이 to 방향과 반대이면 빈 리스트.
+        /// 순환선에서는 direction 방향으로 순회해 to에 닿으면 그 경로를 반환한다.
+        /// DirectionLocked 상태의 TryMoveTo에서 사용한다.
+        /// </summary>
+        public List<string> GetDirectionalPath(string lineId, string from, string to, int direction)
+        {
+            var empty = new List<string>();
+            if (string.IsNullOrEmpty(lineId)) return empty;
+            if (!_lineStations.TryGetValue(lineId, out var stations)) return empty;
+
+            int iFrom = stations.IndexOf(from);
+            int iTo   = stations.IndexOf(to);
+            if (iFrom < 0 || iTo < 0) return empty;
+            if (iFrom == iTo) return new List<string> { from };
+
+            int n   = stations.Count;
+            int dir = direction >= 0 ? 1 : -1;
+            bool circular = _lineCircular.TryGetValue(lineId, out var c) && c;
+
+            if (!circular)
+            {
+                int naturalDir = iTo > iFrom ? 1 : -1;
+                if (naturalDir != dir) return empty; // 요청 방향과 반대
+                var path = new List<string>();
+                for (int i = iFrom; i != iTo; i += dir) path.Add(stations[i]);
+                path.Add(stations[iTo]);
+                return path;
+            }
+
+            // 순환선: direction 방향으로 순회해 to를 찾는다
+            var cpath = new List<string> { stations[iFrom] };
+            int idx = iFrom;
+            for (int k = 0; k < n - 1; k++)
+            {
+                idx = (idx + dir + n) % n;
+                cpath.Add(stations[idx]);
+                if (idx == iTo) return cpath;
+            }
+            return empty; // 도달 불가
+        }
+
+        /// <summary>
         /// 한 노선 위에서 from → to 경로(역 ID 리스트, from·to 포함)를 반환한다(§2-2 노선 내 이동).
         /// 두 역이 모두 같은 노선에 있어야 하며, 아니면 빈 리스트(환승은 ③ 승강장에서만).
         /// 비순환선: 인덱스 사이 구간을 방향에 맞게 슬라이스.
         /// 순환선(2호선): 시계/반시계 두 호(弧) 중 짧은 쪽을 자동 선택.
+        /// 방향 미고정 상태(DirectionLocked=false)의 첫 탑승에서 사용한다.
         /// </summary>
         public List<string> GetLineOrderedPath(string lineId, string from, string to)
         {
