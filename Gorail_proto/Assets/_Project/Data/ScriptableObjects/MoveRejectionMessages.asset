@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 790d932838cacf046aca5c6664d0f0e6, type: 3}
+  m_Name: MoveRejectionMessages
+  m_EditorClassIdentifier: Game.Runtime::Game.UI.MoveRejectionMessages
+  wrongLine: "\uD658\uC2B9\uC774 \uD544\uC694\uD569\uB2C8\uB2E4. \uD658\uC2B9\uC5ED\uC5D0\uC11C
+    \uB0B4\uB9AC\uC138\uC694."
+  wrongDirection: "\uBC18\uB300 \uBC29\uD5A5\uC73C\uB85C \uC7AC\uD0D1\uC2B9\uD574\uC57C
+    \uD569\uB2C8\uB2E4."
+  inactiveLine: "\uBE44\uD65C\uC131\uD654\uB41C \uB178\uC120\uC785\uB2C8\uB2E4. \uD658\uC2B9\uC744
+    \uD1B5\uD574 \uB178\uC120\uC744 \uD65C\uC131\uD654\uD558\uC138\uC694."

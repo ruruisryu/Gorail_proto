@@ -19,6 +19,8 @@ namespace Game.Gameplay
     ///
     /// ⑤⑧③이 아직 없으면 Null* 빈 구현으로 안전하게 동작한다(SetSystems로 실물 주입).
     /// </summary>
+    public enum MoveRejectedReason { WrongLine, WrongDirection, InactiveLine }
+
     public class TurnResolver : MonoBehaviour
     {
         [Header("참조")]
@@ -34,6 +36,9 @@ namespace Game.Gameplay
 
         /// <summary>현재 이동(코루틴) 진행 중인지. 이동 중 추가 입력 무시용.</summary>
         public bool IsMoving { get; private set; }
+
+        /// <summary>이동 요청이 거부됐을 때 발생. UI 알림용.</summary>
+        public event System.Action<MoveRejectedReason> MoveRejected;
 
         /// <summary>한 역 해소가 끝날 때마다 발생(연출·계측용). (도달한 역, 스텝 i, 총 k)</summary>
         public event System.Action<string, int, int> StepResolved;
@@ -70,21 +75,24 @@ namespace Game.Gameplay
             List<string> path;
             if (player.DirectionLocked)
             {
-                // 방향 고정 상태: 현재 방향으로만 이동 가능
                 path = Graph.GetDirectionalPath(player.CurrentLineId, player.CurrentStationId, destStationId, player.Direction);
                 if (path == null || path.Count < 2)
                 {
-                    Debug.Log($"[TurnResolver] '{destStationId}'은(는) 현재 진행 방향({(player.Direction > 0 ? "→" : "←")})의 반대 — 하차 후 재탑승 필요(§7-2)");
+                    // 같은 노선인지 확인 — 반대 방향인지 아니면 아예 다른 노선인지 구분
+                    var sameLine = Graph.GetLineOrderedPath(player.CurrentLineId, player.CurrentStationId, destStationId);
+                    bool isOpposite = sameLine != null && sameLine.Count >= 2;
+                    MoveRejected?.Invoke(isOpposite ? MoveRejectedReason.WrongDirection : ClassifyWrongLineReason(destStationId));
+                    Debug.Log($"[TurnResolver] 이동 거부 — {(isOpposite ? "반대 방향" : "다른 노선")}");
                     return false;
                 }
             }
             else
             {
-                // 방향 미고정: 어느 방향이든 허용, 첫 스텝에서 방향 고정됨
                 path = Graph.GetLineOrderedPath(player.CurrentLineId, player.CurrentStationId, destStationId);
                 if (path == null || path.Count < 2)
                 {
-                    Debug.Log($"[TurnResolver] '{destStationId}'은(는) 현재 노선({player.CurrentLineId}) 위에 없음 — 환승 필요(§2-2)");
+                    MoveRejected?.Invoke(ClassifyWrongLineReason(destStationId));
+                    Debug.Log($"[TurnResolver] '{destStationId}'은(는) 현재 노선({player.CurrentLineId}) 위에 없음");
                     return false;
                 }
             }
@@ -134,6 +142,25 @@ namespace Game.Gameplay
             // 목적지 도달 — 지하철 공간 유지. 승강장 진입은 '하차' 버튼으로 명시적으로만(자동 아님).
             IsMoving = false;
             MoveCompleted?.Invoke(player.CurrentStationId, false);
+        }
+
+        /// <summary>현재 노선에 없는 역 클릭 시 이유를 구분한다.</summary>
+        MoveRejectedReason ClassifyWrongLineReason(string destStationId)
+        {
+            if (Graph == null) return MoveRejectedReason.WrongLine;
+            var destLines = Graph.GetLineIds(destStationId);
+            bool anyActive = false;
+            foreach (var line in destLines)
+            {
+                Debug.Log("Line " + line + ": " + player.HasVisitedLine(line));
+                if (player.HasVisitedLine(line))
+                {
+                    anyActive = true;
+                    break;
+                }
+            }
+
+            return anyActive ? MoveRejectedReason.WrongLine : MoveRejectedReason.InactiveLine;
         }
 
         /// <summary>경로의 노선 인덱스 기준 진행 방향(+1/-1)을 산출.</summary>
