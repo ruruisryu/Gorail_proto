@@ -38,8 +38,10 @@ namespace Game.Gameplay
             if (tr != null && tr.IsMoving) return;                                  // 이동 중엔 프리뷰 안 함
             if (core.Space != null && core.Space.Current != Game.Core.Space.Subway) return; // 지하철에서만
 
-            // 현재 노선 위 이동 경로(이동 가능 역만). 불가/같은 역이면 프리뷰 제거.
-            var path = graph.GetLineOrderedPath(player.CurrentLineId, player.CurrentStationId, stationId);
+            // 현재 노선 위 이동 경로 — 방향 고정 상태면 현재 방향으로만, 미고정이면 최단 경로.
+            var path = player.DirectionLocked
+                ? graph.GetDirectionalPath(player.CurrentLineId, player.CurrentStationId, stationId, player.Direction)
+                : graph.GetLineOrderedPath(player.CurrentLineId, player.CurrentStationId, stationId);
             if (path == null || path.Count < 2) { mapRenderer.ClearChasePreview(); return; }
 
             var config  = tr != null ? tr.Config : null;
