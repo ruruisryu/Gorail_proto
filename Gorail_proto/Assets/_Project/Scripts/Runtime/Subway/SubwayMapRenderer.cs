@@ -21,6 +21,7 @@ namespace Game.Subway
         [SerializeField] private SubwayNetworkData  networkData;
         [SerializeField] private PlayerLocationData playerLocation;
         [SerializeField] private EnemyLocationData  enemyLocations;
+        [SerializeField] private MapGraphProvider   graphProvider;
         [SerializeField] private RectTransform      mapContainer;
         [SerializeField] private StationView        stationNodePrefab;
 
@@ -145,7 +146,7 @@ namespace Game.Subway
                 {
                     if (string.IsNullOrEmpty(id)) continue;
                     var pos = GetStationUIPos(id);
-                    if (pos.HasValue) DrawEnemy(pos.Value, idx++);
+                    if (pos.HasValue) DrawEnemy(pos.Value, id, idx++);
                 }
             }
 
@@ -712,11 +713,37 @@ namespace Game.Subway
             _playerMarker.localScale = Vector3.one * _zoomComp;
         }
 
-        void DrawEnemy(Vector2 uiPos, int index)
+        void DrawEnemy(Vector2 uiPos, string stationId, int index)
         {
-            Circ($"EnemyRing_{index}",    mapContainer, uiPos, EnemySize + 12f, EnemyRingColor);
-            Circ($"EnemyOutline_{index}", mapContainer, uiPos, EnemySize + 4f,  Color.white);
-            Circ($"Enemy_{index}",        mapContainer, uiPos, EnemySize,        EnemyColor);
+            // 원들과 거리 레이블을 하나의 그룹 GO로 묶어 줌 보정이 일괄 적용되도록 한다
+            var grp = new GameObject($"Enemy_{index}");
+            grp.transform.SetParent(mapContainer, false);
+            var grpRT = grp.AddComponent<RectTransform>();
+            grpRT.anchorMin = grpRT.anchorMax = grpRT.pivot = Vector2.one * 0.5f;
+            grpRT.anchoredPosition = uiPos;
+            grpRT.sizeDelta = Vector2.zero;
+
+            Circ("Ring",    grp.transform, Vector2.zero, EnemySize + 12f, EnemyRingColor);
+            Circ("Outline", grp.transform, Vector2.zero, EnemySize + 4f,  Color.white);
+            Circ("Dot",     grp.transform, Vector2.zero, EnemySize,        EnemyColor);
+
+            // 거리 레이블
+            int dist = graphProvider?.Graph != null && playerLocation != null
+                ? graphProvider.Graph.Distance(stationId, playerLocation.currentStationId)
+                : int.MaxValue;
+            var txtGO = new GameObject("Dist");
+            txtGO.transform.SetParent(grp.transform, false);
+            var txtRT = txtGO.AddComponent<RectTransform>();
+            txtRT.anchorMin = txtRT.anchorMax = txtRT.pivot = new Vector2(0.5f, 0f);
+            txtRT.anchoredPosition = new Vector2(0f, EnemySize * 0.5f + 2f);
+            txtRT.sizeDelta = new Vector2(36f, 18f);
+            var tmp = txtGO.AddComponent<TextMeshProUGUI>();
+            tmp.text = dist == int.MaxValue ? "?" : dist.ToString();
+            tmp.fontSize = 13f;
+            tmp.fontStyle = FontStyles.Bold;
+            tmp.alignment = TextAlignmentOptions.Center;
+            tmp.color = Color.black;
+            tmp.raycastTarget = false;
         }
 
         /// <summary>역의 현재 UI 좌표(MapContent 로컬 anchoredPosition). 없으면 null. (중앙 정렬 등에 사용)</summary>
