@@ -29,6 +29,9 @@ namespace Game.Gameplay
         [SerializeField] private SubwayMapRenderer mapRenderer;
         [SerializeField] private ChaseConfig       config;
 
+        GameTimeSystem GameTime => Game.Core.GameCore.Instance?.GameTime;
+        MoneySystem    Money    => Game.Core.GameCore.Instance?.Money;
+
         // ⑤⑧③ 경계 — 구현 전엔 빈 구현. 나중에 SetSystems로 실물 주입.
         private ITrackerStep _tracker    = new NullTrackerStep();
         private IInspection  _inspection = new NullInspection();
@@ -117,6 +120,7 @@ namespace Game.Gameplay
 
                 // (1) 플레이어 1역 전진 + 마커 연출
                 player.StepTo(path[i], dir);
+                GameTime?.Advance(GameTime.minutesPerMove);
                 if (mapRenderer != null) mapRenderer.RefreshMarkers();
                 StepResolved?.Invoke(player.CurrentStationId, i, totalK);
 

@@ -36,7 +36,7 @@ namespace Game.Gameplay
             var tr     = core.TurnResolver;
             if (player == null || graph == null) return;
             if (tr != null && tr.IsMoving) return;                                  // 이동 중엔 프리뷰 안 함
-            if (core.Space != null && core.Space.Current != Game.Core.Space.Subway) return; // 지하철에서만
+            if (core.Space != null && core.Space.Current != Game.Core.GameSpace.Subway) return; // 지하철에서만
 
             // 현재 노선 위 이동 경로 — 방향 고정 상태면 현재 방향으로만, 미고정이면 최단 경로.
             var path = player.DirectionLocked

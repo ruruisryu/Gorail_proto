@@ -49,10 +49,10 @@ namespace Game.UI
 
             var selfRT = GetComponent<RectTransform>();
             if (selfRT == null) selfRT = gameObject.AddComponent<RectTransform>();
-            // 부모(PopupPanel) 좌상단 고정
-            selfRT.anchorMin = selfRT.anchorMax = new Vector2(0f, 1f);
-            selfRT.pivot = new Vector2(0f, 1f);
-            selfRT.anchoredPosition = new Vector2(12f, -12f);
+            // 부모(PopupPanel) 좌하단 고정
+            selfRT.anchorMin = selfRT.anchorMax = new Vector2(0f, 0f);
+            selfRT.pivot = new Vector2(0f, 0f);
+            selfRT.anchoredPosition = new Vector2(12f, 12f);
 
             var bg = GetComponent<Image>();
             if (bg == null) bg = gameObject.AddComponent<Image>();

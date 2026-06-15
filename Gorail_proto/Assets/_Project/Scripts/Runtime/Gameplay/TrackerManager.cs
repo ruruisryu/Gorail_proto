@@ -20,7 +20,6 @@ namespace Game.Gameplay
         [SerializeField] private MapGraphProvider   graphProvider;
         [SerializeField] private Player             player;
         [SerializeField] private ChaseConfig        config;
-        [SerializeField] private GameManager        gameManager;
         [SerializeField] private EnemyLocationData  enemyLocations;
         [SerializeField] private SubwayMapRenderer  mapRenderer;
         [Tooltip("시드 고정 난수(선택). 미할당이면 UnityEngine.Random 폴백.")]
@@ -31,8 +30,8 @@ namespace Game.Gameplay
 
         public IReadOnlyList<Tracker> Trackers => _trackers;
 
-        MapGraph Graph => graphProvider != null ? graphProvider.Graph : null;
-        int Wanted => gameManager != null ? gameManager.WantedLevel : 0;
+        MapGraph Graph  => graphProvider != null ? graphProvider.Graph : null;
+        int      Wanted => GameCore.Instance?.Wanted?.WantedLevel ?? 0;
 
         // ── 스폰 (§5-1 하차 시 갱신) ─────────────────────────────────────
 

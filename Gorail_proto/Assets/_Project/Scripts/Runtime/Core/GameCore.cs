@@ -16,32 +16,45 @@ namespace Game.Core
     {
         public static GameCore Instance { get; private set; }
 
-        [SerializeField] private GameManager      gameManager;
-        [SerializeField] private Player           player;
-        [SerializeField] private FameSystem       fameSystem;
-        [SerializeField] private TrackerManager   trackerManager;
-        [SerializeField] private InspectionSystem inspection;
+        [SerializeField] private GameManager        gameManager;
+        [SerializeField] private Player             player;
+        [SerializeField] private FameSystem         fameSystem;
+        [SerializeField] private WantedSystem       wantedSystem;
+        [SerializeField] private TrackerManager     trackerManager;
+        [SerializeField] private InspectionSystem   inspection;
         [SerializeField] private MapGraphProvider   graphProvider;
         [SerializeField] private SpaceManager       spaceManager;
         [SerializeField] private PlatformController platformController;
         [SerializeField] private TurnResolver       turnResolver;
+        [SerializeField] private GameTimeSystem     gameTimeSystem;
+        [SerializeField] private MoneySystem        moneySystem;
         [SerializeField] private Game.Data.SceneConfig sceneConfig;
 
-        public GameManager        Game       => gameManager;
-        public Player             Player     => player;
-        public FameSystem         Fame       => fameSystem;
-        public TrackerManager     Trackers   => trackerManager;
-        public InspectionSystem   Inspection => inspection;
-        public MapGraphProvider   Graph      => graphProvider;
-        public SpaceManager       Space      => spaceManager;
-        public PlatformController Platform   => platformController;
+        public GameManager        Game        => gameManager;
+        public Player             Player      => player;
+        public FameSystem         Fame        => fameSystem;
+        public WantedSystem       Wanted      => wantedSystem;
+        public TrackerManager     Trackers    => trackerManager;
+        public InspectionSystem   Inspection  => inspection;
+        public MapGraphProvider   Graph       => graphProvider;
+        public SpaceManager       Space       => spaceManager;
+        public PlatformController Platform    => platformController;
         public TurnResolver       TurnResolver => turnResolver;
+        public GameTimeSystem     GameTime    => gameTimeSystem;
+        public MoneySystem        Money       => moneySystem;
         public Game.Data.SceneConfig SceneConfig => sceneConfig;
 
         void Awake()
         {
             if (Instance != null && Instance != this) { Destroy(gameObject); return; }
             Instance = this;
+        }
+
+        void Start()
+        {
+            gameTimeSystem?.Initialize();
+            moneySystem?.Initialize();
+            fameSystem?.Initialize();
         }
     }
 }

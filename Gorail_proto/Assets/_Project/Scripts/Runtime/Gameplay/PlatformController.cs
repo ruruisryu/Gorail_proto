@@ -17,7 +17,13 @@ namespace Game.Gameplay
         [SerializeField] private SpaceManager     spaceManager;
         [SerializeField] private TrackerManager   trackerManager;
 
+        GameTimeSystem GameTime => Game.Core.GameCore.Instance?.GameTime;
+        MoneySystem    Money    => Game.Core.GameCore.Instance?.Money;
+
         public string CurrentStation { get; private set; }
+
+        // 지상에 나갔다 돌아온 경우 탑승·환승 모두 1500원(§자원기획서)
+        private bool _cameFromGround;
 
         private readonly List<string> _transferLines = new List<string>();
         /// <summary>현재 승강장에서 환승 가능한 노선(현재 노선 제외). 환승역이 아니면 빈 목록.</summary>
@@ -55,6 +61,8 @@ namespace Game.Gameplay
         /// <summary>① 가던 방향 재탑승 — 방향·노선 유지 후 지하철로.</summary>
         public void ContinueForward()
         {
+            if (_cameFromGround) Money?.TrySpend(Money.boardingCost);
+            _cameFromGround = false;
             if (spaceManager != null) spaceManager.EnterSubway();
         }
 
@@ -62,6 +70,9 @@ namespace Game.Gameplay
         public void ReverseDirection()
         {
             if (player != null) player.ReverseDirection();
+            GameTime?.Advance(GameTime.minutesReboard);
+            if (_cameFromGround) Money?.TrySpend(Money.boardingCost);
+            _cameFromGround = false;
             if (spaceManager != null) spaceManager.EnterSubway();
         }
 
@@ -70,6 +81,9 @@ namespace Game.Gameplay
         {
             if (!_transferLines.Contains(newLineId)) return false;
             if (player != null) player.ChangeLine(newLineId);
+            GameTime?.Advance(GameTime.minutesTransfer);
+            Money?.TrySpend(_cameFromGround ? Money.boardingCost : Money.transferCost);
+            _cameFromGround = false;
             // 환승으로 새로 활성화된 노선도 현재 수배도 상한까지 채운다(§5-3: 환승은 총 추격자를 불린다).
             // 이게 없으면 막 갈아탄 노선은 '다음 하차'까지 0명이라 수배도가 높아도 추격이 없어 보인다.
             if (trackerManager != null) trackerManager.OnPlayerDisembark();
@@ -81,6 +95,7 @@ namespace Game.Gameplay
         public bool GoOutside()
         {
             if (!CanGoOutside) { Debug.Log($"[Platform] {CurrentStation}은 특별역이 아니라 지상 진입 불가"); return false; }
+            _cameFromGround = true;
             if (spaceManager != null) spaceManager.EnterGround(CurrentStation);
             return true;
         }

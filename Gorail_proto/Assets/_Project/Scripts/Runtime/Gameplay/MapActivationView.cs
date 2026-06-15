@@ -38,9 +38,9 @@ namespace Game.Gameplay
 
         void Start() => Refresh(); // 초기 1회
 
-        void OnSpaceChanged(Game.Core.Space s)
+        void OnSpaceChanged(Game.Core.GameSpace s)
         {
-            if (s == Game.Core.Space.Subway) Refresh(); // 지하철 진입 시 맵 빌드 후 재색칠 보장
+            if (s == Game.Core.GameSpace.Subway) Refresh(); // 지하철 진입 시 맵 빌드 후 재색칠 보장
         }
 
         public void Refresh()

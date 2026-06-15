@@ -27,7 +27,7 @@ namespace Game.Gameplay
         /// <summary>이동 종료 (마지막 역, 게임오버 여부).</summary>
         public event System.Action<string, bool> MoveCompleted;
         /// <summary>공간 전환 (지하철/승강장/지상).</summary>
-        public event System.Action<Game.Core.Space> SpaceChanged;
+        public event System.Action<Game.Core.GameSpace> SpaceChanged;
 
         private GameCore _core;
         private bool _wired;
@@ -50,9 +50,9 @@ namespace Game.Gameplay
             if (core == null) return;
             _core = core;
 
-            if (core.Fame != null)       core.Fame.FameChanged          += OnFame;
-            if (core.Game != null)     { core.Game.WantedChanged        += OnWanted;
-                                         core.Game.GameOverOccurred      += OnGameOver; }
+            if (core.Fame   != null)     core.Fame.FameChanged           += OnFame;
+            if (core.Wanted != null)     core.Wanted.WantedChanged       += OnWanted;
+            if (core.Game   != null)     core.Game.GameOverOccurred      += OnGameOver;
             if (core.Inspection != null) core.Inspection.InspectionResolved += OnInspection;
             if (core.TurnResolver != null) { core.TurnResolver.StepResolved += OnStep;
                                              core.TurnResolver.MoveCompleted += OnMove; }
@@ -64,9 +64,9 @@ namespace Game.Gameplay
         void OnDestroy()
         {
             if (_core == null) return;
-            if (_core.Fame != null)       _core.Fame.FameChanged          -= OnFame;
-            if (_core.Game != null)     { _core.Game.WantedChanged        -= OnWanted;
-                                          _core.Game.GameOverOccurred      -= OnGameOver; }
+            if (_core.Fame   != null)     _core.Fame.FameChanged           -= OnFame;
+            if (_core.Wanted != null)     _core.Wanted.WantedChanged       -= OnWanted;
+            if (_core.Game   != null)     _core.Game.GameOverOccurred      -= OnGameOver;
             if (_core.Inspection != null) _core.Inspection.InspectionResolved -= OnInspection;
             if (_core.TurnResolver != null) { _core.TurnResolver.StepResolved -= OnStep;
                                               _core.TurnResolver.MoveCompleted -= OnMove; }
@@ -81,6 +81,6 @@ namespace Game.Gameplay
         void OnGameOver(string r)       => GameOver?.Invoke(r);
         void OnStep(string s, int i, int k) => StepResolved?.Invoke(s, i, k);
         void OnMove(string s, bool go)  => MoveCompleted?.Invoke(s, go);
-        void OnSpace(Game.Core.Space sp) => SpaceChanged?.Invoke(sp);
+        void OnSpace(Game.Core.GameSpace sp) => SpaceChanged?.Invoke(sp);
     }
 }

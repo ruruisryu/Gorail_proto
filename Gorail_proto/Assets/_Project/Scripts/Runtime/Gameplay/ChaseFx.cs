@@ -79,7 +79,7 @@ namespace Game.Gameplay
         void UpdateNearestHalo()
         {
             var core = GameCore.Instance;
-            bool canShow = core != null && core.Space != null && core.Space.Current == Game.Core.Space.Subway
+            bool canShow = core != null && core.Space != null && core.Space.Current == Game.Core.GameSpace.Subway
                            && core.Trackers != null && core.Trackers.Trackers.Count > 0
                            && core.Graph != null && core.Player != null;
 

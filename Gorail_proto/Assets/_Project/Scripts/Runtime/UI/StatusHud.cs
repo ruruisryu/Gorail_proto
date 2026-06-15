@@ -72,7 +72,7 @@ namespace Game.UI
             var core = GameCore.Instance;
             if (core == null) { _status.text = ""; return; }
 
-            int wanted = core.Game != null ? core.Game.WantedLevel : 0;
+            int wanted = core.Wanted != null ? core.Wanted.WantedLevel : 0;
             float fame = core.Fame != null ? core.Fame.CurrentFame : 0f;
             int trackers = core.Trackers != null ? core.Trackers.Trackers.Count : 0;
             string space = core.Space != null ? SpaceLabel(core.Space.Current) : "?";
@@ -94,11 +94,11 @@ namespace Game.UI
                 $"최근접 <color={nearCol}><b>{near}</b></color>";
         }
 
-        static string SpaceLabel(Game.Core.Space s) => s switch
+        static string SpaceLabel(Game.Core.GameSpace s) => s switch
         {
-            Game.Core.Space.Subway   => "■ 지하철",
-            Game.Core.Space.Platform => "■ 승강장",
-            Game.Core.Space.Ground   => "■ 지상",
+            Game.Core.GameSpace.Subway   => "■ 지하철",
+            Game.Core.GameSpace.Platform => "■ 승강장",
+            Game.Core.GameSpace.Ground   => "■ 지상",
             _ => "?"
         };
 
@@ -187,7 +187,7 @@ namespace Game.UI
             // 어떤 배경 위에서도 읽히도록 외곽선
             t.fontMaterial.EnableKeyword("OUTLINE_ON");
             t.outlineColor = new Color(0, 0, 0, 0.9f);
-            t.outlineWidth = 0.2f;
+            t.outlineWidth = 0.5f;
         }
 
         static void Anchor(RectTransform rt, Vector2 min, Vector2 max, Vector2 pivot, Vector2 anchoredPos, Vector2 size)

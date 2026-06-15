@@ -12,14 +12,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c91f7ac9da39c76489ed35ef18c78cf5, type: 3}
   m_Name: SceneConfig
   m_EditorClassIdentifier: Game.Runtime::Game.Data.SceneConfig
+  artworkHighMinMin: 25
+  artworkHighMinMax: 35
+  artworkMidMinMin: 15
+  artworkMidMinMax: 25
+  artworkLowMinMin: 10
+  artworkLowMinMax: 20
   fameHighBase: 30
   fameHighVar: 6
   fameMidBase: 20
   fameMidVar: 4
   fameLowBase: 10
   fameLowVar: 2
-  fameDecayPerMinute: 1
-  fameDecayGraceMinutes: 0
+  fameDecayPerMinute: 0.4
+  fameDecayGraceMinutes: 120
   wantedFameThresholds:
   - 5
   - 25

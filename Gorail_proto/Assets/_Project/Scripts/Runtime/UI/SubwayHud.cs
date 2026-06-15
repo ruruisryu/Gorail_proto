@@ -14,7 +14,7 @@ namespace Game.UI
         {
             var core = GameCore.Instance;
             if (core == null || core.Space == null) return;
-            if (core.Space.Current != Game.Core.Space.Subway) return; // 지하철 공간에서만
+            if (core.Space.Current != Game.Core.GameSpace.Subway) return; // 지하철 공간에서만
             if (core.TurnResolver != null && core.TurnResolver.IsMoving) return; // 이동 중엔 숨김
             if (core.Player == null || string.IsNullOrEmpty(core.Player.CurrentStationId)) return;
 

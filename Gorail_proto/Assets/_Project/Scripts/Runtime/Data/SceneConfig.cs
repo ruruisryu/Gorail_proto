@@ -9,19 +9,24 @@ namespace Game.Data
     [CreateAssetMenu(fileName = "SceneConfig", menuName = "Chase/Scene Config")]
     public class SceneConfig : ScriptableObject
     {
-        [Header("작품활동 명성 증가 — 성공 시 (§5-1)")]
-        [Tooltip("완성도 상: base ± variance")]
+        [Header("작품활동 소요 시간(분) 범위 (§5-1)")]
+        public int artworkHighMinMin = 25; public int artworkHighMinMax = 35;
+        public int artworkMidMinMin  = 15; public int artworkMidMinMax  = 25;
+        public int artworkLowMinMin  = 10; public int artworkLowMinMax  = 20;
+
+        [Header("작품활동 명성 증가 — 성공 시 (§5-1) / 기획서: 하8~12, 중16~24, 상24~36")]
+        [Tooltip("완성도 상: base ± variance → 24~36")]
         public float fameHighBase = 30f; public float fameHighVar = 6f;
-        [Tooltip("완성도 중")]
+        [Tooltip("완성도 중 → 16~24")]
         public float fameMidBase  = 20f; public float fameMidVar  = 4f;
-        [Tooltip("완성도 하")]
+        [Tooltip("완성도 하 → 8~12")]
         public float fameLowBase  = 10f; public float fameLowVar  = 2f;
 
-        [Header("명성 감소 — 무활동 시 (§5-2)")]
-        [Tooltip("분당 명성 감소량(전역, 모든 씬에서 진행). 하한 0.")]
-        public float fameDecayPerMinute = 1f;
-        [Tooltip("마지막 작품활동 성공 후 감소 시작까지 유예(분). 0이면 즉시 감소.")]
-        public float fameDecayGraceMinutes = 0f;
+        [Header("명성 감소 — 무활동 시 (§5-2) / 기획서: 120분 유예 후 5분마다 2씩")]
+        [Tooltip("분당 명성 감소량(전역). 5분마다 2씩 = 분당 0.4.")]
+        public float fameDecayPerMinute = 0.4f;
+        [Tooltip("마지막 작품활동 성공 후 감소 시작까지 유예(분). 기획서: 120분.")]
+        public float fameDecayGraceMinutes = 120f;
 
         [Header("수배도 — 명성 구간 경계 (§4-1)")]
         [Tooltip("레벨 1~5가 되는 명성 하한. 인덱스 0=레벨1 경계 … 인덱스 4=레벨5 경계. 그 미만이면 레벨0.")]

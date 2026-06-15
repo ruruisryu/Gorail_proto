@@ -27,7 +27,7 @@ namespace Game.UI
             GUILayout.BeginArea(new Rect(Screen.width / 2f - 160f, 70f, 320f, 360f), GUI.skin.box);
             GUILayout.Label($"=== 승강장 @ {plat.CurrentStation} ===");
             if (player != null)
-                GUILayout.Label($"노선 {player.CurrentLineId} · 방향 {player.Direction} · 명성 {core.Fame?.CurrentFame:0} · 수배도 {core.Game?.WantedLevel}");
+                GUILayout.Label($"노선 {player.CurrentLineId} · 방향 {player.Direction} · 명성 {core.Fame?.CurrentFame:0} · 수배도 {core.Wanted?.WantedLevel}");
 
             GUILayout.Space(6);
             if (GUILayout.Button("가던 방향 재탑승")) plat.ContinueForward();

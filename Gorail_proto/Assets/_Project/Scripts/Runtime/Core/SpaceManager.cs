@@ -3,7 +3,7 @@ using UnityEngine.SceneManagement;
 
 namespace Game.Core
 {
-    public enum Space { Subway, Platform, Ground }
+    public enum GameSpace { Subway, Platform, Ground }
 
     /// <summary>
     /// [S3] 세 공간(지하철·승강장·지상) 전환 허브(추격 슬라이스 §9). SubwayScene을 영속 베이스로 두고
@@ -18,13 +18,13 @@ namespace Game.Core
         [Tooltip("지하철 공간일 때만 보일 노선도 루트(승강장/지상에선 숨김).")]
         [SerializeField] private GameObject subwayMapRoot;
 
-        public Space Current { get; private set; } = Space.Subway;
+        public GameSpace Current { get; private set; } = GameSpace.Subway;
         /// <summary>현재 승강장/지상이 속한 역 ID(어느 역에서 내렸는가).</summary>
         public string CurrentStationId { get; private set; }
 
-        public event System.Action<Space> SpaceChanged;
+        public event System.Action<GameSpace> SpaceChanged;
 
-        void Start() => SetSpace(Space.Subway); // 시작은 지하철 공간(SpaceChanged 발행 → 색 등 초기 반영)
+        void Start() => SetSpace(GameSpace.Subway); // 시작은 지하철 공간(SpaceChanged 발행 → 색 등 초기 반영)
 
         /// <summary>도착역 하차 → 승강장 진입(§7-1).</summary>
         public void EnterPlatform(string stationId)
@@ -32,7 +32,7 @@ namespace Game.Core
             CurrentStationId = stationId;
             Unload(groundSceneName);
             Load(platformSceneName);
-            SetSpace(Space.Platform);
+            SetSpace(GameSpace.Platform);
         }
 
         /// <summary>승강장에서 지하철로(재탑승·반대방향·환승 후).</summary>
@@ -40,7 +40,7 @@ namespace Game.Core
         {
             Unload(platformSceneName);
             Unload(groundSceneName);
-            SetSpace(Space.Subway);
+            SetSpace(GameSpace.Subway);
         }
 
         /// <summary>승강장에서 지상으로(특별역만, §9·§10).</summary>
@@ -49,10 +49,10 @@ namespace Game.Core
             CurrentStationId = stationId;
             Unload(platformSceneName);
             Load(groundSceneName);
-            SetSpace(Space.Ground);
+            SetSpace(GameSpace.Ground);
         }
 
-        void SetSpace(Space s)
+        void SetSpace(GameSpace s)
         {
             Current = s;
             ApplyVisibility();
@@ -62,7 +62,7 @@ namespace Game.Core
 
         void ApplyVisibility()
         {
-            if (subwayMapRoot != null) subwayMapRoot.SetActive(Current == Space.Subway);
+            if (subwayMapRoot != null) subwayMapRoot.SetActive(Current == GameSpace.Subway);
         }
 
         void Load(string sceneName)

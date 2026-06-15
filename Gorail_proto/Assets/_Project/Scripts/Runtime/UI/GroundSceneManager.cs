@@ -41,7 +41,7 @@ namespace Game.UI
             GUILayout.BeginArea(new Rect(Screen.width / 2f - 190f, 70f, 380f, 380f), GUI.skin.box);
             GUILayout.Label($"=== 지상 @ {core.Space?.CurrentStationId} ===");
             GUILayout.Label($"체류 {_stayMinutes:0.0}분 / 강제도주 {limit}분");
-            GUILayout.Label($"명성 {core.Fame?.CurrentFame:0.0} · 수배도 {core.Game?.WantedLevel}");
+            GUILayout.Label($"명성 {core.Fame?.CurrentFame:0.0} · 수배도 {core.Wanted?.WantedLevel}");
 
             GUILayout.Space(6);
             GUILayout.Label("작품활동 (완성도 × 결과):");
