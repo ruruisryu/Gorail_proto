@@ -40,6 +40,11 @@ namespace Game.Gameplay
         /// <summary>현재 이동(코루틴) 진행 중인지. 이동 중 추가 입력 무시용.</summary>
         public bool IsMoving { get; private set; }
 
+        private bool _forceStop;
+
+        /// <summary>진행 중인 이동을 현재 역에서 즉시 중단한다. 하루 종료 등 외부 인터럽트용.</summary>
+        public void ForceStop() => _forceStop = true;
+
         /// <summary>이동 요청이 거부됐을 때 발생. UI 알림용.</summary>
         public event System.Action<MoveRejectedReason> MoveRejected;
 
@@ -123,6 +128,15 @@ namespace Game.Gameplay
                 GameTime?.Advance(GameTime.minutesPerMove);
                 if (mapRenderer != null) mapRenderer.RefreshMarkers();
                 StepResolved?.Invoke(player.CurrentStationId, i, totalK);
+
+                // 하루 종료 인터럽트 — 현재 역에서 이동 중단 (다음 날 이 역 승강장에서 시작)
+                if (_forceStop)
+                {
+                    _forceStop = false;
+                    IsMoving   = false;
+                    MoveCompleted?.Invoke(player.CurrentStationId, false);
+                    yield break;
+                }
 
                 // (2) 추격 1스텝 (체증 보정용 k 전달)
                 _tracker.Advance(1, totalK);

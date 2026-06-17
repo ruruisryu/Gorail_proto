@@ -20,14 +20,15 @@ namespace Game.Gameplay
         FameSystem     Fame     => GameCore.Instance?.Fame;
         TrackerManager Trackers => GameCore.Instance?.Trackers;
         SceneConfig    Config   => GameCore.Instance?.SceneConfig;
+        
 
-        void OnEnable()
+        void Start() 
         {
-            if (Fame != null) Fame.FameChanged += OnFameChanged;
+            Fame.FameChanged += OnFameChanged;
             Recalculate();
         }
 
-        void OnDisable()
+        void OnDestroy()
         {
             if (Fame != null) Fame.FameChanged -= OnFameChanged;
         }

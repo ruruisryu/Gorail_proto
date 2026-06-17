@@ -46,15 +46,24 @@ namespace Game.Gameplay
                 Minute = 0;
                 TimeChanged?.Invoke(Day, Hour, Minute);
                 DayEnded?.Invoke(Day);
-                Day++;
-                Hour   = dayStartHour;
-                Minute = 0;
             }
             else
             {
                 Hour   = total / 60;
                 Minute = total % 60;
+                TimeChanged?.Invoke(Day, Hour, Minute);
             }
+        }
+
+        /// <summary>
+        /// DayEnded 구독자(페이드 콜백 등)가 연출 완료 후 호출한다.
+        /// Day를 올리고 다음 날 07:00으로 TimeChanged를 발생시킨다.
+        /// </summary>
+        public void BeginNextDay()
+        {
+            Day++;
+            Hour   = dayStartHour;
+            Minute = 0;
             TimeChanged?.Invoke(Day, Hour, Minute);
         }
 

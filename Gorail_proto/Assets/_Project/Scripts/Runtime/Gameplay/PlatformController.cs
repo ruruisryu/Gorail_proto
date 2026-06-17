@@ -96,7 +96,11 @@ namespace Game.Gameplay
         {
             if (!CanGoOutside) { Debug.Log($"[Platform] {CurrentStation}은 특별역이 아니라 지상 진입 불가"); return false; }
             _cameFromGround = true;
-            if (spaceManager != null) spaceManager.EnterGround(CurrentStation);
+            string stn = CurrentStation;
+            Game.UI.ScreenFader.Instance?.Fade(onBlack: () =>
+            {
+                if (spaceManager != null) spaceManager.EnterGround(stn);
+            });
             return true;
         }
     }
