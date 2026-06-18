@@ -36,9 +36,15 @@ namespace Game.UI
             GUILayout.Space(6);
             if (plat.AvailableTransferLines.Count > 0)
             {
-                GUILayout.Label("환승 (노선 선택):");
+                GUILayout.Label("환승 (노선·방향 선택):");
                 foreach (var line in plat.AvailableTransferLines)
-                    if (GUILayout.Button("→ " + line)) plat.Transfer(line);
+                {
+                    var (bwd, fwd) = plat.GetTransferDirectionLabels(line);
+                    GUILayout.BeginHorizontal();
+                    if (bwd != null && GUILayout.Button($"← {line} {bwd}방면")) plat.TransferWithDirection(line, -1);
+                    if (fwd != null && GUILayout.Button($"→ {line} {fwd}방면")) plat.TransferWithDirection(line, +1);
+                    GUILayout.EndHorizontal();
+                }
             }
             else GUILayout.Label("환승 불가 (환승역 아님)");
 

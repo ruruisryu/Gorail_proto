@@ -74,19 +74,26 @@ namespace Game.Gameplay
         }
 
         /// <summary>③ 환승 — 노선 변경(환승역만, §2-2) 후 지하철로. 활성 노선 누적(§5-3).</summary>
-        public bool Transfer(string newLineId)
+        public bool Transfer(string newLineId) => TransferWithDirection(newLineId, 0);
+
+        /// <summary>③-b 방향 지정 환승 — 노선과 초기 방향을 함께 선택한다.</summary>
+        public bool TransferWithDirection(string newLineId, int direction)
         {
             if (!_transferLines.Contains(newLineId)) return false;
-            if (player != null) player.ChangeLine(newLineId);
+            if (player != null) player.ChangeLine(newLineId); // DirectionLocked = false
             GameTime?.Advance(GameTime.minutesTransfer);
             Money?.TrySpend(_cameFromGround ? Money.boardingCost : Money.transferCost);
             _cameFromGround = false;
-            // 환승으로 새로 활성화된 노선도 현재 수배도 상한까지 채운다(§5-3: 환승은 총 추격자를 불린다).
-            // 이게 없으면 막 갈아탄 노선은 '다음 하차'까지 0명이라 수배도가 높아도 추격이 없어 보인다.
+            // 환승으로 새로 활성화된 노선도 현재 수배도 상한까지 채운다(§5-3).
             if (trackerManager != null) trackerManager.OnPlayerDisembark();
+            if (direction != 0 && player != null) player.LockDirection(direction);
             if (spaceManager != null) spaceManager.EnterSubway();
             return true;
         }
+
+        /// <summary>방향 버튼 레이블용. 지정 노선의 양방향 종점 역 ID를 반환한다.</summary>
+        public (string backward, string forward) GetTransferDirectionLabels(string lineId)
+            => Graph?.GetLineNeighbors(lineId, CurrentStation) ?? (null, null);
 
         /// <summary>④ 지상으로 — 특별역만(§9·§10). 지상 공간(OutsideScene)으로.</summary>
          public bool GoOutside()

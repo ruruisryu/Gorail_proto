@@ -49,6 +49,11 @@ namespace Game.Core
         public RngService         Rng          => rngService;
         public SubwayMapRenderer  MapRenderer  => mapRenderer;
 
+        [Header("동작 설정")]
+        [SerializeField] private bool autoDisembark = true;
+        /// <summary>목적지 도착 시 자동으로 승강장으로 진입할지 여부.</summary>
+        public bool AutoDisembark { get => autoDisembark; set => autoDisembark = value; }
+
         /// <summary>
         /// 화면이 완전히 검어졌을 때 발생. (다음 날 번호, 22:00 도달 역).
         /// 씬 전환·상태 초기화 등 플레이어에게 보이지 않아야 하는 작업에 구독한다.

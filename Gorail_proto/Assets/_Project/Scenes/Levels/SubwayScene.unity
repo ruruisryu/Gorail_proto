@@ -47466,8 +47466,8 @@ GameObject:
   m_Component:
   - component: {fileID: 1196569270}
   - component: {fileID: 1196569280}
-  - component: {fileID: 1196569269}
   - component: {fileID: 1196569268}
+  - component: {fileID: 1196569269}
   - component: {fileID: 1196569265}
   - component: {fileID: 1196569264}
   - component: {fileID: 1196569273}
@@ -47631,6 +47631,7 @@ MonoBehaviour:
   moneySystem: {fileID: 2087252923}
   rngService: {fileID: 1196569276}
   mapRenderer: {fileID: 388388996}
+  autoDisembark: 1
 --- !u!114 &1196569281
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -83411,6 +83412,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1671728996291702699, guid: b953fc5906ef96c4987b9450a1741ba7, type: 3}
+      propertyPath: 'bagShape.cells.Array.data[2]'
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3831986561991380236, guid: b953fc5906ef96c4987b9450a1741ba7, type: 3}
+      propertyPath: stepAnimSeconds
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 7101279855335766122, guid: b953fc5906ef96c4987b9450a1741ba7, type: 3}
       propertyPath: m_LocalPosition.x
       value: 915.95605

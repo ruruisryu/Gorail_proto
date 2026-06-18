@@ -141,9 +141,12 @@ namespace Game.Gameplay
                 if (wait > 0f) yield return new WaitForSeconds(wait);
             }
 
-            // 목적지 도달 — 지하철 공간 유지. 승강장 진입은 '하차' 버튼으로 명시적으로만(자동 아님).
+            // 목적지 도달 — 자동하차: 도착 즉시 승강장으로 진입한다.
             IsMoving = false;
             MoveCompleted?.Invoke(player.CurrentStationId, false);
+            var _core = Game.Core.GameCore.Instance;
+            if (_core?.AutoDisembark == true)
+                _core.Platform?.OpenAt(player.CurrentStationId);
         }
 
         /// <summary>현재 노선에 없는 역 클릭 시 이유를 구분한다.</summary>

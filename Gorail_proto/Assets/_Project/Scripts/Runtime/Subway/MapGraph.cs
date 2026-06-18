@@ -253,6 +253,32 @@ namespace Game.Subway
             return path.Count >= 2 ? path[1] : from;
         }
 
+        /// <summary>
+        /// 노선의 양방향 종점 역 ID를 반환한다 (승강장 방향 버튼 레이블용).
+        /// 비순환선: 인덱스 기준 direction=-1 끝 역, direction=+1 끝 역.
+        ///           현재 역이 이미 끝 역이면 해당 방향은 null (버튼 숨김용).
+        /// 순환선: 현재 역의 index-1, index+1 이웃 역.
+        /// </summary>
+        public (string backward, string forward) GetLineNeighbors(string lineId, string fromStationId)
+        {
+            if (!_lineStations.TryGetValue(lineId, out var stations) || stations.Count == 0)
+                return (null, null);
+
+            bool circular = _lineCircular.TryGetValue(lineId, out var c) && c;
+            if (circular)
+            {
+                int idx = stations.IndexOf(fromStationId);
+                if (idx < 0) return (null, null);
+                int n = stations.Count;
+                return (stations[(idx - 1 + n) % n], stations[(idx + 1) % n]);
+            }
+
+            int iFrom = stations.IndexOf(fromStationId);
+            string bwd = iFrom > 0                   ? stations[iFrom - 1] : null;
+            string fwd = iFrom < stations.Count - 1  ? stations[iFrom + 1] : null;
+            return (bwd, fwd);
+        }
+
         /// <summary>인접한 두 역 a-b를 잇는 노선 ID(여럿이면 첫 번째). 인접이 아니면 null.</summary>
         public string GetConnectingLineId(string a, string b)
         {

@@ -82,6 +82,14 @@ namespace Game.Gameplay
             StateChanged?.Invoke();
         }
 
+        /// <summary>승강장에서 탑승 전 방향을 미리 지정하고 고정한다.</summary>
+        public void LockDirection(int direction)
+        {
+            if (direction != 0) Direction = direction;
+            DirectionLocked = true;
+            StateChanged?.Invoke();
+        }
+
         /// <summary>진행 방향 반전(§7-2 반대방향 재탑승 — 추격자와 상대 위치 역전 수단).</summary>
         public void ReverseDirection()
         {
