@@ -57,12 +57,16 @@ namespace Game.Subway
         /// <summary>[D1] lineId가 현재 활성(고유색)인지 여부. _activeLines==null이면 전부 활성으로 간주.</summary>
         bool IsActiveLineId(string lineId) =>
             _activeLines == null || _activeLines.Contains(lineId);
-        private const string LinesTag       = "[Lines]";
-        private const string StationsTag   = "[Stations]";
-        private const string PreviewTag    = "[Preview]";    // [D10] 적 이동 프리뷰 고스트
-        private const string FxTag         = "[Fx]";         // [H6] 연출 오버레이(깜빡임·강조 등, ChaseFx 소유)
-        private const string PlayerTag     = "[Player]";     // [H6] 영속 플레이어 마커(역간 부드러운 글라이드)
-        private const string LineHLTag = "[LineHL]"; // 현재 노선 하이라이트
+        private const string LinesTag      = "[Lines]";
+        private const string StationsTag  = "[Stations]";
+        private const string PreviewTag   = "[Preview]";    // [D10] 적 이동 프리뷰 고스트
+        private const string FxTag        = "[Fx]";         // [H6] 연출 오버레이(깜빡임·강조 등, ChaseFx 소유)
+        private const string PlayerTag    = "[Player]";     // [H6] 영속 플레이어 마커(역간 부드러운 글라이드)
+        private const string LineHLTag    = "[LineHL]";     // 현재 노선 하이라이트
+        private const string RouteHintTag = "[RouteHint]";  // 갈 수 없는 역 호버 시 추천 경로
+
+        private static readonly Color HintRouteColor = new Color(0.75f, 0.92f, 1f, 0.70f);
+        private static readonly Color HintDestColor  = new Color(0.75f, 0.92f, 1f, 0.90f);
 
         // [H6] 플레이어 마커 글라이드 — 재생성 대신 영속 컨테이너를 목표 위치로 보간(플레이 모드 한정).
         private const float PlayerGlideSharpness = 14f;  // 클수록 빠르게 따라붙음(프레임 독립)
@@ -134,7 +138,7 @@ namespace Game.Subway
             for (int i = mapContainer.childCount - 1; i >= 0; i--)
             {
                 var child = mapContainer.GetChild(i);
-                if (child.name == LinesTag || child.name == StationsTag || child.name == PreviewTag || child.name == FxTag || child.name == PlayerTag || child.name == LineHLTag) continue;
+                if (child.name == LinesTag || child.name == StationsTag || child.name == PreviewTag || child.name == FxTag || child.name == PlayerTag || child.name == LineHLTag || child.name == RouteHintTag) continue;
                 if (Application.isPlaying) Destroy(child.gameObject);
                 else DestroyImmediate(child.gameObject);
             }
@@ -194,7 +198,7 @@ namespace Game.Subway
             for (int i = 0; i < mapContainer.childCount; i++)
             {
                 var child = mapContainer.GetChild(i);
-                if (child.name == LinesTag || child.name == StationsTag || child.name == PreviewTag || child.name == FxTag || child.name == PlayerTag || child.name == LineHLTag) continue;
+                if (child.name == LinesTag || child.name == StationsTag || child.name == PreviewTag || child.name == FxTag || child.name == PlayerTag || child.name == LineHLTag || child.name == RouteHintTag) continue;
                 child.localScale = Vector3.one * _zoomComp;
             }
         }
@@ -274,6 +278,40 @@ namespace Game.Subway
         }
 
         public void ClearChasePreview() => DestroyContainer(PreviewTag);
+
+        /// <summary>
+        /// 갈 수 없는 역(다른 노선·반대 방향) 호버 시 BFS 추천 경로를 연한 하늘색으로 표시한다.
+        /// </summary>
+        public void ShowRouteHint(System.Collections.Generic.IList<string> path)
+        {
+            ClearRouteHint();
+            if (path == null || path.Count < 2) return;
+            var layer = CreateContainer(RouteHintTag, mapContainer.childCount);
+
+            for (int i = 0; i < path.Count - 1; i++)
+            {
+                var a = GetStationUIPos(path[i]);
+                var b = GetStationUIPos(path[i + 1]);
+                if (!a.HasValue || !b.HasValue) continue;
+                SegmentDirect(a.Value, b.Value, HintRouteColor, LineThickness + 3f, layer).name = "HintSeg";
+            }
+            var dest = GetStationUIPos(path[path.Count - 1]);
+            if (dest.HasValue)
+            {
+                Circ("HintRing", layer, dest.Value, PlayerSize + 16f, new Color(0.75f, 0.92f, 1f, 0.25f));
+                Circ("HintDest", layer, dest.Value, PlayerSize + 2f,  HintDestColor);
+            }
+
+            for (int i = 0; i < layer.childCount; i++)
+            {
+                var ch = layer.GetChild(i);
+                ch.localScale = ch.name == "HintSeg"
+                    ? new Vector3(1f, _zoomComp, 1f)
+                    : Vector3.one * _zoomComp;
+            }
+        }
+
+        public void ClearRouteHint() => DestroyContainer(RouteHintTag);
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // [H6] 연출 오버레이 레이어 — ChaseFx가 깜빡임·강조 마커를 여기에 그린다.

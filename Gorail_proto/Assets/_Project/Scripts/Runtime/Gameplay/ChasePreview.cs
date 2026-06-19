@@ -42,7 +42,15 @@ namespace Game.Gameplay
             var path = player.DirectionLocked
                 ? graph.GetDirectionalPath(player.CurrentLineId, player.CurrentStationId, stationId, player.Direction)
                 : graph.GetLineOrderedPath(player.CurrentLineId, player.CurrentStationId, stationId);
-            if (path == null || path.Count < 2) { mapRenderer.ClearChasePreview(); return; }
+            if (path == null || path.Count < 2)
+            {
+                // 현재 노선으로 갈 수 없는 역: BFS 추천 경로를 연한 하늘색으로 표시.
+                mapRenderer.ClearChasePreview();
+                var hint = graph.ShortestPath(player.CurrentStationId, stationId);
+                mapRenderer.ShowRouteHint(hint);
+                return;
+            }
+            mapRenderer.ClearRouteHint();
 
             var config  = tr != null ? tr.Config : null;
             float baseM = config != null ? config.chaserStepsPerPlayerStep : 1f;
@@ -81,7 +89,9 @@ namespace Game.Gameplay
 
         void OnExit()
         {
-            if (mapRenderer != null) mapRenderer.ClearChasePreview();
+            if (mapRenderer == null) return;
+            mapRenderer.ClearChasePreview();
+            mapRenderer.ClearRouteHint();
         }
     }
 }
