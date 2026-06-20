@@ -140,20 +140,17 @@ public class StationPrefabReplacerWizard : ScriptableWizard
         {
             if (view == null) continue;
 
-            // stationData가 없으면 GO 이름으로 추론
-            StationData data = view.stationData;
-            if (data == null)
+            // GO 이름으로 stationData를 결정(복사 GO의 오염된 필드 무시)
+            StationData data = null;
+            var goName = view.gameObject.name;
+            if (goName.StartsWith("Stn_"))
             {
-                var n = view.gameObject.name;
-                if (n.StartsWith("Stn_"))
-                {
-                    var id = n.Substring(4);
-                    foreach (var line in networkData.lines)
-                        foreach (var stn in line?.stations ?? new List<StationData>())
-                            if (stn != null && stn.stationId == id) { data = stn; break; }
-                }
-                if (data == null) { skipped++; continue; }
+                var id = goName.Substring(4);
+                foreach (var line in networkData.lines)
+                    foreach (var stn in line?.stations ?? new List<StationData>())
+                        if (stn != null && stn.stationId == id) { data = stn; break; }
             }
+            if (data == null) { skipped++; continue; }
 
             stationLineIds.TryGetValue(data.stationId, out var lineIds);
 

@@ -414,13 +414,10 @@ namespace Game.Subway
             {
                 if (v == null) continue;
 
-                // stationData가 없으면 GO 이름에서 ID를 추출해 자동 주입
-                if (v.stationData == null)
-                {
-                    var n = v.gameObject.name;
-                    if (n.StartsWith("Stn_") && dataById.TryGetValue(n.Substring(4), out var sd))
-                        v.stationData = sd;
-                }
+                // GO 이름으로 stationData를 결정(복사 GO의 오염된 필드 무시)
+                var n = v.gameObject.name;
+                if (n.StartsWith("Stn_") && dataById.TryGetValue(n.Substring(4), out var sd))
+                    v.stationData = sd;
 
                 if (v.stationData == null) continue;
                 _stationViews.Add(v);

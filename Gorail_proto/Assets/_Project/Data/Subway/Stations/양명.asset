@@ -10,8 +10,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f45b371bd07ee97489241e0524541a3c, type: 3}
-  m_Name: "\uCD1D\uC2E0\uB300\uC785\uAD6C"
+  m_Name: "\uC591\uBA85"
   m_EditorClassIdentifier: Game.Runtime::Game.Subway.StationData
-  stationId: "\uCD1D\uC2E0\uB300\uC785\uAD6C"
-  displayName: "\uCD1D\uC2E0\uB300\uC785\uAD6C"
-  mapPosition: {x: 405.6725, y: 448.91354}
+  stationId: "\uC591\uBA85"
+  displayName: "\uC591\uBA85"
+  featureType: 0
