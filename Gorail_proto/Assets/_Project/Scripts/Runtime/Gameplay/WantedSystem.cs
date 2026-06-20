@@ -1,5 +1,4 @@
 using UnityEngine;
-using Game.Data;
 using Game.Core;
 
 namespace Game.Gameplay
@@ -13,16 +12,18 @@ namespace Game.Gameplay
     {
         public const int MaxWantedLevel = 5;
 
+        [Header("수배도 — 명성 구간 경계 (§4-1)")]
+        [Tooltip("레벨 1~5가 되는 명성 하한. 인덱스 0=레벨1 경계 … 인덱스 4=레벨5 경계. 그 미만이면 레벨0.")]
+        [SerializeField] private float[] wantedFameThresholds = { 5f, 25f, 45f, 75f, 200f };
+
         public int WantedLevel { get; private set; }
 
         public event System.Action<int> WantedChanged;
 
         FameSystem     Fame     => GameCore.Instance?.Fame;
         TrackerManager Trackers => GameCore.Instance?.Trackers;
-        SceneConfig    Config   => GameCore.Instance?.SceneConfig;
-        
 
-        void Start() 
+        void Start()
         {
             Fame.FameChanged += OnFameChanged;
             Recalculate();
@@ -38,8 +39,8 @@ namespace Game.Gameplay
         /// <summary>현재 명성 → 수배도 레벨 환산 후 반영(§4-2).</summary>
         public void Recalculate()
         {
-            if (Config == null || Fame == null) return;
-            int newLevel = Config.WantedLevelForFame(Fame.CurrentFame);
+            if (Fame == null) return;
+            int newLevel = WantedLevelForFame(Fame.CurrentFame);
             SetWantedLevel(newLevel);
         }
 
@@ -52,6 +53,16 @@ namespace Game.Gameplay
             WantedLevel = clamped;
             WantedChanged?.Invoke(WantedLevel);
             if (WantedLevel < prev && Trackers != null) Trackers.TrimToCaps();
+        }
+
+        /// <summary>명성값 → 수배도 레벨(0~5). 경계표와 비교(§4-1).</summary>
+        public int WantedLevelForFame(float fame)
+        {
+            if (wantedFameThresholds == null) return 0;
+            int level = 0;
+            for (int i = 0; i < wantedFameThresholds.Length; i++)
+                if (fame >= wantedFameThresholds[i]) level = i + 1; else break;
+            return level;
         }
     }
 }

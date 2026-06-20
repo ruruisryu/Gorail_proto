@@ -10,14 +10,14 @@ namespace Game.Gameplay
     /// </summary>
     public class StationClickRouter : MonoBehaviour
     {
-        [SerializeField] private TurnResolver turnResolver;
+        TurnResolver turnResolver => Game.Core.GameCore.Instance?.TurnResolver;
 
-        void OnEnable()  => StationView.StationClicked += OnStationClicked;
-        void OnDisable() => StationView.StationClicked -= OnStationClicked;
+        void Start()  => StationView.StationClicked += OnStationClicked;
+        void OnDestroy() => StationView.StationClicked -= OnStationClicked;
 
         void OnStationClicked(string stationId)
         {
-            if (turnResolver != null) turnResolver.TryMoveTo(stationId);
+            turnResolver?.TryMoveTo(stationId);
         }
     }
 }

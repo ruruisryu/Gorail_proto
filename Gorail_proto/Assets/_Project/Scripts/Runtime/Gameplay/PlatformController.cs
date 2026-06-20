@@ -10,15 +10,14 @@ namespace Game.Gameplay
     /// 네 갈래 행동(§7-2)을 실제 공간 전환으로 수행한다. UI는 PlatformSceneController(PlatformScene)가 그린다.
     /// TurnResolver에 IPlatform으로 주입되어 도착 시 OpenAt이 호출된다.
     /// </summary>
-    public class PlatformController : MonoBehaviour, IPlatform
+    public class PlatformController : MonoBehaviour
     {
-        [SerializeField] private Player           player;
-        [SerializeField] private MapGraphProvider graphProvider;
-        [SerializeField] private SpaceManager     spaceManager;
-        [SerializeField] private TrackerManager   trackerManager;
-
-        GameTimeSystem GameTime => Game.Core.GameCore.Instance?.GameTime;
-        MoneySystem    Money    => Game.Core.GameCore.Instance?.Money;
+        Player         player         => Game.Core.GameCore.Instance?.Player;
+        MapGraph       Graph          => Game.Core.GameCore.Instance?.Graph?.Graph;
+        SpaceManager   spaceManager   => Game.Core.GameCore.Instance?.Space;
+        TrackerManager trackerManager => Game.Core.GameCore.Instance?.Trackers;
+        GameTimeSystem GameTime       => Game.Core.GameCore.Instance?.GameTime;
+        MoneySystem    Money          => Game.Core.GameCore.Instance?.Money;
 
         public string CurrentStation { get; private set; }
 
@@ -28,8 +27,6 @@ namespace Game.Gameplay
         private readonly List<string> _transferLines = new List<string>();
         /// <summary>현재 승강장에서 환승 가능한 노선(현재 노선 제외). 환승역이 아니면 빈 목록.</summary>
         public IReadOnlyList<string> AvailableTransferLines => _transferLines;
-
-        MapGraph Graph => graphProvider != null ? graphProvider.Graph : null;
 
         /// <summary>현재 역이 특별역(랜드마크/상점)이라 지상 진입 가능한가(§10·§9).</summary>
         public bool CanGoOutside

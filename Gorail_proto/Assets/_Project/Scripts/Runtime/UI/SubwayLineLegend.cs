@@ -17,8 +17,9 @@ namespace Game.UI
     public class SubwayLineLegend : MonoBehaviour
     {
         [SerializeField] private SubwayNetworkData networkData;
-        [SerializeField] private Player            player;
         [SerializeField] private TMP_FontAsset     font;
+
+        Player player => Game.Core.GameCore.Instance?.Player;
 
         [Header("레이아웃")]
         [SerializeField] private Color inactiveColor = new Color(0.62f, 0.62f, 0.62f, 1f);
@@ -29,16 +30,15 @@ namespace Game.UI
 
         private readonly List<(string lineId, Color color, Image swatch)> _rows = new();
         private bool _built;
-
-        // 팝업이 닫힌 채 시작하므로 Start가 아니라 OnEnable에서 빌드(첫 활성화 = 팝업 열릴 때).
-        void OnEnable()
+        
+        void Start()
         {
             if (!_built) { Build(); _built = true; }
             if (player != null) player.ActiveLinesChanged += Refresh;
             Refresh();
         }
 
-        void OnDisable()
+        void OnDestroy()
         {
             if (player != null) player.ActiveLinesChanged -= Refresh;
         }

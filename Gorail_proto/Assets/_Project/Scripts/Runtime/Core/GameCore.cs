@@ -19,6 +19,7 @@ namespace Game.Core
 
         [SerializeField] private GameManager        gameManager;
         [SerializeField] private Player             player;
+        [SerializeField] private ArtworkSystem      artworkSystem;
         [SerializeField] private FameSystem         fameSystem;
         [SerializeField] private WantedSystem       wantedSystem;
         [SerializeField] private TrackerManager     trackerManager;
@@ -29,10 +30,12 @@ namespace Game.Core
         [SerializeField] private TurnResolver       turnResolver;
         [SerializeField] private GameTimeSystem     gameTimeSystem;
         [SerializeField] private MoneySystem        moneySystem;
-        [SerializeField] private Game.Data.SceneConfig sceneConfig;
+        [SerializeField] private RngService         rngService;
+        [SerializeField] private SubwayMapRenderer  mapRenderer;
 
         public GameManager        Game         => gameManager;
         public Player             Player       => player;
+        public ArtworkSystem      Artwork      => artworkSystem;
         public FameSystem         Fame         => fameSystem;
         public WantedSystem       Wanted       => wantedSystem;
         public TrackerManager     Trackers     => trackerManager;
@@ -43,7 +46,8 @@ namespace Game.Core
         public TurnResolver       TurnResolver => turnResolver;
         public GameTimeSystem     GameTime     => gameTimeSystem;
         public MoneySystem        Money        => moneySystem;
-        public Game.Data.SceneConfig SceneConfig => sceneConfig;
+        public RngService         Rng          => rngService;
+        public SubwayMapRenderer  MapRenderer  => mapRenderer;
 
         /// <summary>
         /// 화면이 완전히 검어졌을 때 발생. (다음 날 번호, 22:00 도달 역).

@@ -7,8 +7,9 @@ namespace Game.UI
     {
         [SerializeField] private Button closeButton;
         [SerializeField] private Button backgroundOverlay;
-        [SerializeField] private Game.Subway.SubwayMapRenderer mapRenderer;
         [SerializeField] private SubwayMapZoom mapZoom;
+
+        Game.Subway.SubwayMapRenderer mapRenderer => Game.Core.GameCore.Instance?.MapRenderer;
 
         private CanvasGroup canvasGroup;
 

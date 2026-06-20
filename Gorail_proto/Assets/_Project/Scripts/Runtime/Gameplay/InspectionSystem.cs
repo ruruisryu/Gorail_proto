@@ -1,5 +1,4 @@
 using UnityEngine;
-using Game.Data;
 using Game.Core;
 
 namespace Game.Gameplay
@@ -12,13 +11,16 @@ namespace Game.Gameplay
     /// 맵에서 제거한다. 중간역 검문 발동 여부(§8-1)는 TurnResolver가 토글로 제어하므로,
     /// 여기서는 "같은 역인가 → 굴림"만 책임진다.
     /// </summary>
-    public class InspectionSystem : MonoBehaviour, IInspection
+    public class InspectionSystem : MonoBehaviour
     {
-        [SerializeField] private TrackerManager trackerManager;
-        [SerializeField] private GameManager    gameManager;
-        [SerializeField] private ChaseConfig    config;
-        [Tooltip("시드 고정 난수(선택). 미할당이면 UnityEngine.Random 폴백.")]
-        [SerializeField] private RngService     rng;
+        [Range(0f, 1f)]
+        [SerializeField] private float inspectionPassRate = 0.7f;
+
+        public float InspectionPassRate { get => inspectionPassRate; set => inspectionPassRate = Mathf.Clamp01(value); }
+
+        RngService     Rng        => GameCore.Instance?.Rng;
+        TrackerManager trackerManager => GameCore.Instance?.Trackers;
+        GameManager    gameManager    => GameCore.Instance?.Game;
 
         /// <summary>검문이 발동·판정될 때 발생(stationId, 통과여부). 통계·연출용.</summary>
         public event System.Action<string, bool> InspectionResolved;
@@ -29,8 +31,8 @@ namespace Game.Gameplay
             if (trackerManager == null || string.IsNullOrEmpty(stationId)) return false;
             if (!trackerManager.HasTrackerAt(stationId)) return false; // 같은 역 아님 → 검문 없음
 
-            float passRate = config != null ? config.inspectionPassRate : 0.7f;
-            float roll = rng != null ? rng.Value01() : Random.value;
+            float passRate = inspectionPassRate;
+            float roll = Rng != null ? Rng.Value01() : Random.value;
             bool passed = roll <= passRate;
 
             if (passed)

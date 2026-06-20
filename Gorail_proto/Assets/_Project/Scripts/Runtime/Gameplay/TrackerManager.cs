@@ -2,36 +2,52 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using Game.Subway;
-using Game.Data;
 using Game.Core;
 
 namespace Game.Gameplay
 {
     /// <summary>
-    /// ⑤⑥ 추격자 일괄 관리(§15 TrackerManager). 스폰(노선당 상한)·추격(1+2규칙+체증)·
-    /// 수배도 감소 시 제거를 담당하고, TurnResolver에 ITrackerStep으로 주입된다.
-    ///
-    /// 스폰 위치 등 [미확정] 세부는 기획서 §5 의도에 맞춘 프로토타입 구현이며 D단계에서 조정한다.
-    /// 랜덤은 지금 UnityEngine.Random을 쓰고, H1에서 시드 고정 RngService로 교체 예정.
+    /// ⑤⑥ 추격자 일괄 관리(§15). 스폰(노선당 상한)·추격(1+2규칙)·수배도 감소 시 제거를 담당하고,
+    /// TurnResolver에 ITrackerStep으로 주입된다.
     /// </summary>
-    public class TrackerManager : MonoBehaviour, ITrackerStep
+    public class TrackerManager : MonoBehaviour
     {
         [Header("참조")]
-        [SerializeField] private MapGraphProvider   graphProvider;
-        [SerializeField] private Player             player;
-        [SerializeField] private ChaseConfig        config;
         [SerializeField] private EnemyLocationData  enemyLocations;
-        [SerializeField] private SubwayMapRenderer  mapRenderer;
-        [Tooltip("시드 고정 난수(선택). 미할당이면 UnityEngine.Random 폴백.")]
-        [SerializeField] private RngService         rng;
+
+        [Header("추격 속도")]
+        [Tooltip("기본 추격: 플레이어 1역 이동 시 추격자도 1역. 추가로 플레이어 N역마다 보너스 1역.")]
+        [SerializeField] public int bonusStepsPerPlayerSteps = 5;
+        [Tooltip("지상 체류 시 추격자 이동 속도: 게임 시간 N분마다 1역.")]
+        [SerializeField] public float trackerMinutesPerStep = 5f;
+
+        [Header("노선당 개체수 상한 — §5-2")]
+        [Tooltip("인덱스 = 수배도 레벨(0~5), 값 = 활성 노선 1개당 Tracker 상한.")]
+        [SerializeField] private int[] perLineCapByWantedLevel = { 0, 1, 2, 3, 4, 5 };
+
+        [Header("첫 등장 — §5-4")]
+        [Tooltip("세션 최초 스폰 시 플레이어 뒤로 떨어뜨릴 역 범위(최소~최대).")]
+        [SerializeField] private int firstSpawnMinBehind = 6;
+        [SerializeField] private int firstSpawnMaxBehind = 8;
+
+        RngService        Rng    => GameCore.Instance?.Rng;
+        Player            player => GameCore.Instance?.Player;
+        Game.Subway.SubwayMapRenderer mapRenderer => GameCore.Instance?.MapRenderer;
 
         private readonly List<Tracker> _trackers = new List<Tracker>();
-        private float _chaseDebt; // 체증 보정으로 생긴 소수 추격량 누적(정수 스텝으로 환산)
+        private float _debt;
 
-        public IReadOnlyList<Tracker> Trackers => _trackers;
+        public IReadOnlyList<Tracker> Trackers  => _trackers;
+        public float                  ChaseDebt => _debt;
 
-        MapGraph Graph  => graphProvider != null ? graphProvider.Graph : null;
-        int      Wanted => GameCore.Instance?.Wanted?.WantedLevel ?? 0;
+        public MapGraph Graph  => GameCore.Instance?.Graph?.Graph;
+        int             Wanted => GameCore.Instance?.Wanted?.WantedLevel ?? 0;
+
+        public int PerLineCap(int wantedLevel)
+        {
+            if (perLineCapByWantedLevel == null || perLineCapByWantedLevel.Length == 0) return 0;
+            return perLineCapByWantedLevel[Mathf.Clamp(wantedLevel, 0, perLineCapByWantedLevel.Length - 1)];
+        }
 
         // ── 스폰 (§5-1 하차 시 갱신) ─────────────────────────────────────
 
@@ -39,7 +55,7 @@ namespace Game.Gameplay
         public void OnPlayerDisembark()
         {
             if (Graph == null || player == null) return;
-            int cap = config != null ? config.PerLineCap(Wanted) : 0;
+            int cap = PerLineCap(Wanted);
 
             foreach (var line in player.ActiveLines)
             {
@@ -54,7 +70,7 @@ namespace Game.Gameplay
         public void TrimToCaps()
         {
             if (Graph == null) return;
-            int cap = config != null ? config.PerLineCap(Wanted) : 0;
+            int cap = PerLineCap(Wanted);
 
             foreach (var line in player != null ? player.ActiveLines.ToList() : new List<string>())
             {
@@ -67,39 +83,39 @@ namespace Game.Gameplay
             SyncMarkers();
         }
 
-        // ── 추격 1스텝 (ITrackerStep, §4-1 + §4-2) ───────────────────────
+        // ── 추격 (ITrackerStep) ───────────────────────────────────────────
 
+        /// <summary>
+        /// 플레이어 1역 이동마다 호출.
+        /// 기본 1:1 + 플레이어 N역마다 보너스 1역. 소수는 _debt에 이월.
+        /// </summary>
         public void Advance(int playerSteps, int totalMoveStations)
         {
             if (Graph == null || player == null || _trackers.Count == 0) return;
 
-            float baseM = config != null ? config.chaserStepsPerPlayerStep : 1;
-            float mult  = config != null ? Mathf.Max(0.01f, config.congestionCurve.Evaluate(totalMoveStations)) : 1f;
-            int steps   = ComputeAdvanceSteps(baseM, mult, playerSteps, ref _chaseDebt);
+            _debt += (1f + 1f / bonusStepsPerPlayerSteps) * playerSteps;
+            int steps = Mathf.FloorToInt(_debt);
+            _debt -= steps;
             if (steps <= 0) return;
 
             foreach (var t in _trackers)
                 t.ChaseToward(Graph, player.CurrentStationId, steps);
-
             SyncMarkers();
         }
 
-        /// <summary>외부 체류 등으로 모든 추격자를 steps역 일괄 전진(§9-1 체류→추격 전진). 체증 없음.</summary>
-        public void AdvanceAll(int steps)
+        /// <summary>지상 체류 등 게임 시간 경과만큼 추격자 전진(보너스 없음).</summary>
+        public void AdvanceByMinutes(int gameMinutes)
         {
-            if (Graph == null || player == null || steps <= 0 || _trackers.Count == 0) return;
+            if (Graph == null || player == null || gameMinutes <= 0 || _trackers.Count == 0) return;
+
+            _debt += gameMinutes / trackerMinutesPerStep;
+            int steps = Mathf.FloorToInt(_debt);
+            _debt -= steps;
+            if (steps <= 0) return;
+
             foreach (var t in _trackers)
                 t.ChaseToward(Graph, player.CurrentStationId, steps);
             SyncMarkers();
-        }
-
-        /// <summary>체증 누적을 정수 스텝으로 환산(소수분은 다음 호출로 이월). 순수 함수 — 테스트 대상.</summary>
-        public static int ComputeAdvanceSteps(float basePerStep, float congestionMult, int playerSteps, ref float debt)
-        {
-            debt += basePerStep * congestionMult * Mathf.Max(0, playerSteps);
-            int steps = Mathf.FloorToInt(debt);
-            debt -= steps;
-            return steps;
         }
 
         // ── 세션 ─────────────────────────────────────────────────────────
@@ -107,17 +123,15 @@ namespace Game.Gameplay
         public void ResetAll()
         {
             _trackers.Clear();
-            _chaseDebt = 0f;
+            _debt = 0f;
             SyncMarkers();
         }
 
         // ── 검문 연동 (⑧ InspectionSystem이 사용) ────────────────────────
 
-        /// <summary>해당 역에 추격자가 있는지(같은 역 검문 발동 조건 §8-1).</summary>
         public bool HasTrackerAt(string stationId) =>
             !string.IsNullOrEmpty(stationId) && _trackers.Any(t => t.StationId == stationId);
 
-        /// <summary>해당 역의 추격자를 모두 제거(검문 통과 시 어그로 해제 §8-2). 제거 수 반환.</summary>
         public int RemoveTrackersAt(string stationId)
         {
             int removed = _trackers.RemoveAll(t => t.StationId == stationId);
@@ -129,8 +143,7 @@ namespace Game.Gameplay
 
         int CountOnLine(string line) => _trackers.Count(t => t.LineId == line);
 
-        /// <summary>[a,b) 정수 — RngService 있으면 시드 기반, 없으면 UnityEngine.Random.</summary>
-        int RandInt(int a, int b) => rng != null ? rng.RangeInt(a, b) : Random.Range(a, b);
+        int RandInt(int a, int b) => Rng != null ? Rng.RangeInt(a, b) : Random.Range(a, b);
 
         void SpawnOnLine(string line)
         {
@@ -139,35 +152,27 @@ namespace Game.Gameplay
                 _trackers.Add(new Tracker(station, line));
         }
 
-        /// <summary>
-        /// 노선 위에서 플레이어로부터 적당히 떨어진(첫 등장 §5-4 범위 우선) 스폰 역을 고른다.
-        /// 범위 내 후보가 없으면 그 노선에서 플레이어로부터 가장 먼 역으로 폴백.
-        /// </summary>
         string PickSpawnStation(string line)
         {
             var stations = Graph.GetLineStations(line);
             if (stations.Count == 0) return null;
 
             string playerStn = player.CurrentStationId;
-            int min = config != null ? config.firstSpawnMinBehind : 6;
-            int max = config != null ? config.firstSpawnMaxBehind : 8;
 
             var inRange = stations
                 .Where(s => s != playerStn)
-                .Where(s => { int d = Graph.Distance(playerStn, s); return d >= min && d <= max; })
+                .Where(s => { int d = Graph.Distance(playerStn, s); return d >= firstSpawnMinBehind && d <= firstSpawnMaxBehind; })
                 .ToList();
 
             if (inRange.Count > 0)
                 return inRange[RandInt(0, inRange.Count)];
 
-            // 폴백: 플레이어로부터 가장 먼 역(연결 없으면 아무 역)
             return stations
                 .Where(s => s != playerStn)
                 .OrderByDescending(s => { int d = Graph.Distance(playerStn, s); return d == int.MaxValue ? -1 : d; })
                 .FirstOrDefault() ?? stations[0];
         }
 
-        /// <summary>거리별(근/중/원 3밴드)로 나눠 각 밴드에서 비슷한 비율로 count개를 제거 대상으로 고른다(§5-5).</summary>
         List<Tracker> PickByDistanceBands(List<Tracker> pool, int count)
         {
             if (count >= pool.Count) return new List<Tracker>(pool);
@@ -178,14 +183,13 @@ namespace Game.Gameplay
             int n = sorted.Count;
             var bands = new List<List<Tracker>>
             {
-                sorted.Take(n / 3).ToList(),                       // 근거리
-                sorted.Skip(n / 3).Take(n / 3).ToList(),           // 중거리
-                sorted.Skip(2 * (n / 3)).ToList(),                 // 원거리
+                sorted.Take(n / 3).ToList(),
+                sorted.Skip(n / 3).Take(n / 3).ToList(),
+                sorted.Skip(2 * (n / 3)).ToList(),
             };
 
             var picked = new List<Tracker>();
             int bi = 0;
-            // 밴드를 돌며 한 명씩 균등하게 뽑아 비율을 맞춘다
             while (picked.Count < count)
             {
                 var band = bands[bi % bands.Count];
@@ -207,10 +211,6 @@ namespace Game.Gameplay
             return Graph.Distance(t.StationId, playerStn);
         }
 
-        /// <summary>
-        /// 마커 동기화 — ⑦ 가시화 규칙(§6): 활성 노선 위의 추격자만 표시한다.
-        /// 추격자가 2규칙으로 비활성 노선 구간에 들어가 있으면 숨고, 그 노선으로 환승하면 드러난다.
-        /// </summary>
         void SyncMarkers()
         {
             if (enemyLocations != null)
@@ -223,7 +223,6 @@ namespace Game.Gameplay
             if (mapRenderer != null) mapRenderer.RefreshMarkers();
         }
 
-        /// <summary>플레이어가 한 번이라도 탑승한 노선인지(활성 노선만 가시 §6).</summary>
         bool IsLineVisible(string lineId) =>
             player != null && !string.IsNullOrEmpty(lineId) && player.HasVisitedLine(lineId);
     }

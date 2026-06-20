@@ -78,46 +78,5 @@ namespace Game.Tests
             Assert.AreEqual("L1", t.LineId);
         }
 
-        // ── 체증 스텝 환산 (§4-2) ────────────────────────────────────────
-
-        [Test]
-        public void AdvanceSteps_UnitMultiplier_IsBaseTimesPlayerSteps()
-        {
-            float debt = 0f;
-            int s = TrackerManager.ComputeAdvanceSteps(2f, 1f, 1, ref debt);
-            Assert.AreEqual(2, s);
-            Assert.AreEqual(0f, debt, 1e-5f);
-        }
-
-        [Test]
-        public void AdvanceSteps_Congestion_BoostsChase()
-        {
-            float debt = 0f;
-            int s = TrackerManager.ComputeAdvanceSteps(2f, 2f, 1, ref debt); // 2*2 = 4
-            Assert.AreEqual(4, s);
-        }
-
-        [Test]
-        public void AdvanceSteps_FractionalAccumulates_AcrossCalls()
-        {
-            float debt = 0f;
-            int s1 = TrackerManager.ComputeAdvanceSteps(0.5f, 1f, 1, ref debt); // 0.5 → 0
-            int s2 = TrackerManager.ComputeAdvanceSteps(0.5f, 1f, 1, ref debt); // 1.0 → 1
-            Assert.AreEqual(0, s1);
-            Assert.AreEqual(1, s2);
-            Assert.AreEqual(0f, debt, 1e-5f);
-        }
-
-        [Test]
-        public void AdvanceSteps_FractionalCongestion_NoChaseLostOverTime()
-        {
-            // base 1, mult 1.2를 5번 → 총 6.0 누적 → 정수 스텝 합 6, 잔여 0
-            float debt = 0f;
-            int total = 0;
-            for (int i = 0; i < 5; i++)
-                total += TrackerManager.ComputeAdvanceSteps(1f, 1.2f, 1, ref debt);
-            Assert.AreEqual(6, total);
-            Assert.AreEqual(0f, debt, 1e-4f);
-        }
     }
 }

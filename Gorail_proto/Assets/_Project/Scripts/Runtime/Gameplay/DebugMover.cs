@@ -14,10 +14,11 @@ namespace Game.Gameplay
     /// </summary>
     public class DebugMover : MonoBehaviour
     {
-        [SerializeField] private Player             player;
-        [SerializeField] private TurnResolver       turnResolver;
-        [SerializeField] private MapGraphProvider   graphProvider;
         [SerializeField] private PlayerLocationData playerLocation;
+
+        Player       player       => GameCore.Instance?.Player;
+        TurnResolver turnResolver => GameCore.Instance?.TurnResolver;
+        MapGraph     graph        => GameCore.Instance?.Graph?.Graph;
 
         [Tooltip("세션 시작 역(안정적 단일 소스). 비우면 PlayerLocation의 현재 역을 사용. " +
                  "주의: PlayerLocation은 플레이 중 현재 위치로 덮여쓰기되므로 시작역 소스로 쓰지 않는다.")]
@@ -37,7 +38,7 @@ namespace Game.Gameplay
         /// <summary>시작 역·노선으로 Player를 초기화(② 디버그 부트스트랩).</summary>
         public void BootstrapSession()
         {
-            if (player == null || graphProvider == null || graphProvider.Graph == null) return;
+            if (player == null || graph == null) return;
 
             // 시작역의 단일 소스 = startStationId(안정). PlayerLocation은 플레이 중 현재 위치로
             // 덮여쓰이므로 시작역 소스로 쓰지 않는다(비었을 때만 폴백).
@@ -64,7 +65,7 @@ namespace Game.Gameplay
 
             // 세션 시작 = 추격자 0(§1). 이전 플레이/에셋의 잔재 추격자·마커(EnemyLocationData)를 비운다.
             // (이게 없으면 수배도 0인데도 '유령' 적 마커가 남아 보임)
-            var trackers = GameCore.Instance != null ? GameCore.Instance.Trackers : null;
+            var trackers = GameCore.Instance?.Trackers;
             if (trackers != null) trackers.ResetAll();
 
             Debug.Log($"[DebugMover] 세션 시작 — 역:{startStation} 노선:{startLine}");
@@ -72,7 +73,7 @@ namespace Game.Gameplay
 
         string FirstLineOf(string stationId)
         {
-            var lines = graphProvider.Graph.GetLineIds(stationId);
+            var lines = graph?.GetLineIds(stationId);
             return lines != null && lines.Count > 0 ? lines[0] : null;
         }
 
@@ -80,7 +81,7 @@ namespace Game.Gameplay
         [ContextMenu("Move To Destination")]
         public void Move()
         {
-            if (turnResolver == null) { Debug.LogWarning("[DebugMover] turnResolver 미할당"); return; }
+            if (turnResolver == null) { Debug.LogWarning("[DebugMover] TurnResolver 미연결"); return; }
             turnResolver.TryMoveTo(destinationStationId);
         }
 

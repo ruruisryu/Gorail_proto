@@ -1,6 +1,5 @@
 using UnityEngine;
 using Game.Core;
-using Game.Data;
 using Game.Subway;
 
 namespace Game.Gameplay
@@ -11,18 +10,18 @@ namespace Game.Gameplay
     /// </summary>
     public class DebugPanel : MonoBehaviour
     {
-        [SerializeField] private ChaseConfig  config;
         [SerializeField] private DebugMover   debugMover;
         [SerializeField] private bool         show = true;
 
         Vector2 _scroll;
 
-        GameManager     Manager  => GameCore.Instance?.Game;
-        FameSystem      Fame     => GameCore.Instance?.Fame;
-        WantedSystem    Wanted   => GameCore.Instance?.Wanted;
-        TrackerManager  Trackers => GameCore.Instance?.Trackers;
-        TurnResolver    Resolver => GameCore.Instance?.TurnResolver;
-        Player          Player   => GameCore.Instance?.Player;
+        GameManager       Manager    => GameCore.Instance?.Game;
+        FameSystem        Fame       => GameCore.Instance?.Fame;
+        WantedSystem      Wanted     => GameCore.Instance?.Wanted;
+        TrackerManager    Trackers   => GameCore.Instance?.Trackers;
+        TurnResolver      Resolver   => GameCore.Instance?.TurnResolver;
+        InspectionSystem  Inspection => GameCore.Instance?.Inspection;
+        Player            Player     => GameCore.Instance?.Player;
 
         void OnGUI()
         {
@@ -75,9 +74,9 @@ namespace Game.Gameplay
                 if (!Mathf.Approximately(f, fame.CurrentFame)) fame.SetFame(f);
 
                 GUILayout.BeginHorizontal();
-                if (GUILayout.Button("작품 상")) fame.OnArtworkResult(ArtworkGrade.High, true);
-                if (GUILayout.Button("중"))     fame.OnArtworkResult(ArtworkGrade.Mid,  true);
-                if (GUILayout.Button("하"))     fame.OnArtworkResult(ArtworkGrade.Low,  true);
+                if (GUILayout.Button("작품 상")) GameCore.Instance?.Artwork?.OnArtworkResult(ArtworkGrade.High, true);
+                if (GUILayout.Button("중"))     GameCore.Instance?.Artwork?.OnArtworkResult(ArtworkGrade.Mid,  true);
+                if (GUILayout.Button("하"))     GameCore.Instance?.Artwork?.OnArtworkResult(ArtworkGrade.Low,  true);
                 GUILayout.EndHorizontal();
             }
             else if (wanted != null)
@@ -89,21 +88,27 @@ namespace Game.Gameplay
             }
         }
 
-        int Cap() => config != null && Wanted != null ? config.PerLineCap(Wanted.WantedLevel) : 0;
+        int Cap() => Trackers != null && Wanted != null ? Trackers.PerLineCap(Wanted.WantedLevel) : 0;
 
         void DrawConfigSliders()
         {
-            if (config == null) return;
             GUILayout.Label("── 튜닝 ──");
 
-            GUILayout.Label($"검문 통과율: {config.inspectionPassRate:P0}");
-            config.inspectionPassRate = GUILayout.HorizontalSlider(config.inspectionPassRate, 0f, 1f);
+            var insp = Inspection;
+            if (insp != null)
+            {
+                GUILayout.Label($"검문 통과율: {insp.InspectionPassRate:P0}");
+                insp.InspectionPassRate = GUILayout.HorizontalSlider(insp.InspectionPassRate, 0f, 1f);
+            }
 
-            GUILayout.Label($"연출 속도(초/역): {config.stepAnimSeconds:0.00}");
-            config.stepAnimSeconds = GUILayout.HorizontalSlider(config.stepAnimSeconds, 0.02f, 1.5f);
+            var tr = Resolver;
+            if (tr != null)
+            {
+                GUILayout.Label($"연출 속도(초/역): {tr.StepAnimSeconds:0.00}");
+                tr.StepAnimSeconds = GUILayout.HorizontalSlider(tr.StepAnimSeconds, 0.02f, 1.5f);
 
-            config.inspectAtMidStations =
-                GUILayout.Toggle(config.inspectAtMidStations, "중간역 검문(§8-1)");
+                tr.InspectAtMidStations = GUILayout.Toggle(tr.InspectAtMidStations, "중간역 검문(§8-1)");
+            }
         }
 
         void DrawSpace()

@@ -16,8 +16,9 @@ namespace Game.Subway
         [SerializeField] private SubwayNetworkData  networkData;
         [SerializeField] private PlayerLocationData playerLocation;
         [SerializeField] private EnemyLocationData  enemyLocations;
-        [SerializeField] private MapGraphProvider   graphProvider;
         [SerializeField] private RectTransform      mapContainer;
+
+        MapGraph Graph => Game.Core.GameCore.Instance?.Graph?.Graph;
 
         // ── 비활성 색 ────────────────────────────────────────────────────
         [Header("색")]
@@ -493,8 +494,8 @@ namespace Game.Subway
             Circ("Outline", grp.transform, Vector2.zero, EnemySize + 4f,  Color.white);
             Circ("Dot",     grp.transform, Vector2.zero, EnemySize,        EnemyColor);
 
-            int dist = graphProvider?.Graph != null && playerLocation != null
-                ? graphProvider.Graph.Distance(stationId, playerLocation.currentStationId)
+            int dist = Graph != null && playerLocation != null
+                ? Graph.Distance(stationId, playerLocation.currentStationId)
                 : int.MaxValue;
             var txtGO = new GameObject("Dist");
             txtGO.transform.SetParent(grp.transform, false);

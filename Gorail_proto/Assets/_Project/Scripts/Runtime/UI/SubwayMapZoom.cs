@@ -8,9 +8,6 @@ namespace Game.UI
         IScrollHandler, IBeginDragHandler, IDragHandler, IEndDragHandler
     {
         [SerializeField] private RectTransform zoomTarget;
-        [Tooltip("[D2] 줌 변경 시 역 점·선 크기 고정 보정을 받을 렌더러.")]
-        [SerializeField] private Game.Subway.SubwayMapRenderer mapRenderer;
-
         [Header("Zoom Settings")]
         [Tooltip("스크롤 한 칸당 배율 변화량 (1~20 권장). 높을수록 한 번에 크게 확대/축소됩니다.")]
         [SerializeField][Range(1, 20)] private int zoomSensitivity = 5;
@@ -25,6 +22,8 @@ namespace Game.UI
         [SerializeField] private bool enablePan = true;
         [Tooltip("map 끝 너머로 드래그할 수 있는 여유(px). 0이면 끝까지만, 50 이하 권장.")]
         [SerializeField][Range(0f, 200f)] private float panMargin = 30f;
+
+        Game.Subway.SubwayMapRenderer mapRenderer => Game.Core.GameCore.Instance?.MapRenderer;
 
         private float currentZoom = 1f;
         private RectTransform _viewportRT;

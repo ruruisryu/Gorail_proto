@@ -12,11 +12,11 @@ namespace Game.Gameplay
     /// </summary>
     public class MapActivationView : MonoBehaviour
     {
-        [SerializeField] private Player                 player;
-        [SerializeField] private SubwayMapRenderer      mapRenderer;
-        [SerializeField] private Game.Core.SpaceManager spaceManager;
+        Player                    player       => Game.Core.GameCore.Instance?.Player;
+        SubwayMapRenderer         mapRenderer  => Game.Core.GameCore.Instance?.MapRenderer;
+        Game.Core.SpaceManager    spaceManager => Game.Core.GameCore.Instance?.Space;
 
-        void OnEnable()
+        void Start()
         {
             if (player != null)
             {
@@ -24,9 +24,10 @@ namespace Game.Gameplay
                 player.StateChanged       += RefreshHighlight; // 역 이동 시 환승역 하이라이트 갱신
             }
             if (spaceManager != null) spaceManager.SpaceChanged += OnSpaceChanged;
+            Refresh();
         }
 
-        void OnDisable()
+        void OnDestroy()
         {
             if (player != null)
             {
@@ -35,8 +36,6 @@ namespace Game.Gameplay
             }
             if (spaceManager != null) spaceManager.SpaceChanged -= OnSpaceChanged;
         }
-
-        void Start() => Refresh(); // 초기 1회
 
         void OnSpaceChanged(Game.Core.GameSpace s)
         {

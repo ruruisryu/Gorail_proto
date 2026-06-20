@@ -13,7 +13,7 @@ namespace Game.Gameplay
     /// </summary>
     public class ChasePreview : MonoBehaviour
     {
-        [SerializeField] private SubwayMapRenderer mapRenderer;
+        SubwayMapRenderer mapRenderer => GameCore.Instance?.MapRenderer;
 
         void OnEnable()
         {
@@ -30,7 +30,7 @@ namespace Game.Gameplay
         void OnHover(string stationId)
         {
             var core = GameCore.Instance;
-            if (core == null || mapRenderer == null) return;
+            if (core == null || core.MapRenderer == null) return;
             var player = core.Player;
             var graph  = core.Graph != null ? core.Graph.Graph : null;
             var tr     = core.TurnResolver;
@@ -52,16 +52,20 @@ namespace Game.Gameplay
             }
             mapRenderer.ClearRouteHint();
 
-            var config  = tr != null ? tr.Config : null;
-            float baseM = config != null ? config.chaserStepsPerPlayerStep : 1f;
-            int   k     = path.Count - 1;
-            float mult  = config != null ? Mathf.Max(0.01f, config.congestionCurve.Evaluate(k)) : 1f;
+            var tm         = core.Trackers;
+            int bonusEvery = tm != null ? tm.bonusStepsPerPlayerSteps : 5;
+            float perStep  = 1f + 1f / bonusEvery;
 
-            // 한 이동 동안 적이 플레이어 경로 각 칸을 좇으며 전진할 스텝 스케줄(모든 적 공통, 체증 반영).
+            // 한 이동 동안 적이 플레이어 경로 각 칸을 좇으며 전진할 스텝 스케줄(모든 적 공통).
+            // TrackerManager의 현재 debt에서 이어서 계산해야 실제 이동과 일치한다.
             var schedule = new int[path.Count];
-            float debt = 0f;
+            float debt = core.Trackers?.ChaseDebt ?? 0f;
             for (int i = 1; i < path.Count; i++)
-                schedule[i] = TrackerManager.ComputeAdvanceSteps(baseM, mult, 1, ref debt);
+            {
+                debt += perStep;
+                schedule[i] = Mathf.FloorToInt(debt);
+                debt -= schedule[i];
+            }
 
             // 적 출처 = 지도에 실제 표시 중인 적 마커(런타임 추격자=디버그 정적 적 모두 동일 경로).
             var enemyStarts = mapRenderer.DisplayedEnemyStations;

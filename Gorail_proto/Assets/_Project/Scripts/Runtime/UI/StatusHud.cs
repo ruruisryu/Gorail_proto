@@ -32,20 +32,16 @@ namespace Game.UI
         void Start()
         {
             BuildUi();
-            if (ChaseEvents.Instance != null)
-            {
-                ChaseEvents.Instance.InspectionResolved += OnInspection;
-                ChaseEvents.Instance.GameOver           += OnGameOver;
-            }
+            var core = GameCore.Instance;
+            if (core?.Inspection != null) core.Inspection.InspectionResolved += OnInspection;
+            if (core?.Game != null)       core.Game.GameOverOccurred         += OnGameOver;
         }
 
         void OnDestroy()
         {
-            if (ChaseEvents.Instance != null)
-            {
-                ChaseEvents.Instance.InspectionResolved -= OnInspection;
-                ChaseEvents.Instance.GameOver           -= OnGameOver;
-            }
+            var core = GameCore.Instance;
+            if (core?.Inspection != null) core.Inspection.InspectionResolved -= OnInspection;
+            if (core?.Game != null)       core.Game.GameOverOccurred         -= OnGameOver;
         }
 
         void Update()

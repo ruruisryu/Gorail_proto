@@ -14,9 +14,10 @@ namespace Game.Gameplay
     /// </summary>
     public class ChaseFx : MonoBehaviour
     {
-        [SerializeField] private SubwayMapRenderer mapRenderer;
         [Tooltip("검문 깜빡임 지속(초).")]
         [SerializeField] private float flashSeconds = 0.7f;
+
+        SubwayMapRenderer mapRenderer => GameCore.Instance?.MapRenderer;
 
         private static readonly Color PassColor = new Color(0.40f, 1f, 0.50f);
         private static readonly Color FailColor = new Color(1f, 0.30f, 0.25f);
@@ -25,15 +26,17 @@ namespace Game.Gameplay
         private RectTransform _fx;
         private Image _halo;
         private bool _subbed;
+        private InspectionSystem _inspectionSub;
 
         private class Flash { public Image img; public float t; public float zoom; }
         private readonly List<Flash> _flashes = new List<Flash>();
 
         void Update()
         {
-            if (!_subbed && ChaseEvents.Instance != null)
+            if (!_subbed && GameCore.Instance?.Inspection != null)
             {
-                ChaseEvents.Instance.InspectionResolved += OnInspection;
+                _inspectionSub = GameCore.Instance.Inspection;
+                _inspectionSub.InspectionResolved += OnInspection;
                 _subbed = true;
             }
             if (mapRenderer == null) return;
@@ -44,8 +47,8 @@ namespace Game.Gameplay
 
         void OnDestroy()
         {
-            if (_subbed && ChaseEvents.Instance != null)
-                ChaseEvents.Instance.InspectionResolved -= OnInspection;
+            if (_inspectionSub != null)
+                _inspectionSub.InspectionResolved -= OnInspection;
         }
 
         // ── ① 검문 깜빡임 ────────────────────────────────────────────────
