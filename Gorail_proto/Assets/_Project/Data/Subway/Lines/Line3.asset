@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Game.Runtime::Game.Subway.LineData
   lineId: Line3
   displayName: "3\uD638\uC120"
-  lineColor: {r: 1, g: 0.55, b: 0, a: 1}
+  lineColor: {r: 0.90588236, g: 0.5254902, b: 0.08235294, a: 1}
   stations:
   - {fileID: 11400000, guid: f3e746e24a3f0f74b97272dc245a6008, type: 2}
   - {fileID: 11400000, guid: 56c5586db0cd4fa4d9df70d6089333da, type: 2}

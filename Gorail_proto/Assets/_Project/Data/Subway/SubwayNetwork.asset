@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Game.Runtime::Game.Subway.SubwayNetworkData
   lines:
   - {fileID: 11400000, guid: 90ca5b667f66d7d42b62248c841eef9c, type: 2}
+  - {fileID: 11400000, guid: a4ab498179b72ba48b2db70baef813ac, type: 2}
   - {fileID: 11400000, guid: 011b68a151239804386d311d9e12ce8e, type: 2}
   - {fileID: 11400000, guid: 98cf853bc089b5a40befe190ccd3145c, type: 2}
   - {fileID: 11400000, guid: 973956f0c3e75bc48b51b7fd9016ab37, type: 2}

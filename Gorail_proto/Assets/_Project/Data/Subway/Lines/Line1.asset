@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Game.Runtime::Game.Subway.LineData
   lineId: Line1
   displayName: "1\uD638\uC120"
-  lineColor: {r: 0, g: 0.32, b: 0.64, a: 1}
+  lineColor: {r: 0.21960784, g: 0.32941177, b: 0.5411765, a: 1}
   stations:
   - {fileID: 11400000, guid: c6ec151e73177ca469d13b1a960bdb1e, type: 2}
   - {fileID: 11400000, guid: c0e1e71cb9114fb458fba31141f7d6e1, type: 2}
@@ -46,10 +46,6 @@ MonoBehaviour:
   - {fileID: 11400000, guid: e2096041f607caf4c98b5f6d28bec7ad, type: 2}
   - {fileID: 11400000, guid: 70b02e9363caf80418304a1d1366eed9, type: 2}
   - {fileID: 11400000, guid: 529b04d961ae6f746b7868924251bd5d, type: 2}
-  - {fileID: 11400000, guid: 89c1661fef194a34dbc94193927453bc, type: 2}
   - {fileID: 11400000, guid: 342ca02e1cb851e4fa38ea5d9c3ab696, type: 2}
-  - {fileID: 11400000, guid: 071b65c5e68795e4987f72e2caa20dc3, type: 2}
   - {fileID: 11400000, guid: b46208b41a98e9344bb1d7edd159ae9e, type: 2}
-  - {fileID: 11400000, guid: 76f81939a9bc3ac4ba06ea56f35bd522, type: 2}
-  - {fileID: 11400000, guid: bf0375212bf3de940861725a555d56b9, type: 2}
   isCircular: 0

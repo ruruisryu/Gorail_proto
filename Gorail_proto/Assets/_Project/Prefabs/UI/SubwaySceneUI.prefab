@@ -212,6 +212,7 @@ Canvas:
   m_OverridePixelPerfect: 0
   m_SortingBucketNormalizedSize: 0
   m_VertexColorAlwaysGammaSpace: 0
+  m_UseReflectionProbes: 0
   m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
@@ -270,6 +271,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Game.Runtime::Game.UI.SubwaySceneController
   subwayMapPopup: {fileID: 2274359475466909508}
+  subwayMapButton: {fileID: 0}
 --- !u!1 &6675037630557447591
 GameObject:
   m_ObjectHideFlags: 0

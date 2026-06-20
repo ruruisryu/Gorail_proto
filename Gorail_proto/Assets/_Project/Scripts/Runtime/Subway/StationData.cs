@@ -17,8 +17,6 @@ namespace Game.Subway
     {
         public string stationId;
         public string displayName;
-        [Tooltip("맵 패널 내 좌표. 기준 크기 860x550, 좌상단이 (0,0)")]
-        public Vector2 mapPosition;
 
         [Tooltip("역 기능 레이어(§10). 환승 여부는 노선 구조로 별도 결정됨.")]
         public StationFeature featureType = StationFeature.General;
@@ -27,6 +25,6 @@ namespace Game.Subway
         public bool AllowsOutside => featureType == StationFeature.Landmark || featureType == StationFeature.Shop;
 
         /// <summary>외부에서 작품활동 가능한가 — 랜드마크만(상점·안전·일반 불가).</summary>
-        public bool AllowsArtwork => featureType == StationFeature.Landmark;
+        public bool AllowsArtwork => featureType == StationFeature.Landmark;  // 현재 지상으로 나갈 수만 있으면 다 작품활동을 할 수 있게 되어있음
     }
 }

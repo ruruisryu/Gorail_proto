@@ -238,7 +238,6 @@ public static class SubwayDataImporter
                     sd = ScriptableObject.CreateInstance<StationData>();
                     sd.stationId   = node.assetId;
                     sd.displayName = node.name;
-                    sd.mapPosition = node.pos;
                     AssetDatabase.CreateAsset(sd, $"{StationsDir}/{node.assetId}.asset");
                     stnAssets[node.assetId] = sd;
                 }
