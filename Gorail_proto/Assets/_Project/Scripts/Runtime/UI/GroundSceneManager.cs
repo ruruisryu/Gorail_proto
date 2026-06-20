@@ -5,58 +5,68 @@ using Game.Gameplay;
 namespace Game.UI
 {
     /// <summary>
-    /// [S4] 지상 씬(scene_system_spec §3). 체류 타이머 + 작품활동 6버튼(상/중/하 × 성공/실패) +
-    /// 강제도주. 복귀 시 체류 분만큼 추격자 전진(§9-1) 후 나간 역 승강장으로,
-    /// 같은 역에 추격자가 있으면 즉시 검문(확률 게이트).
+    /// [S4] 지상 씬(scene_system_spec §3). 작품활동을 5분 단위 틱으로 진행하며,
+    /// 추격자가 현재 역에 도달하면 작품이 강제 실패되고 지하철로 복귀한다.
     /// </summary>
     public class GroundSceneManager : MonoBehaviour
     {
-        [Header("지상 씬 설정 (§3)")]
-        //[Tooltip("외부 체류 강제 도주 시간(분). 초과 시 나간 역 승강장으로 복귀.")]
-        //[SerializeField] private float forceExitMinutes = 30f;
-
-        private int   _stayGameMinutes;  // 게임 시간 기준 체류 분
-        private int   _enterGameMinutes; // 진입 시점의 게임 누적 분
-        private bool  _returning;
+        private bool _returning;
+        private int  _artworkElapsed;
+        private int  _artworkTotal;
+        private string _artworkResult = "";
 
         GameTimeSystem GameTime => GameCore.Instance?.GameTime;
+        ArtworkSystem  Artwork  => GameCore.Instance?.Artwork;
 
         void OnEnable()
         {
-            _stayGameMinutes = 0;
-            _returning       = false;
+            _returning     = false;
+            _artworkResult = "";
 
-            var gt = GameTime;
-            if (gt != null)
+            var aw = Artwork;
+            if (aw != null)
             {
-                _enterGameMinutes = TotalMinutes(gt);
-                gt.TimeChanged += OnGameTimeChanged;
+                aw.ProgressTicked  += OnProgressTicked;
+                aw.ArtworkFinished += OnArtworkFinished;
             }
         }
 
         void OnDisable()
         {
-            var gt = GameTime;
-            if (gt != null) gt.TimeChanged -= OnGameTimeChanged;
+            var aw = Artwork;
+            if (aw != null)
+            {
+                aw.ProgressTicked  -= OnProgressTicked;
+                aw.ArtworkFinished -= OnArtworkFinished;
+            }
         }
 
-        void OnGameTimeChanged(int day, int hour, int minute)
+        void OnProgressTicked(int elapsed, int total)
         {
-            if (_returning) return;
-            var gt = GameTime;
-            if (gt == null) return;
+            _artworkElapsed = elapsed;
+            _artworkTotal   = total;
+        }
 
-            _stayGameMinutes = TotalMinutes(gt) - _enterGameMinutes;
-
-            //float limit = forceExitMinutes;
-            //if (_stayGameMinutes >= limit) ReturnToSubway(true);
+        void OnArtworkFinished(bool succeeded, float fameGain, bool interrupted)
+        {
+            if (interrupted)
+            {
+                _artworkResult = "추격자 도달 — 작품 실패!";
+                // 추격자가 역에 있으므로 즉시 강제 복귀 → 복귀 후 검문 판정
+                ReturnToSubway(true);
+            }
+            else
+            {
+                _artworkResult = succeeded
+                    ? $"작품 완성 +{fameGain:0.0} 명성"
+                    : "작품 실패";
+            }
         }
 
         void OnGUI()
         {
             var core = GameCore.Instance;
             if (core == null) return;
-            //float limit = forceExitMinutes;
 
             var prevC = GUI.color;
             GUI.color = new Color(0.10f, 0.17f, 0.16f, 0.97f);
@@ -64,45 +74,66 @@ namespace Game.UI
             GUI.color = prevC;
             GUI.Label(new Rect(0, 24f, Screen.width, 30f), "■ 지상 (Ground)");
 
-            GUILayout.BeginArea(new Rect(Screen.width / 2f - 190f, 70f, 380f, 380f), GUI.skin.box);
+            GUILayout.BeginArea(new Rect(Screen.width / 2f - 190f, 70f, 380f, 460f), GUI.skin.box);
             GUILayout.Label($"=== 지상 @ {core.Space?.CurrentStationId} ===");
-            //GUILayout.Label($"체류 {_stayGameMinutes}분(게임) / 강제도주 {limit}분");
             GUILayout.Label($"명성 {core.Fame?.CurrentFame:0.0} · 수배도 {core.Wanted?.WantedLevel}");
+            GUILayout.Label($"추격자 {core.Trackers?.Trackers.Count ?? 0}명");
 
             GUILayout.Space(6);
-            GUILayout.Label("작품활동 (완성도 × 결과):");
-            GUILayout.BeginHorizontal();
-            if (GUILayout.Button("상 성공")) core.Artwork?.OnArtworkResult(ArtworkGrade.High, true);
-            if (GUILayout.Button("중 성공")) core.Artwork?.OnArtworkResult(ArtworkGrade.Mid, true);
-            if (GUILayout.Button("하 성공")) core.Artwork?.OnArtworkResult(ArtworkGrade.Low, true);
-            GUILayout.EndHorizontal();
-            GUILayout.BeginHorizontal();
-            if (GUILayout.Button("상 실패")) core.Artwork?.OnArtworkResult(ArtworkGrade.High, false);
-            if (GUILayout.Button("중 실패")) core.Artwork?.OnArtworkResult(ArtworkGrade.Mid, false);
-            if (GUILayout.Button("하 실패")) core.Artwork?.OnArtworkResult(ArtworkGrade.Low, false);
-            GUILayout.EndHorizontal();
+
+            var aw = Artwork;
+            bool inProgress = aw != null && aw.IsActive;
+
+            if (inProgress)
+            {
+                // 진행 중 표시
+                GUILayout.Label($"작업 진행: {_artworkElapsed} / {_artworkTotal} 분");
+                float ratio = _artworkTotal > 0 ? (float)_artworkElapsed / _artworkTotal : 0f;
+                GUI.color = new Color(0.3f, 0.9f, 0.5f);
+                GUILayout.Box(new string('█', Mathf.RoundToInt(ratio * 20)) +
+                              new string('░', 20 - Mathf.RoundToInt(ratio * 20)));
+                GUI.color = Color.white;
+            }
+            else
+            {
+                if (!string.IsNullOrEmpty(_artworkResult))
+                    GUILayout.Label(_artworkResult);
+
+                GUILayout.Label("작품활동 (완성도 선택 → 추격자 회피 시 성공):");
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("상")) StartArtwork(ArtworkGrade.High);
+                if (GUILayout.Button("중")) StartArtwork(ArtworkGrade.Mid);
+                if (GUILayout.Button("하")) StartArtwork(ArtworkGrade.Low);
+                GUILayout.EndHorizontal();
+            }
 
             GUILayout.Space(10);
             if (GUILayout.Button("지하철로 복귀")) ReturnToSubway(false);
+
             GUILayout.EndArea();
+        }
+
+        void StartArtwork(ArtworkGrade grade)
+        {
+            _artworkResult = "";
+            Artwork?.StartArtwork(grade);
         }
 
         void ReturnToSubway(bool forced)
         {
             if (_returning) return;
             _returning = true;
+
+            Artwork?.CancelArtwork();
+
             var core = GameCore.Instance;
             if (core == null) return;
 
-            string station   = core.Space?.CurrentStationId;
-            int    stayMin   = _stayGameMinutes;
-            string logTag    = forced ? "강제도주" : "자발";
+            string station = core.Space?.CurrentStationId;
 
             ScreenFader.Instance?.Fade(onBlack: () =>
             {
-                // §9-1: 게임 시간 기준 체류 분 → 추격자 전진
-                core.Trackers?.AdvanceByMinutes(stayMin);
-                Debug.Log($"[Ground] 복귀({logTag}) 체류 {stayMin}분(게임) → 추격자 전진");
+                Debug.Log($"[Ground] 복귀({(forced ? "강제" : "자발")}) → 추격자 검문 판정");
 
                 if (core.Platform != null) core.Platform.OpenAt(station);
                 else if (core.Space != null) core.Space.EnterPlatform(station);
@@ -111,10 +142,5 @@ namespace Game.UI
                     core.Inspection.ResolveAt(station);
             });
         }
-
-        static int TotalMinutes(GameTimeSystem gt)
-            => (gt.Day - 1) * (gt.dayEndHour - gt.dayStartHour) * 60
-               + (gt.Hour - gt.dayStartHour) * 60
-               + gt.Minute;
     }
 }

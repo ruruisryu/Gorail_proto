@@ -74,9 +74,9 @@ namespace Game.Gameplay
                 if (!Mathf.Approximately(f, fame.CurrentFame)) fame.SetFame(f);
 
                 GUILayout.BeginHorizontal();
-                if (GUILayout.Button("작품 상")) GameCore.Instance?.Artwork?.OnArtworkResult(ArtworkGrade.High, true);
-                if (GUILayout.Button("중"))     GameCore.Instance?.Artwork?.OnArtworkResult(ArtworkGrade.Mid,  true);
-                if (GUILayout.Button("하"))     GameCore.Instance?.Artwork?.OnArtworkResult(ArtworkGrade.Low,  true);
+                if (GUILayout.Button("작품 상")) GameCore.Instance?.Artwork?.StartArtwork(ArtworkGrade.High);
+                if (GUILayout.Button("중"))     GameCore.Instance?.Artwork?.StartArtwork(ArtworkGrade.Mid);
+                if (GUILayout.Button("하"))     GameCore.Instance?.Artwork?.StartArtwork(ArtworkGrade.Low);
                 GUILayout.EndHorizontal();
             }
             else if (wanted != null)

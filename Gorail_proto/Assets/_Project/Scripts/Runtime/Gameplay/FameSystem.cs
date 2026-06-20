@@ -59,14 +59,10 @@ namespace Game.Gameplay
         /// ArtworkSystem이 작품활동 완료 시 호출. 유예 타이머 리셋 → 시간 전진 → 명성 증가 순으로 처리.
         /// fameGain이 0이면 명성 변화 없음(실패).
         /// </summary>
-        public void OnArtworkCompleted(float fameGain, int artworkDurationMinutes)
+        public void OnArtworkCompleted(float fameGain)
         {
-            // 유예 타이머를 Advance 전에 리셋 — Advance가 TimeChanged를 즉시 발생시키므로
-            // 핸들러 안에서 minutesSinceArtwork가 올바르게 0으로 읽히려면 먼저 갱신해야 한다.
             if (GameTime != null)
-                _totalMinutesAtLastArtwork = TotalMinutes(GameTime) + artworkDurationMinutes;
-
-            GameTime?.Advance(artworkDurationMinutes);
+                _totalMinutesAtLastArtwork = TotalMinutes(GameTime);
 
             if (fameGain > 0f) SetFame(CurrentFame + fameGain);
         }
