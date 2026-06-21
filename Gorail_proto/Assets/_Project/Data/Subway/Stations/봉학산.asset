@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f45b371bd07ee97489241e0524541a3c, type: 3}
   m_Name: "\uBD09\uD559\uC0B0"
   m_EditorClassIdentifier: Game.Runtime::Game.Subway.StationData
-  stationId: "\uBD09\uD559\uC0B0"
-  displayName: "\uBD09\uD559\uC0B0"
+  stationId: "\uBD09\uD654\uC0B0"
+  displayName: "\uBD09\uD654\uC0B0"
   featureType: 0
