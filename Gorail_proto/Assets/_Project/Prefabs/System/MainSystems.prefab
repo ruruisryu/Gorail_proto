@@ -102,6 +102,119 @@ MonoBehaviour:
   fameMidVar: 4
   fameLowBase: 10
   fameLowVar: 2
+  tickRealSeconds: 0.5
+--- !u!1 &4221940980970412693
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 375711082177857098}
+  - component: {fileID: 1671728996291702699}
+  m_Layer: 0
+  m_Name: InventorySystem
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &375711082177857098
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4221940980970412693}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 7101279855335766122}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1671728996291702699
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4221940980970412693}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ef766424fc5585f4d9b71d925efaeec3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Runtime::Game.Inventory.InventorySystem
+  bagShape:
+    width: 7
+    height: 8
+    cells: 0000010101000000010101010100000101010101000001010101010001010101010101010101010101010101010101010100010101010100
+  autoFillItems:
+  - {fileID: 11400000, guid: b15dcd4c07344dc41be2dcf2d2459413, type: 2}
+  - {fileID: 11400000, guid: 2056d20f225011b459ec9573279ce33b, type: 2}
+  - {fileID: 11400000, guid: b5e98a9c75f15df42aab2fab2b5240ad, type: 2}
+  - {fileID: 11400000, guid: f4967704a33a7a74c992b2c5fadf892f, type: 2}
+  - {fileID: 11400000, guid: b15dcd4c07344dc41be2dcf2d2459413, type: 2}
+  - {fileID: 11400000, guid: b15dcd4c07344dc41be2dcf2d2459413, type: 2}
+  - {fileID: 11400000, guid: b15dcd4c07344dc41be2dcf2d2459413, type: 2}
+  - {fileID: 11400000, guid: b15dcd4c07344dc41be2dcf2d2459413, type: 2}
+  - {fileID: 11400000, guid: b15dcd4c07344dc41be2dcf2d2459413, type: 2}
+  - {fileID: 11400000, guid: b15dcd4c07344dc41be2dcf2d2459413, type: 2}
+  - {fileID: 11400000, guid: b15dcd4c07344dc41be2dcf2d2459413, type: 2}
+  - {fileID: 11400000, guid: b15dcd4c07344dc41be2dcf2d2459413, type: 2}
+  canvasData: {fileID: 0}
+--- !u!1 &5573837702417116789
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5205802468988611541}
+  - component: {fileID: 743861622740770509}
+  m_Layer: 0
+  m_Name: ArtworkInventory
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5205802468988611541
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5573837702417116789}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 7101279855335766122}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &743861622740770509
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5573837702417116789}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ef766424fc5585f4d9b71d925efaeec3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Runtime::Game.Inventory.InventorySystem
+  bagShape:
+    width: 6
+    height: 8
+    cells: 000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+  autoFillItems: []
+  canvasData: {fileID: 11400000, guid: 605af6a19e779a34a83127d6e93da846, type: 2}
 --- !u!1 &5770222420146574258
 GameObject:
   m_ObjectHideFlags: 0
@@ -186,6 +299,8 @@ Transform:
   - {fileID: 3692240270783537071}
   - {fileID: 7539475944333535401}
   - {fileID: 8838361199156686039}
+  - {fileID: 375711082177857098}
+  - {fileID: 5205802468988611541}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &7962934293635320438
