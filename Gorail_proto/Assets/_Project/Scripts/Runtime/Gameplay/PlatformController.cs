@@ -89,9 +89,17 @@ namespace Game.Gameplay
         }
 
         /// <summary>④ 지상으로 — 특별역만(§9·§10). 지상 공간(OutsideScene)으로.</summary>
-        public bool GoOutside()
+         public bool GoOutside()
         {
             if (!CanGoOutside) { Debug.Log($"[Platform] {CurrentStation}은 특별역이 아니라 지상 진입 불가"); return false; }
+
+            // 진입 30% 룰: 보유 재료가 IP 빈칸의 30% 미만이면 작품활동 진입 불가
+            var screen = Game.Inventory.ArtworkScreen.Instance;
+            if (screen != null && !screen.HasEnoughMaterials(out int have, out int need))
+            {
+                Debug.Log($"[Platform] 재료 부족({have}/{need}칸) — IP 빈칸의 30% 이상 있어야 작품활동 진입 가능");
+                return false;
+            }
             _cameFromGround = true;
             string stn = CurrentStation;
             Game.UI.ScreenFader.Instance?.Fade(onBlack: () =>

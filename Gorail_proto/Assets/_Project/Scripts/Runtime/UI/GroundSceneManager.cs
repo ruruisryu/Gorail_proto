@@ -1,12 +1,14 @@
 using UnityEngine;
 using Game.Core;
 using Game.Gameplay;
+using Game.Inventory;   // [추가] ArtworkScreen 참조
 
 namespace Game.UI
 {
     /// <summary>
     /// [S4] 지상 씬(scene_system_spec §3). 작품활동을 5분 단위 틱으로 진행하며,
     /// 추격자가 현재 역에 도달하면 작품이 강제 실패되고 지하철로 복귀한다.
+    /// 작품활동은 ArtworkScreen(가방+재료 배치 UI)에서 완성도로 등급이 정해진다.
     /// </summary>
     public class GroundSceneManager : MonoBehaviour
     {
@@ -68,6 +70,9 @@ namespace Game.UI
             var core = GameCore.Instance;
             if (core == null) return;
 
+            // [추가] 작품활동 uGUI 화면이 열려 있으면 IMGUI는 그리지 않는다(겹침 방지)
+            if (ArtworkScreen.Instance != null && ArtworkScreen.Instance.IsOpen) return;
+
             var prevC = GUI.color;
             GUI.color = new Color(0.10f, 0.17f, 0.16f, 0.97f);
             GUI.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), Texture2D.whiteTexture);
@@ -99,24 +104,16 @@ namespace Game.UI
                 if (!string.IsNullOrEmpty(_artworkResult))
                     GUILayout.Label(_artworkResult);
 
-                GUILayout.Label("작품활동 (완성도 선택 → 추격자 회피 시 성공):");
-                GUILayout.BeginHorizontal();
-                if (GUILayout.Button("상")) StartArtwork(ArtworkGrade.High);
-                if (GUILayout.Button("중")) StartArtwork(ArtworkGrade.Mid);
-                if (GUILayout.Button("하")) StartArtwork(ArtworkGrade.Low);
-                GUILayout.EndHorizontal();
+                // [변경] 상/중/하 직접 선택 → 재료 배치 화면(완성도로 등급 결정)
+                GUILayout.Label("작품활동 — 가방에서 재료를 배치해 완성도를 올리세요:");
+                if (GUILayout.Button("작품활동 시작 (재료 배치)"))
+                    ArtworkScreen.Instance?.Open();
             }
 
             GUILayout.Space(10);
             if (GUILayout.Button("지하철로 복귀")) ReturnToSubway(false);
 
             GUILayout.EndArea();
-        }
-
-        void StartArtwork(ArtworkGrade grade)
-        {
-            _artworkResult = "";
-            Artwork?.StartArtwork(grade);
         }
 
         void ReturnToSubway(bool forced)
