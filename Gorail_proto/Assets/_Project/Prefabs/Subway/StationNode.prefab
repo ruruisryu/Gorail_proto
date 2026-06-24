@@ -67,8 +67,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\uC5ED\uBA85"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 031ecbaef987c2f4c83b486d3808d1a5, type: 2}
-  m_sharedMaterial: {fileID: 3670968952827390848, guid: 031ecbaef987c2f4c83b486d3808d1a5, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 36d784d7d8d7f914283cca7bc6a11b01, type: 2}
+  m_sharedMaterial: {fileID: 4402234757357678134, guid: 36d784d7d8d7f914283cca7bc6a11b01, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []

@@ -96,14 +96,7 @@ namespace Game.Subway
             if (linesRT != null) RebuildBezierCache(linesRT);
             RefreshMarkers();
         }
-
-        void Start()
-        {
-            foreach (var outer in _enemyOuterRTs)
-                if (outer != null) outer.SetSiblingIndex(mapContainer.childCount - 1);
-            if (_playerMarker != null)
-                _playerMarker.SetSiblingIndex(mapContainer.childCount - 1);
-        }
+        
 
         // ── 마커 ────────────────────────────────────────────────────────
 
@@ -592,8 +585,11 @@ namespace Game.Subway
                 float yBob  = (Mathf.Sin(Time.time * bobSpeed + phase) + 1f) * 0.5f * bobAmplitude;
                 bobRT.anchoredPosition = new Vector2(0f, yBob);
             }
-
-
+            
+            foreach (var outer in _enemyOuterRTs)
+                if (outer != null) outer.SetSiblingIndex(mapContainer.childCount - 1);
+            if (_playerMarker != null)
+                _playerMarker.SetSiblingIndex(mapContainer.childCount - 1);
         }
 
         // ── UI 헬퍼 ──────────────────────────────────────────────────────
