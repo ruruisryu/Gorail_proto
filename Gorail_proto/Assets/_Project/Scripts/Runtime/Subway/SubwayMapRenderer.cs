@@ -24,14 +24,22 @@ namespace Game.Subway
         [Header("색")]
         [SerializeField] private Color inactiveLineColor = new Color(0.62f, 0.62f, 0.62f, 1f);
 
-        // ── 마커 크기 ────────────────────────────────────────────────────
-        private const float PlayerSize = 18f;
-        private const float EnemySize  = 18f;
+        // ── 마커 아이콘 ──────────────────────────────────────────────────
+        [Header("마커 프리팹 (비우면 원형 폴백)")]
+        [SerializeField] private GameObject playerMarkerPrefab;
+        [SerializeField] private GameObject trackerMarkerPrefab;
 
-        private static readonly Color PlayerColor     = new Color(0.22f, 0.92f, 0.42f);
-        private static readonly Color PlayerRingColor = new Color(0.22f, 0.92f, 0.42f, 0.30f);
-        private static readonly Color EnemyColor      = new Color(0.95f, 0.18f, 0.18f);
-        private static readonly Color EnemyRingColor  = new Color(0.95f, 0.18f, 0.18f, 0.30f);
+        [Header("마커 크기 (비율 40 : 52.3 고정)")]
+        [SerializeField] private float markerWidth = 20f;
+        private static readonly Vector2 MarkerRatio = new Vector2(40f, 52.3f);
+        Vector2 MarkerSize => new Vector2(markerWidth, markerWidth * MarkerRatio.y / MarkerRatio.x);
+
+        [Header("마커 밥 애니메이션")]
+        [SerializeField] private float bobAmplitude = 4f;
+        [SerializeField] private float bobSpeed     = 2.2f;
+
+        private static readonly Color PlayerFallbackColor  = new Color(0.22f, 0.92f, 0.42f);
+        private static readonly Color TrackerFallbackColor = new Color(0.95f, 0.18f, 0.18f);
 
         // ── 컨테이너 태그 ────────────────────────────────────────────────
         private const string LinesTag     = "[Lines]";
@@ -60,6 +68,12 @@ namespace Game.Subway
         private const float PlayerGlideSharpness = 14f;
         private RectTransform _playerMarker;
         private Vector2       _playerTarget;
+        private Vector2       _playerBasePos;
+        private Image         _playerBorder; // 노선 색 테두리
+
+        // 추격자 마커 목록 (RefreshMarkers마다 갱신)
+        private readonly List<RectTransform> _enemyBobRTs  = new();
+        private readonly List<RectTransform> _enemyOuterRTs = new();
 
         private readonly Dictionary<string, RectTransform> _containerCache = new();
         private readonly List<StationView>                 _stationViews   = new();
@@ -87,6 +101,9 @@ namespace Game.Subway
 
         public void RefreshMarkers()
         {
+            _enemyBobRTs.Clear();
+            _enemyOuterRTs.Clear();
+
             for (int i = mapContainer.childCount - 1; i >= 0; i--)
             {
                 var child = mapContainer.GetChild(i);
@@ -105,7 +122,7 @@ namespace Game.Subway
                 {
                     if (string.IsNullOrEmpty(id)) continue;
                     var pos = GetStationUIPos(id);
-                    if (pos.HasValue) DrawEnemy(pos.Value, id, idx++);
+                    if (pos.HasValue) DrawTracker(pos.Value, id, idx++);
                 }
             }
 
@@ -176,8 +193,8 @@ namespace Game.Subway
                     var end = GetStationUIPos(ep[ep.Count - 1]);
                     if (end.HasValue)
                     {
-                        Circ("PreviewRing", prev, end.Value, EnemySize + 16f, new Color(0.95f, 0.18f, 0.18f, 0.22f));
-                        Circ("Preview",     prev, end.Value, EnemySize + 4f,  new Color(0.95f, 0.18f, 0.18f, 0.70f));
+                        Circ("PreviewRing", prev, end.Value, 48f, new Color(0.95f, 0.18f, 0.18f, 0.22f));
+                        Circ("Preview",     prev, end.Value, 36f, new Color(0.95f, 0.18f, 0.18f, 0.70f));
                     }
                 }
 
@@ -187,12 +204,11 @@ namespace Game.Subway
                 var dest = GetStationUIPos(playerPath[playerPath.Count - 1]);
                 if (dest.HasValue)
                 {
-                    Circ("DestRing", prev, dest.Value, PlayerSize + 16f, DestRingColor);
-                    Circ("Dest",     prev, dest.Value, PlayerSize + 2f,  DestColor);
+                    Circ("DestRing", prev, dest.Value, 48f, DestRingColor);
+                    Circ("Dest",     prev, dest.Value, 34f, DestColor);
                 }
             }
 
-            // 원형 마커만 줌 보정 (UIBezierLine 클론은 SetWidthScale로 처리)
             for (int i = 0; i < prev.childCount; i++)
             {
                 var ch = prev.GetChild(i);
@@ -247,8 +263,8 @@ namespace Game.Subway
             var dest = GetStationUIPos(path[path.Count - 1]);
             if (dest.HasValue)
             {
-                Circ("HintRing", layer, dest.Value, PlayerSize + 16f, new Color(0.75f, 0.92f, 1f, 0.25f));
-                Circ("HintDest", layer, dest.Value, PlayerSize + 2f,  HintDestColor);
+                Circ("HintRing", layer, dest.Value, 48f, new Color(0.75f, 0.92f, 1f, 0.25f));
+                Circ("HintDest", layer, dest.Value, 34f, HintDestColor);
             }
 
             for (int i = 0; i < layer.childCount; i++)
@@ -303,7 +319,6 @@ namespace Game.Subway
                 seg.SetVerticesDirty();
             }
 
-            // lineRings.lineId 대신 networkData에서 직접 조회 (lineRings 설정 누락에 무관하게 동작)
             var stationLineIds = new Dictionary<string, List<string>>();
             foreach (var line in networkData.lines)
             {
@@ -399,7 +414,6 @@ namespace Game.Subway
 
         void RebuildStationCache(RectTransform stationsRT)
         {
-            // GO 이름 "Stn_<stationId>" 패턴으로 StationData를 자동 주입하기 위한 조회 테이블
             var dataById = new Dictionary<string, StationData>();
             if (networkData != null)
                 foreach (var line in networkData.lines)
@@ -415,7 +429,6 @@ namespace Game.Subway
             {
                 if (v == null) continue;
 
-                // GO 이름으로 stationData를 결정(복사 GO의 오염된 필드 무시)
                 var n = v.gameObject.name;
                 if (n.StartsWith("Stn_") && dataById.TryGetValue(n.Substring(4), out var sd))
                     v.stationData = sd;
@@ -454,9 +467,11 @@ namespace Game.Subway
         {
             if (!Application.isPlaying)
             {
-                Circ("PlayerRing",    mapContainer, uiPos, PlayerSize + 12f, PlayerRingColor);
-                Circ("PlayerOutline", mapContainer, uiPos, PlayerSize + 4f,  Color.white);
-                Circ("Player",        mapContainer, uiPos, PlayerSize,        PlayerColor);
+                if (playerMarkerPrefab != null)
+                    Instantiate(playerMarkerPrefab, mapContainer).GetComponent<RectTransform>()
+                               .anchoredPosition = uiPos;
+                else
+                    Circ("Player", mapContainer, uiPos, 32f, PlayerFallbackColor);
                 return;
             }
 
@@ -464,52 +479,130 @@ namespace Game.Subway
             if (_playerMarker == null)
             {
                 _playerMarker = CreateContainer(PlayerTag, mapContainer.childCount);
-                Circ("PlayerRing",    _playerMarker, Vector2.zero, PlayerSize + 12f, PlayerRingColor);
-                Circ("PlayerOutline", _playerMarker, Vector2.zero, PlayerSize + 4f,  Color.white);
-                Circ("Player",        _playerMarker, Vector2.zero, PlayerSize,        PlayerColor);
+
+                if (playerMarkerPrefab != null)
+                {
+                    var inst   = Instantiate(playerMarkerPrefab, _playerMarker);
+                    var instRT = inst.GetComponent<RectTransform>();
+                    if (instRT != null) { instRT.anchoredPosition = Vector2.zero; instRT.sizeDelta = MarkerSize; }
+                    foreach (var img in inst.GetComponentsInChildren<Image>(true))
+                        if (img.name == "Border")
+                        {
+                            _playerBorder = img;
+                            var brt = img.GetComponent<RectTransform>();
+                            if (brt != null) brt.sizeDelta = MarkerSize;
+                            break;
+                        }
+                }
+                else
+                {
+                    Circ("PlayerOutline", _playerMarker, Vector2.zero, markerWidth + 4f, Color.white);
+                    Circ("Player",        _playerMarker, Vector2.zero, markerWidth,       PlayerFallbackColor);
+                }
+
                 _playerMarker.anchoredPosition = uiPos;
+                _playerBasePos = uiPos;
             }
             _playerMarker.SetSiblingIndex(mapContainer.childCount - 1);
             _playerTarget = uiPos;
         }
 
-        void Update()
+        void DrawTracker(Vector2 uiPos, string stationId, int index)
         {
-            if (!Application.isPlaying || _playerMarker == null) return;
-            float k = 1f - Mathf.Exp(-PlayerGlideSharpness * Time.deltaTime);
-            _playerMarker.anchoredPosition = Vector2.Lerp(_playerMarker.anchoredPosition, _playerTarget, k);
-            _playerMarker.localScale = Vector3.one * _zoomComp;
-        }
+            // 외부 앵커 (역 위치 고정, 줌 보정 적용 대상)
+            var outer   = new GameObject($"Enemy_{index}");
+            outer.transform.SetParent(mapContainer, false);
+            var outerRT = outer.AddComponent<RectTransform>();
+            outerRT.anchorMin = outerRT.anchorMax = outerRT.pivot = Vector2.one * 0.5f;
+            outerRT.anchoredPosition = uiPos;
+            outerRT.sizeDelta        = Vector2.zero;
+            _enemyOuterRTs.Add(outerRT);
 
-        void DrawEnemy(Vector2 uiPos, string stationId, int index)
-        {
-            var grp = new GameObject($"Enemy_{index}");
-            grp.transform.SetParent(mapContainer, false);
-            var grpRT = grp.AddComponent<RectTransform>();
-            grpRT.anchorMin = grpRT.anchorMax = grpRT.pivot = Vector2.one * 0.5f;
-            grpRT.anchoredPosition = uiPos;
-            grpRT.sizeDelta = Vector2.zero;
+            // 내부 밥 컨테이너 (위아래 애니메이션)
+            var bobGO = new GameObject("Bob");
+            bobGO.transform.SetParent(outer.transform, false);
+            var bobRT = bobGO.AddComponent<RectTransform>();
+            bobRT.anchorMin = bobRT.anchorMax = bobRT.pivot = Vector2.one * 0.5f;
+            bobRT.anchoredPosition = Vector2.zero;
+            bobRT.sizeDelta        = Vector2.zero;
+            _enemyBobRTs.Add(bobRT);
 
-            Circ("Ring",    grp.transform, Vector2.zero, EnemySize + 12f, EnemyRingColor);
-            Circ("Outline", grp.transform, Vector2.zero, EnemySize + 4f,  Color.white);
-            Circ("Dot",     grp.transform, Vector2.zero, EnemySize,        EnemyColor);
+            if (trackerMarkerPrefab != null)
+            {
+                var inst   = Instantiate(trackerMarkerPrefab, bobRT);
+                var instRT = inst.GetComponent<RectTransform>();
+                if (instRT != null) { instRT.anchoredPosition = Vector2.zero; instRT.sizeDelta = MarkerSize; }
+            }
+            else
+            {
+                Circ("Ring",    bobRT, Vector2.zero, markerWidth + 12f, new Color(0.95f, 0.18f, 0.18f, 0.30f));
+                Circ("Outline", bobRT, Vector2.zero, markerWidth + 4f,  Color.white);
+                Circ("Dot",     bobRT, Vector2.zero, markerWidth,        TrackerFallbackColor);
+            }
 
+            // 거리 텍스트
             int dist = Graph != null && playerLocation != null
                 ? Graph.Distance(stationId, playerLocation.currentStationId)
                 : int.MaxValue;
             var txtGO = new GameObject("Dist");
-            txtGO.transform.SetParent(grp.transform, false);
+            txtGO.transform.SetParent(bobRT, false);
             var txtRT = txtGO.AddComponent<RectTransform>();
             txtRT.anchorMin = txtRT.anchorMax = txtRT.pivot = new Vector2(0.5f, 0f);
-            txtRT.anchoredPosition = new Vector2(0f, EnemySize * 0.5f + 2f);
+            txtRT.anchoredPosition = new Vector2(0f, 18f);
             txtRT.sizeDelta = new Vector2(36f, 18f);
             var tmp = txtGO.AddComponent<TextMeshProUGUI>();
-            tmp.text = dist == int.MaxValue ? "?" : dist.ToString();
-            tmp.fontSize = 13f;
-            tmp.fontStyle = FontStyles.Bold;
-            tmp.alignment = TextAlignmentOptions.Center;
-            tmp.color = Color.black;
+            tmp.text          = dist == int.MaxValue ? "?" : dist.ToString();
+            tmp.fontSize      = 13f;
+            tmp.fontStyle     = FontStyles.Bold;
+            tmp.alignment     = TextAlignmentOptions.Center;
+            tmp.color         = Color.black;
             tmp.raycastTarget = false;
+        }
+
+        // ── Update: 글라이드 + 밥 + 노선 색 갱신 ────────────────────────
+
+        void Update()
+        {
+            if (!Application.isPlaying) return;
+
+            // 플레이어 글라이드 + 밥
+            if (_playerMarker != null)
+            {
+                float k = 1f - Mathf.Exp(-PlayerGlideSharpness * Time.deltaTime);
+                _playerBasePos = Vector2.Lerp(_playerBasePos, _playerTarget, k);
+                // sin [-1,1] → [0,1] 로 변환해 원래 위치 아래로 안 내려감
+                float playerBob = (Mathf.Sin(Time.time * bobSpeed) + 1f) * 0.5f * bobAmplitude;
+                _playerMarker.anchoredPosition = _playerBasePos + Vector2.up * playerBob;
+                _playerMarker.localScale = Vector3.one * _zoomComp;
+
+                // 노선 색 테두리 갱신
+                if (_playerBorder != null)
+                {
+                    var core   = Game.Core.GameCore.Instance;
+                    string lid = core?.Player?.CurrentLineId;
+                    if (lid != null && networkData != null)
+                    {
+                        var ld = networkData.lines.FirstOrDefault(l => l != null && l.lineId == lid);
+                        if (ld != null) _playerBorder.color = ld.lineColor;
+                    }
+                }
+            }
+
+            // 추격자 밥 (위상 엇갈림으로 동기화 방지, 위쪽으로만)
+            for (int i = 0; i < _enemyBobRTs.Count; i++)
+            {
+                var bobRT = _enemyBobRTs[i];
+                if (bobRT == null) continue;
+                float phase = i * Mathf.PI * 0.71f;
+                float yBob  = (Mathf.Sin(Time.time * bobSpeed + phase) + 1f) * 0.5f * bobAmplitude;
+                bobRT.anchoredPosition = new Vector2(0f, yBob);
+            }
+
+            // 마커를 항상 최상위로 (프리뷰·힌트 레이어 위)
+            foreach (var outer in _enemyOuterRTs)
+                if (outer != null) outer.SetSiblingIndex(mapContainer.childCount - 1);
+            if (_playerMarker != null)
+                _playerMarker.SetSiblingIndex(mapContainer.childCount - 1);
         }
 
         // ── UI 헬퍼 ──────────────────────────────────────────────────────
