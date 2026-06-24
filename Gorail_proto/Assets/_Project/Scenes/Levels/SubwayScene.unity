@@ -14972,7 +14972,7 @@ MonoBehaviour:
   inactiveLineColor: {r: 0.62, g: 0.62, b: 0.62, a: 1}
   playerMarkerPrefab: {fileID: 2936326140553974562, guid: 27b4a0ece788cc94e8b98423d856714f, type: 3}
   trackerMarkerPrefab: {fileID: 1583880422764544412, guid: a674d068cfca701478500f6c2e453825, type: 3}
-  markerWidth: 20
+  markerWidth: 60
   bobAmplitude: 4
   bobSpeed: 2.2
 --- !u!1001 &398848801

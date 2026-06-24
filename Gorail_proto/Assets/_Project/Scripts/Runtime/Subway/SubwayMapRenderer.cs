@@ -132,41 +132,27 @@ namespace Game.Subway
                 if (pos.HasValue) DrawPlayer(pos.Value);
             }
 
-            ApplyCompToMarkers();
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // [D2] 줌 크기 고정
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+        /// <summary>
+        /// 줌 배율이 바뀔 때 SubwayMapZoom이 호출한다.
+        /// 마커는 화면상 크기를 고정(역배율 적용), 선·프리뷰는 줌과 함께 스케일됨.
+        /// </summary>
         public void ApplyZoomCompensation(float zoom, float lockThreshold)
         {
             _zoomComp = zoom > lockThreshold && zoom > 0f ? lockThreshold / zoom : 1f;
 
-            foreach (var view in _stationViews)
-                if (view != null) view.transform.localScale = Vector3.one * _zoomComp;
+            // 플레이어 마커
+            if (_playerMarker != null)
+                _playerMarker.localScale = Vector3.one * _zoomComp;
 
-            foreach (var line in _bezierLines)
-                if (line != null) line.SetWidthScale(_zoomComp);
-
-            ApplyWidthScaleToContainer(FindContainer(PreviewTag),   _zoomComp);
-            ApplyWidthScaleToContainer(FindContainer(RouteHintTag), _zoomComp);
-            ApplyWidthScaleToContainer(FindContainer(LineHLTag),    _zoomComp);
-
-            ApplyCompToMarkers();
-        }
-
-        void ApplyCompToMarkers()
-        {
-            for (int i = 0; i < mapContainer.childCount; i++)
-            {
-                var child = mapContainer.GetChild(i);
-                if (child.name == LinesTag    || child.name == StationsTag ||
-                    child.name == PreviewTag  || child.name == FxTag       ||
-                    child.name == PlayerTag   || child.name == LineHLTag   ||
-                    child.name == RouteHintTag) continue;
-                child.localScale = Vector3.one * _zoomComp;
-            }
+            // 추격자 마커 (outer 앵커 기준)
+            foreach (var outer in _enemyOuterRTs)
+                if (outer != null) outer.localScale = Vector3.one * _zoomComp;
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -501,6 +487,7 @@ namespace Game.Subway
                 }
 
                 _playerMarker.anchoredPosition = uiPos;
+                _playerMarker.localScale = Vector3.one * _zoomComp;
                 _playerBasePos = uiPos;
             }
             _playerMarker.SetSiblingIndex(mapContainer.childCount - 1);
@@ -516,6 +503,7 @@ namespace Game.Subway
             outerRT.anchorMin = outerRT.anchorMax = outerRT.pivot = Vector2.one * 0.5f;
             outerRT.anchoredPosition = uiPos;
             outerRT.sizeDelta        = Vector2.zero;
+            outerRT.localScale       = Vector3.one * _zoomComp;
             _enemyOuterRTs.Add(outerRT);
 
             // 내부 밥 컨테이너 (위아래 애니메이션)
@@ -573,7 +561,6 @@ namespace Game.Subway
                 // sin [-1,1] → [0,1] 로 변환해 원래 위치 아래로 안 내려감
                 float playerBob = (Mathf.Sin(Time.time * bobSpeed) + 1f) * 0.5f * bobAmplitude;
                 _playerMarker.anchoredPosition = _playerBasePos + Vector2.up * playerBob;
-                _playerMarker.localScale = Vector3.one * _zoomComp;
 
                 // 노선 색 테두리 갱신
                 if (_playerBorder != null)

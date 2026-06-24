@@ -101,7 +101,7 @@ namespace Game.UI
             if (zoomTarget != null)
                 zoomTarget.localScale = Vector3.one * currentZoom;
             if (mapRenderer != null)
-                mapRenderer.ApplyZoomCompensation(currentZoom, sizeLockThreshold); // [D2] 점·선 크기 고정
+                mapRenderer.ApplyZoomCompensation(currentZoom, sizeLockThreshold);
             ClampPosition();
         }
 
