@@ -97,6 +97,14 @@ namespace Game.Subway
             RefreshMarkers();
         }
 
+        void Start()
+        {
+            foreach (var outer in _enemyOuterRTs)
+                if (outer != null) outer.SetSiblingIndex(mapContainer.childCount - 1);
+            if (_playerMarker != null)
+                _playerMarker.SetSiblingIndex(mapContainer.childCount - 1);
+        }
+
         // ── 마커 ────────────────────────────────────────────────────────
 
         public void RefreshMarkers()
@@ -585,11 +593,7 @@ namespace Game.Subway
                 bobRT.anchoredPosition = new Vector2(0f, yBob);
             }
 
-            // 마커를 항상 최상위로 (프리뷰·힌트 레이어 위)
-            foreach (var outer in _enemyOuterRTs)
-                if (outer != null) outer.SetSiblingIndex(mapContainer.childCount - 1);
-            if (_playerMarker != null)
-                _playerMarker.SetSiblingIndex(mapContainer.childCount - 1);
+
         }
 
         // ── UI 헬퍼 ──────────────────────────────────────────────────────
