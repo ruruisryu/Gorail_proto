@@ -1,60 +1,207 @@
+using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 using Game.Core;
+using Game.Gameplay;
+using Game.Subway;
 
 namespace Game.UI
 {
     /// <summary>
-    /// [S5] 승강장 씬 UI(scene_system_spec §2). 네 갈래 버튼을 그리고 역 속성에 따라 활성화한다.
-    ///   재탑승·반대방향: 항상 / 환승: 환승역만 / 지상으로: 특별역만.
-    /// 버튼 stub 방식(IMGUI) — 별도 Canvas 불필요. 로직은 GameCore.Platform(영속) 호출.
+    /// [S5] 승강장 씬 UGUI 컨트롤러.
+    ///
+    /// 패널 흐름: LineSelectPanel → DirectionSelectPanel
+    ///   1. 호선 선택: 현재 노선(재탑승) + 환승 가능 노선 버튼 목록(프리팹)
+    ///   2. 방면 선택: 선택한 호선의 양방향 이웃한 역 버튼
+    ///
+    /// 인스펙터 연결 필요 항목은 [SerializeField] 참조.
+    /// 버튼 onClick은 아래 public 메서드를 직접 연결:
+    ///   - WayOutButton.onClick  → OnWayOutClicked()
+    ///   - BackButton.onClick    → OnBackClicked()
     /// </summary>
     public class PlatformSceneController : MonoBehaviour
     {
-        void OnGUI()
+        // ── 나가는 곳 ─────────────────────────────────────────────────────
+        [Header("나가는 곳 버튼")]
+        [SerializeField] private Button   wayOutButton;
+        [SerializeField] private TMP_Text wayOutStationName;
+        [SerializeField] private TMP_Text wayOutStationNum;
+
+        // ── 호선 선택 패널 ────────────────────────────────────────────────
+        [Header("호선 선택 패널")]
+        [SerializeField] private GameObject lineSelectPanel;
+        [SerializeField] private Transform  lineButtonContainer; // VerticalLayoutGroup
+        [SerializeField] private GameObject lineSelectorPrefab;  // LineSelectorButtonUI
+
+        // ── 방면 선택 패널 ────────────────────────────────────────────────
+        [Header("방면 선택 패널")]
+        [SerializeField] private GameObject directionSelectPanel;
+        [SerializeField] private Image      directionHeaderBar;  // 선택 호선 색
+        [SerializeField] private Image[]    lineTextCircle; // 선택 호선 색 (원)
+        [SerializeField] private TMP_Text[] lineText;   // 선택 호선 표시명
+        [SerializeField] private Button     backwardButton;
+        [SerializeField] private TMP_Text   backwardLabel;       // "○○ 방면"
+        [SerializeField] private Button     forwardButton;
+        [SerializeField] private TMP_Text   forwardLabel;        // "○○ 방면"
+
+        // ── 경고 메시지 ───────────────────────────────────────────────────
+        [Header("경고 (외부IP 작품 후 재진입 시도)")] [SerializeField]
+        private string dangerWarning = "지금 밖으로 나가면 위험할 것 같다...";
+
+        // ── 내부 ─────────────────────────────────────────────────────────
+        private string _pendingLineId;
+        private bool   _pendingIsSameLine;
+
+        PlatformController Platform   => GameCore.Instance?.Platform;
+        SubwayMapRenderer  MapRenderer => GameCore.Instance?.MapRenderer;
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        void OnEnable()
         {
-            var core = GameCore.Instance;
-            if (core == null || core.Platform == null) return;
-            var plat = core.Platform;
-            var player = core.Player;
+            wayOutButton.onClick.AddListener(OnWayOutClicked);
+            RefreshWayOut();
+            ShowLineSelect();
+            BuildLineButtons();
+        }
 
-            // 전체화면 배경 — 지하철과 시각적으로 분리된 '승강장' 공간(어두운 청회색).
-            var prevC = GUI.color;
-            GUI.color = new Color(0.10f, 0.13f, 0.18f, 0.97f);
-            GUI.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), Texture2D.whiteTexture);
-            GUI.color = prevC;
-            GUI.Label(new Rect(0, 24f, Screen.width, 30f), "■ 승강장 (Platform)");
+        void OnDisable() => ClearLineButtons();
 
-            GUILayout.BeginArea(new Rect(Screen.width / 2f - 160f, 70f, 320f, 360f), GUI.skin.box);
-            GUILayout.Label($"=== 승강장 @ {plat.CurrentStation} ===");
-            if (player != null)
-                GUILayout.Label($"노선 {player.CurrentLineId} · 방향 {player.Direction} · 명성 {core.Fame?.CurrentFame:0} · 수배도 {core.Wanted?.WantedLevel}");
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 나가는 곳
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-            GUILayout.Space(6);
-            if (GUILayout.Button("가던 방향 재탑승")) plat.ContinueForward();
-            if (GUILayout.Button("반대방향 탑승"))   plat.ReverseDirection();
+        void RefreshWayOut()
+        {
+            if (wayOutButton == null) return;
+            wayOutButton.gameObject.SetActive(Platform?.IsSpecialStation == true);
 
-            GUILayout.Space(6);
-            if (plat.AvailableTransferLines.Count > 0)
+            var graph     = GameCore.Instance?.Graph?.Graph;
+            var stationId = Platform?.CurrentStation;
+            if (graph != null && !string.IsNullOrEmpty(stationId))
             {
-                GUILayout.Label("환승 (노선·방향 선택):");
-                foreach (var line in plat.AvailableTransferLines)
-                {
-                    var (bwd, fwd) = plat.GetTransferDirectionLabels(line);
-                    GUILayout.BeginHorizontal();
-                    if (bwd != null && GUILayout.Button($"← {line} {bwd}방면")) plat.TransferWithDirection(line, -1);
-                    if (fwd != null && GUILayout.Button($"→ {line} {fwd}방면")) plat.TransferWithDirection(line, +1);
-                    GUILayout.EndHorizontal();
-                }
+                var station = graph.GetStation(stationId);
+                if (wayOutStationName != null) wayOutStationName.text = station?.displayName ?? stationId;
             }
-            else GUILayout.Label("환승 불가 (환승역 아님)");
+            if (wayOutStationNum != null) wayOutStationNum.text = UnityEngine.Random.Range(1, 7).ToString();
+        }
 
-            GUILayout.Space(6);
-            bool canOut = plat.CanGoOutside;
-            GUI.enabled = canOut;
-            if (GUILayout.Button(canOut ? "지상으로 (작품활동)" : "지상 불가 (특별역 아님)")) plat.GoOutside();
-            GUI.enabled = true;
+        private void OnWayOutClicked()
+        {
+            var plat = Platform;
+            if (plat == null) return;
 
-            GUILayout.EndArea();
+            // 이미 작품활동을 한 역이면 경고
+            if (!plat.CanGoOutside)
+            {
+                MoveNotificationHud.Instance.ShowPopUp(dangerWarning, new Vector2(0, -350));
+                return;
+            }
+
+            plat.GoOutside();
+        }
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 호선 선택 패널
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        void BuildLineButtons()
+        {
+            ClearLineButtons();
+            var plat   = Platform;
+            var player = GameCore.Instance?.Player;
+            if (plat == null || player == null || lineSelectorPrefab == null) return;
+
+            bool fromGround = plat.CameFromGround;
+
+            // 현재 노선 — 재탑승 or 탑승하는 방향
+            string currentLabel = fromGround
+                ? $"{MapRenderer.GetLineDisplayName(player.CurrentLineId)} 탑승하는 방향"
+                : $"{MapRenderer.GetLineDisplayName(player.CurrentLineId)} 재탑승";
+            SpawnLineButton(player.CurrentLineId, currentLabel, isSameLine: true);
+
+            // 환승 가능 노선
+            foreach (var lineId in plat.AvailableTransferLines)
+            {
+                string transferLabel = fromGround
+                    ? $"{MapRenderer.GetLineDisplayName(lineId)} 탑승하는 방향"
+                    : $"{MapRenderer.GetLineDisplayName(lineId)} 갈아타는 방향";
+                SpawnLineButton(lineId, transferLabel, isSameLine: false);
+            }
+        }
+
+        void SpawnLineButton(string lineId, string labelText, bool isSameLine)
+        {
+            var go  = Instantiate(lineSelectorPrefab, lineButtonContainer);
+            var btn = go.GetComponent<LineSelectorButtonUI>();
+            if (btn == null) return;
+
+            var color       = MapRenderer != null ? MapRenderer.GetLineColor(lineId)       : Color.gray;
+            var displayName = MapRenderer != null ? MapRenderer.GetLineDisplayName(lineId) : lineId;
+
+            btn.Setup(color, labelText, () => OnLineButtonClicked(lineId, isSameLine));
+        }
+
+        void ClearLineButtons()
+        {
+            if (lineButtonContainer == null) return;
+            for (int i = lineButtonContainer.childCount - 1; i >= 0; i--)
+                Destroy(lineButtonContainer.GetChild(i).gameObject);
+        }
+
+        void OnLineButtonClicked(string lineId, bool isSameLine)
+        {
+            _pendingLineId     = lineId;
+            _pendingIsSameLine = isSameLine;
+            ShowDirectionPanel(lineId, isSameLine);
+        }
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 방면 선택 패널
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        void ShowDirectionPanel(string lineId, bool isSameLine)
+        {
+            var plat = Platform;
+            if (plat == null) return;
+
+            var color       = MapRenderer != null ? MapRenderer.GetLineColor(lineId) : Color.gray;
+            var displayName = MapRenderer != null ? MapRenderer.GetLineDisplayName(lineId) : lineId;
+            var numMatch   = System.Text.RegularExpressions.Regex.Match(displayName, @"\d+");
+            var lineNumber = numMatch.Success ? numMatch.Value : displayName;
+
+            if (directionHeaderBar != null) directionHeaderBar.color = color;
+            foreach (var circle in lineTextCircle) circle.color = color;
+            foreach (var text in lineText) text.text = lineNumber;
+
+            var (bwd, fwd) = plat.GetTransferDirectionLabels(lineId);
+            if (backwardLabel != null) backwardLabel.text = bwd != null ? $"{bwd} 방면" : "—";
+            if (forwardLabel  != null) forwardLabel.text  = fwd != null ? $"{fwd} 방면" : "—";
+
+            backwardButton.onClick.RemoveAllListeners();
+            forwardButton.onClick.RemoveAllListeners();
+
+            if (isSameLine)
+            {
+                backwardButton.onClick.AddListener(() => plat.BoardCurrentLineWithDirection(-1));
+                forwardButton.onClick.AddListener( () => plat.BoardCurrentLineWithDirection(+1));
+            }
+            else
+            {
+                backwardButton.onClick.AddListener(() => plat.TransferWithDirection(lineId, -1));
+                forwardButton.onClick.AddListener( () => plat.TransferWithDirection(lineId, +1));
+            }
+
+            lineSelectPanel.SetActive(false);
+            directionSelectPanel.SetActive(true);
+        }
+
+        // Inspector의 BackButton.onClick에 연결
+        public void OnBackClicked() => ShowLineSelect();
+
+        void ShowLineSelect()
+        {
+            if (lineSelectPanel      != null) lineSelectPanel.SetActive(true);
+            if (directionSelectPanel != null) directionSelectPanel.SetActive(false);
         }
     }
 }

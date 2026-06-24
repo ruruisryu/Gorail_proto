@@ -37,6 +37,10 @@ namespace Game.Subway
         [Header("마커 밥 애니메이션")]
         [SerializeField] private float bobAmplitude = 4f;
         [SerializeField] private float bobSpeed     = 2.2f;
+        
+        [Header("마커 거리 텍스트 폰트")]
+        [SerializeField] private TMP_FontAsset distanceTextFont;
+        [SerializeField] private float distanceTextSize = 13f;
 
         private static readonly Color PlayerFallbackColor  = new Color(0.22f, 0.92f, 0.42f);
         private static readonly Color TrackerFallbackColor = new Color(0.95f, 0.18f, 0.18f);
@@ -277,6 +281,22 @@ namespace Game.Subway
             if (rt == null) rt = CreateContainer(FxTag, mapContainer.childCount);
             else rt.SetSiblingIndex(mapContainer.childCount - 1);
             return rt;
+        }
+
+        /// <summary>lineId에 해당하는 노선 색. 없으면 회색.</summary>
+        public Color GetLineColor(string lineId)
+        {
+            if (networkData == null || string.IsNullOrEmpty(lineId)) return Color.gray;
+            var ld = networkData.lines.FirstOrDefault(l => l != null && l.lineId == lineId);
+            return ld != null ? ld.lineColor : Color.gray;
+        }
+
+        /// <summary>lineId에 해당하는 노선 표시명(displayName). 없으면 lineId 그대로.</summary>
+        public string GetLineDisplayName(string lineId)
+        {
+            if (networkData == null || string.IsNullOrEmpty(lineId)) return lineId ?? "";
+            var ld = networkData.lines.FirstOrDefault(l => l != null && l.lineId == lineId);
+            return ld != null && !string.IsNullOrEmpty(ld.displayName) ? ld.displayName : lineId;
         }
 
         public Image CreateFxCircle(RectTransform fxLayer, Vector2 anchoredPos, float size, Color color)
@@ -537,11 +557,12 @@ namespace Game.Subway
             txtGO.transform.SetParent(bobRT, false);
             var txtRT = txtGO.AddComponent<RectTransform>();
             txtRT.anchorMin = txtRT.anchorMax = txtRT.pivot = new Vector2(0.5f, 0f);
-            txtRT.anchoredPosition = new Vector2(0f, 18f);
+            txtRT.anchoredPosition = new Vector2(0f, MarkerSize.y + 4f);
             txtRT.sizeDelta = new Vector2(36f, 18f);
             var tmp = txtGO.AddComponent<TextMeshProUGUI>();
+            tmp.font = distanceTextFont;
             tmp.text          = dist == int.MaxValue ? "?" : dist.ToString();
-            tmp.fontSize      = 13f;
+            tmp.fontSize      = distanceTextSize;
             tmp.fontStyle     = FontStyles.Bold;
             tmp.alignment     = TextAlignmentOptions.Center;
             tmp.color         = Color.black;

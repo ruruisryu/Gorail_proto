@@ -123,7 +123,7 @@ namespace Game.Gameplay
                 }
 
                 // (2) 추격 1스텝
-                Game.Core.GameCore.Instance?.Trackers?.Advance(1, 0);
+                Game.Core.GameCore.Instance?.Trackers?.Advance(1);
 
                 // (3) 같은 역 검문 — 도착역은 항상, 중간역은 토글(§8-1)
                 if (isArrival || inspectMid)

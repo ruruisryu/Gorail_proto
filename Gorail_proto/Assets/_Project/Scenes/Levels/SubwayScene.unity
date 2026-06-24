@@ -14659,6 +14659,8 @@ MonoBehaviour:
   markerWidth: 40
   bobAmplitude: 4
   bobSpeed: 2.2
+  distanceTextFont: {fileID: 11400000, guid: 36d784d7d8d7f914283cca7bc6a11b01, type: 2}
+  distanceTextSize: 15
 --- !u!1001 &398848801
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -22259,6 +22261,8 @@ RectTransform:
   m_Children:
   - {fileID: 979055079}
   - {fileID: 161813150}
+  - {fileID: 1786058138}
+  - {fileID: 1681608979}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -33901,34 +33905,6 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 3460033404760691624, guid: 023d6f9bee8ac854cafac9d98aa023ea, type: 3}
   m_PrefabInstance: {fileID: 883245315}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &887700788 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 6675037630557447591, guid: c11fcfb47ccefd745931b01e0f580fe3, type: 3}
-  m_PrefabInstance: {fileID: 1061870276561418599}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &887700793
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 887700788}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3d8ec02cf323b64419f6fbd237501936, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Game.Runtime::Game.UI.ButtonHoverOutline
---- !u!114 &887700795 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 1814886504066496880, guid: c11fcfb47ccefd745931b01e0f580fe3, type: 3}
-  m_PrefabInstance: {fileID: 1061870276561418599}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 887700788}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
 --- !u!1001 &889314470
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -36829,7 +36805,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8904532028388120204, guid: e11b1f7967f732347a71d811354cb7fa, type: 3}
       propertyPath: m_Name
-      value: PopUpUI
+      value: MoveNotificationPopUp
       objectReference: {fileID: 0}
     - target: {fileID: 8904532028388120204, guid: e11b1f7967f732347a71d811354cb7fa, type: 3}
       propertyPath: m_IsActive
@@ -66066,6 +66042,81 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 3460033404760691624, guid: 023d6f9bee8ac854cafac9d98aa023ea, type: 3}
   m_PrefabInstance: {fileID: 1680525448}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1681608978
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1681608979}
+  - component: {fileID: 1681608981}
+  - component: {fileID: 1681608980}
+  m_Layer: 0
+  m_Name: Subway_Info
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &1681608979
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1681608978}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 608235821}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 553, y: -40}
+  m_SizeDelta: {x: 200, y: 120}
+  m_Pivot: {x: 0, y: 1}
+--- !u!114 &1681608980
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1681608978}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 21300000, guid: e12904902197f5a4eb1015167a29034d, type: 3}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!222 &1681608981
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1681608978}
+  m_CullTransparentMesh: 1
 --- !u!1001 &1681728983
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -69185,6 +69236,151 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 8832374887176007148, guid: 81444a0e8aaf22b43a9103db62cc1b96, type: 3}
   m_PrefabInstance: {fileID: 1784790823}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1786058133
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1786058138}
+  - component: {fileID: 1786058137}
+  - component: {fileID: 1786058135}
+  - component: {fileID: 1786058134}
+  - component: {fileID: 1786058136}
+  m_Layer: 0
+  m_Name: SubwayMapButton
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1786058134
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1786058133}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
+  m_Navigation:
+    m_Mode: 3
+    m_WrapAround: 0
+    m_SelectOnUp: {fileID: 0}
+    m_SelectOnDown: {fileID: 0}
+    m_SelectOnLeft: {fileID: 0}
+    m_SelectOnRight: {fileID: 0}
+  m_Transition: 1
+  m_Colors:
+    m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
+    m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
+    m_PressedColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 1}
+    m_SelectedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
+    m_DisabledColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+    m_ColorMultiplier: 1
+    m_FadeDuration: 0.1
+  m_SpriteState:
+    m_HighlightedSprite: {fileID: 0}
+    m_PressedSprite: {fileID: 0}
+    m_SelectedSprite: {fileID: 0}
+    m_DisabledSprite: {fileID: 0}
+  m_AnimationTriggers:
+    m_NormalTrigger: Normal
+    m_HighlightedTrigger: Highlighted
+    m_PressedTrigger: Pressed
+    m_SelectedTrigger: Selected
+    m_DisabledTrigger: Disabled
+  m_Interactable: 1
+  m_TargetGraphic: {fileID: 1786058135}
+  m_OnClick:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 1061870276561418600}
+        m_TargetAssemblyTypeName: Game.UI.SubwaySceneController, Game.Runtime
+        m_MethodName: OnSubwayMapButtonClicked
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+--- !u!114 &1786058135
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1786058133}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_Material: {fileID: 0}
+  m_Color: {r: 0.8962264, g: 0.8529205, b: 0.7694019, a: 1}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 21300000, guid: 4215dabb38ccfad469c93e9594afd386, type: 3}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!114 &1786058136
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1786058133}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3d8ec02cf323b64419f6fbd237501936, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Runtime::Game.UI.ButtonHoverOutline
+--- !u!222 &1786058137
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1786058133}
+  m_CullTransparentMesh: 1
+--- !u!224 &1786058138
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1786058133}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 608235821}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 773, y: -40}
+  m_SizeDelta: {x: 600, y: 120}
+  m_Pivot: {x: 0, y: 1}
 --- !u!1 &1786846724
 GameObject:
   m_ObjectHideFlags: 0
@@ -82769,7 +82965,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3831986561991380236, guid: b953fc5906ef96c4987b9450a1741ba7, type: 3}
       propertyPath: stepAnimSeconds
-      value: 1
+      value: 0.5
       objectReference: {fileID: 0}
     - target: {fileID: 7101279855335766122, guid: b953fc5906ef96c4987b9450a1741ba7, type: 3}
       propertyPath: m_LocalPosition.x
@@ -83019,7 +83215,7 @@ PrefabInstance:
     - target: {fileID: 3022724166869426072, guid: c11fcfb47ccefd745931b01e0f580fe3, type: 3}
       propertyPath: subwayMapButton
       value: 
-      objectReference: {fileID: 887700795}
+      objectReference: {fileID: 1786058134}
     - target: {fileID: 3790092905416423498, guid: c11fcfb47ccefd745931b01e0f580fe3, type: 3}
       propertyPath: m_IsActive
       value: 0
@@ -83150,6 +83346,8 @@ PrefabInstance:
     - {fileID: 438281591836163847, guid: c11fcfb47ccefd745931b01e0f580fe3, type: 3}
     - {fileID: 8057204053486780074, guid: c11fcfb47ccefd745931b01e0f580fe3, type: 3}
     - {fileID: 387203859756741371, guid: c11fcfb47ccefd745931b01e0f580fe3, type: 3}
+    - {fileID: 3513256911597129200, guid: c11fcfb47ccefd745931b01e0f580fe3, type: 3}
+    - {fileID: 6675037630557447591, guid: c11fcfb47ccefd745931b01e0f580fe3, type: 3}
     m_AddedGameObjects:
     - targetCorrespondingSourceObject: {fileID: 4162152354396350777, guid: c11fcfb47ccefd745931b01e0f580fe3, type: 3}
       insertIndex: 0
@@ -83164,9 +83362,6 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 793443086}
     m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 6675037630557447591, guid: c11fcfb47ccefd745931b01e0f580fe3, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 887700793}
     - targetCorrespondingSourceObject: {fileID: 3790092905416423498, guid: c11fcfb47ccefd745931b01e0f580fe3, type: 3}
       insertIndex: -1
       addedObject: {fileID: 467174260}
@@ -83183,6 +83378,17 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 1148725850}
   m_SourcePrefab: {fileID: 100100000, guid: c11fcfb47ccefd745931b01e0f580fe3, type: 3}
+--- !u!114 &1061870276561418600 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 3022724166869426072, guid: c11fcfb47ccefd745931b01e0f580fe3, type: 3}
+  m_PrefabInstance: {fileID: 1061870276561418599}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6aa434a5256c77841a5b940662754dbc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Runtime::Game.UI.SubwaySceneController
 --- !u!1001 &1147590210257086336
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -83853,9 +84059,9 @@ SceneRoots:
   - {fileID: 1786846727}
   - {fileID: 1196569270}
   - {fileID: 255488290840724881}
+  - {fileID: 608235821}
   - {fileID: 1061870276561418599}
   - {fileID: 959108220}
   - {fileID: 819772242}
   - {fileID: 5091338841255807284}
-  - {fileID: 608235821}
   - {fileID: 1720991648}

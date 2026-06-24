@@ -55,8 +55,9 @@ namespace Game.Gameplay
         public void OnPlayerDisembark()
         {
             if (Graph == null || player == null) return;
-            int cap = PerLineCap(Wanted);
+            TrimToCaps();
 
+            int cap = PerLineCap(Wanted);
             foreach (var line in player.ActiveLines)
             {
                 int have = CountOnLine(line);
@@ -83,13 +84,13 @@ namespace Game.Gameplay
             SyncMarkers();
         }
 
-        // ── 추격 (ITrackerStep) ───────────────────────────────────────────
+        // ── 추격 ─────────────────────────────────────────────────────────
 
         /// <summary>
         /// 플레이어 1역 이동마다 호출.
         /// 기본 1:1 + 플레이어 N역마다 보너스 1역. 소수는 _debt에 이월.
         /// </summary>
-        public void Advance(int playerSteps, int totalMoveStations)
+        public void Advance(int playerSteps)
         {
             if (Graph == null || player == null || _trackers.Count == 0) return;
 

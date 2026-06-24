@@ -19,7 +19,16 @@ namespace Game.Gameplay
         GameTimeSystem GameTime       => Game.Core.GameCore.Instance?.GameTime;
         MoneySystem    Money          => Game.Core.GameCore.Instance?.Money;
 
-        public string CurrentStation { get; private set; }
+        public string CurrentStation  { get; private set; }
+        public bool   CameFromGround  => _cameFromGround;
+        private readonly HashSet<string> _artworkDoneStations = new();
+
+        /// <summary>현재 역을 작품활동 완료 역으로 기록. GroundSceneManager가 성공·실패 모두 호출.</summary>
+        public void MarkArtworkDone()
+        {
+            if (!string.IsNullOrEmpty(CurrentStation))
+                _artworkDoneStations.Add(CurrentStation);
+        }
 
         // 지상에 나갔다 돌아온 경우 탑승·환승 모두 1500원(§자원기획서)
         private bool _cameFromGround;
@@ -28,20 +37,23 @@ namespace Game.Gameplay
         /// <summary>현재 승강장에서 환승 가능한 노선(현재 노선 제외). 환승역이 아니면 빈 목록.</summary>
         public IReadOnlyList<string> AvailableTransferLines => _transferLines;
 
-        /// <summary>현재 역이 특별역(랜드마크/상점)이라 지상 진입 가능한가(§10·§9).</summary>
-        public bool CanGoOutside
+        /// <summary>현재 역이 특별역인지 여부 (작품완료 여부 무관).</summary>
+        public bool IsSpecialStation
         {
             get
             {
-                var s = Graph != null ? Graph.GetStation(CurrentStation) : null;
+                var s = Graph?.GetStation(CurrentStation);
                 return s != null && s.AllowsOutside;
             }
         }
 
+        /// <summary>특별역이고 아직 작품활동을 하지 않은 경우에만 true.</summary>
+        public bool CanGoOutside => IsSpecialStation && !_artworkDoneStations.Contains(CurrentStation);
+
         // ── 하차 → 승강장 공간 진입(§7-1) ────────────────────────────────
         public void OpenAt(string stationId)
         {
-            CurrentStation = stationId;
+            CurrentStation   = stationId;
             _transferLines.Clear();
             if (Graph != null && player != null)
                 foreach (var line in Graph.GetLineIds(stationId))
@@ -59,7 +71,7 @@ namespace Game.Gameplay
         public void ContinueForward()
         {
             if (_cameFromGround) Money?.TrySpend(Money.boardingCost);
-            _cameFromGround = false;
+            _cameFromGround    = false;
             if (spaceManager != null) spaceManager.EnterSubway();
         }
 
@@ -68,9 +80,18 @@ namespace Game.Gameplay
         {
             if (player != null) player.ReverseDirection();
             GameTime?.Advance(GameTime.minutesReboard);
+            trackerManager?.AdvanceByMinutes(GameTime.minutesReboard);
             if (_cameFromGround) Money?.TrySpend(Money.boardingCost);
-            _cameFromGround = false;
+            _cameFromGround    = false;
             if (spaceManager != null) spaceManager.EnterSubway();
+        }
+
+        /// <summary>현재 노선 방향 선택 탑승 — 재탑승/반대방향을 방면 패널에서 통합 처리.</summary>
+        public void BoardCurrentLineWithDirection(int direction)
+        {
+            if (player == null) return;
+            if (direction == player.Direction) ContinueForward();
+            else ReverseDirection();
         }
 
         /// <summary>③ 환승 — 노선 변경(환승역만, §2-2) 후 지하철로. 활성 노선 누적(§5-3).</summary>
@@ -82,8 +103,9 @@ namespace Game.Gameplay
             if (!_transferLines.Contains(newLineId)) return false;
             if (player != null) player.ChangeLine(newLineId); // DirectionLocked = false
             GameTime?.Advance(GameTime.minutesTransfer);
+            trackerManager?.AdvanceByMinutes(GameTime.minutesTransfer);
             Money?.TrySpend(_cameFromGround ? Money.boardingCost : Money.transferCost);
-            _cameFromGround = false;
+            _cameFromGround    = false;
             // 환승으로 새로 활성화된 노선도 현재 수배도 상한까지 채운다(§5-3).
             if (trackerManager != null) trackerManager.OnPlayerDisembark();
             if (direction != 0 && player != null) player.LockDirection(direction);
@@ -91,7 +113,7 @@ namespace Game.Gameplay
             return true;
         }
 
-        /// <summary>방향 버튼 레이블용. 지정 노선의 양방향 종점 역 ID를 반환한다.</summary>
+        /// <summary>방향 버튼 레이블용. 지정 노선의 양방향 이웃한 역 ID를 반환한다.</summary>
         public (string backward, string forward) GetTransferDirectionLabels(string lineId)
             => Graph?.GetLineNeighbors(lineId, CurrentStation) ?? (null, null);
 

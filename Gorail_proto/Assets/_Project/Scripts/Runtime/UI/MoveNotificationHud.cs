@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using TMPro;
 using UnityEngine;
@@ -14,17 +15,31 @@ namespace Game.UI
     /// </summary>
     public class MoveNotificationHud : MonoBehaviour
     {
+        public static MoveNotificationHud Instance { get; private set; }
+        
         [SerializeField] private CanvasGroup          canvasGroup;
         [SerializeField] private TextMeshProUGUI       messageText;
         [SerializeField] private MoveRejectionMessages messages;
         [SerializeField] private float displaySeconds = 2.5f;
         [SerializeField] private float fadeSeconds    = 0.3f;
 
+        private RectTransform rt;
+        private Vector2 defaultPosition;
         private Coroutine _routine;
+
+        private void Awake()
+        {
+            if (Instance == null)
+                Instance = this;
+            else
+                Destroy(gameObject);
+        }
 
         void Start()
         {
             if (canvasGroup != null) canvasGroup.alpha = 0f;
+            rt = gameObject.GetComponent<RectTransform>();
+            defaultPosition = rt.anchoredPosition;
 
             var tr = GameCore.Instance?.TurnResolver;
             if (tr != null)
@@ -41,13 +56,19 @@ namespace Game.UI
 
         void OnMoveRejected(MoveRejectedReason reason)
         {
-            if (messageText != null && messages != null)
-                messageText.text = reason switch
-                {
-                    MoveRejectedReason.WrongDirection => messages.wrongDirection,
-                    MoveRejectedReason.InactiveLine   => messages.inactiveLine,
-                    _                                 => messages.wrongLine,
-                };
+            string text = reason switch
+            {
+                MoveRejectedReason.WrongDirection => messages.wrongDirection,
+                MoveRejectedReason.InactiveLine   => messages.inactiveLine,
+                _                                 => messages.wrongLine,
+            };
+            ShowPopUp(text, defaultPosition);
+        }
+
+        public void ShowPopUp(string message, Vector2 position)
+        {
+            rt.anchoredPosition = position;
+            if (messageText != null) messageText.text = message;
             
             LayoutRebuilder.ForceRebuildLayoutImmediate(messageText.GetComponent<RectTransform>());
             LayoutRebuilder.ForceRebuildLayoutImmediate(transform as RectTransform);
