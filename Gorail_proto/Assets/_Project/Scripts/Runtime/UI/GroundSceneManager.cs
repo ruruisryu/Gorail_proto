@@ -54,8 +54,6 @@ namespace Game.UI
             if (interrupted)
             {
                 _artworkResult = "추격자 도달 — 작품 실패!";
-                var plat = GameCore.Instance?.Platform;
-                plat?.MarkArtworkDone();
                 ReturnToSubway(true);
             }
             else
@@ -63,9 +61,8 @@ namespace Game.UI
                 _artworkResult = succeeded
                     ? $"작품 완성 +{fameGain:0.0} 명성"
                     : "작품 실패";
-                // 성공·실패 모두 작품활동을 시도했으므로 나가는 곳 비활성
-                var plat = GameCore.Instance?.Platform;
-                plat?.MarkArtworkDone();
+                if (succeeded)
+                    GameCore.Instance?.Platform?.MarkArtworkDone();
             }
         }
 

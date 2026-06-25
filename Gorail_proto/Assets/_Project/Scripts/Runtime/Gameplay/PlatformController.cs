@@ -23,12 +23,25 @@ namespace Game.Gameplay
         public bool   CameFromGround  => _cameFromGround;
         private readonly HashSet<string> _artworkDoneStations = new();
 
-        /// <summary>현재 역을 작품활동 완료 역으로 기록. GroundSceneManager가 성공·실패 모두 호출.</summary>
+        /// <summary>현재 역을 작품활동 완료 역으로 기록. GroundSceneManager에서 성공 시 호출.</summary>
         public void MarkArtworkDone()
         {
             if (!string.IsNullOrEmpty(CurrentStation))
                 _artworkDoneStations.Add(CurrentStation);
         }
+
+        void OnEnable()  => SubscribeDayEnded(true);
+        void OnDisable() => SubscribeDayEnded(false);
+
+        void SubscribeDayEnded(bool subscribe)
+        {
+            var gt = GameCore.Instance?.GameTime;
+            if (gt == null) return;
+            if (subscribe) gt.DayEnded += OnDayEnded;
+            else           gt.DayEnded -= OnDayEnded;
+        }
+
+        void OnDayEnded(int day) => _artworkDoneStations.Clear();
 
         // 지상에 나갔다 돌아온 경우 탑승·환승 모두 1500원(§자원기획서)
         private bool _cameFromGround;
