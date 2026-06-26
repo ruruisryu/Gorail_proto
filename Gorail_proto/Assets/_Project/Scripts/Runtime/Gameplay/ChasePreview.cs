@@ -13,7 +13,11 @@ namespace Game.Gameplay
     /// </summary>
     public class ChasePreview : MonoBehaviour
     {
+        [SerializeField] private float exitDelay = 0.08f;
+
         SubwayMapRenderer mapRenderer => GameCore.Instance?.MapRenderer;
+        private Coroutine _exitCoroutine;
+        private string    _hoveredStation;
 
         void OnEnable()
         {
@@ -25,10 +29,15 @@ namespace Game.Gameplay
         {
             StationView.StationHovered -= OnHover;
             StationView.StationHoverExited -= OnExit;
+            if (_exitCoroutine != null) { StopCoroutine(_exitCoroutine); _exitCoroutine = null; }
         }
 
         void OnHover(string stationId)
         {
+            if (_exitCoroutine != null) { StopCoroutine(_exitCoroutine); _exitCoroutine = null; }
+            if (stationId == _hoveredStation) return;
+            _hoveredStation = stationId;
+
             var core = GameCore.Instance;
             if (core == null || core.MapRenderer == null) return;
             var player = core.Player;
@@ -93,7 +102,16 @@ namespace Game.Gameplay
 
         void OnExit()
         {
-            if (mapRenderer == null) return;
+            if (_exitCoroutine != null) StopCoroutine(_exitCoroutine);
+            _exitCoroutine = StartCoroutine(ExitAfterDelay());
+        }
+
+        System.Collections.IEnumerator ExitAfterDelay()
+        {
+            yield return new WaitForSeconds(exitDelay);
+            _exitCoroutine = null;
+            _hoveredStation = null;
+            if (mapRenderer == null) yield break;
             mapRenderer.ClearChasePreview();
             mapRenderer.ClearRouteHint();
         }

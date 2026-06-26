@@ -48,6 +48,7 @@ namespace Game.Subway
         // ── 컨테이너 태그 ────────────────────────────────────────────────
         private const string LinesTag     = "[Lines]";
         private const string StationsTag  = "[Stations]";
+        private const string LabelsTag    = "[Labels]";
         private const string PreviewTag   = "[Preview]";
         private const string FxTag        = "[Fx]";
         private const string PlayerTag    = "[Player]";
@@ -68,6 +69,7 @@ namespace Game.Subway
 
         private readonly List<UIBezierLine>                             _bezierLines = new();
         private readonly Dictionary<(string, string), List<UIBezierLine>> _segmentMap = new();
+        private readonly List<RectTransform> _sortBuffer = new();
 
         private const float PlayerGlideSharpness = 14f;
         private RectTransform _playerMarker;
@@ -98,7 +100,22 @@ namespace Game.Subway
             if (stationsRT != null) RebuildStationCache(stationsRT);
             var linesRT = FindContainer(LinesTag);
             if (linesRT != null) RebuildBezierCache(linesRT);
+            LiftLabels();
             RefreshMarkers();
+        }
+
+        void LiftLabels()
+        {
+            var labelsRT = FindContainer(LabelsTag);
+            if (labelsRT == null) labelsRT = CreateContainer(LabelsTag, mapContainer.childCount);
+
+            foreach (var view in _stationViews)
+            {
+                var lbl = view.Label;
+                if (lbl == null) continue;
+                lbl.raycastTarget = false;
+                lbl.transform.SetParent(labelsRT, true);
+            }
         }
         
 
@@ -113,9 +130,9 @@ namespace Game.Subway
             {
                 var child = mapContainer.GetChild(i);
                 if (child.name == LinesTag    || child.name == StationsTag ||
-                    child.name == PreviewTag  || child.name == FxTag       ||
-                    child.name == PlayerTag   || child.name == LineHLTag   ||
-                    child.name == RouteHintTag) continue;
+                    child.name == LabelsTag   || child.name == PreviewTag  ||
+                    child.name == FxTag       || child.name == PlayerTag   ||
+                    child.name == LineHLTag   || child.name == RouteHintTag) continue;
                 if (Application.isPlaying) Destroy(child.gameObject);
                 else DestroyImmediate(child.gameObject);
             }
@@ -174,7 +191,9 @@ namespace Game.Subway
             bool hasEnemy  = enemyPaths != null && enemyPaths.Count > 0;
             if (!hasPlayer && !hasEnemy) return;
 
-            var prev = CreateContainer(PreviewTag, mapContainer.childCount);
+            var stationsContainerP = FindContainer(StationsTag);
+            int previewIdx = stationsContainerP != null ? stationsContainerP.GetSiblingIndex() : 1;
+            var prev = CreateContainer(PreviewTag, previewIdx);
 
             if (hasEnemy)
                 foreach (var ep in enemyPaths)
@@ -232,15 +251,36 @@ namespace Game.Subway
             ClearRouteHint();
             if (path == null || path.Count < 2) return;
 
-            var layer = CreateContainer(RouteHintTag, mapContainer.childCount);
-            DrawPathOverlay(path, HintRouteColor, layer);
+            var stationsContainer = FindContainer(StationsTag);
+            int hintIdx = stationsContainer != null ? stationsContainer.GetSiblingIndex() : 1;
+            var layer = CreateContainer(RouteHintTag, hintIdx);
+
+            Color lastSegColor = HintDestColor;
+            for (int i = 0; i < path.Count - 1; i++)
+            {
+                var segColor = GetSegmentLineColor(path[i], path[i + 1], 1f);
+                DrawSegmentOverlay(path[i], path[i + 1], segColor, layer);
+                if (i == path.Count - 2) lastSegColor = segColor;
+            }
 
             var dest = GetStationUIPos(path[path.Count - 1]);
             if (dest.HasValue)
             {
-                Circ("HintRing", layer, dest.Value, 48f, new Color(0.75f, 0.92f, 1f, 0.25f));
-                Circ("HintDest", layer, dest.Value, 34f, HintDestColor);
+                var ringColor = new Color(lastSegColor.r, lastSegColor.g, lastSegColor.b, 0.30f);
+                Circ("HintRing", layer, dest.Value, 48f, ringColor);
+                Circ("HintDest", layer, dest.Value, 34f, lastSegColor);
             }
+        }
+
+        /// <summary>두 역을 잇는 구간의 노선 색을 반환한다. 구간이 없으면 폴백 색.</summary>
+        Color GetSegmentLineColor(string a, string b, float alpha)
+        {
+            if (_segmentMap.TryGetValue((a, b), out var segs) && segs.Count > 0)
+            {
+                var lineColor = GetLineColor(segs[0].lineId);
+                return new Color(lineColor.r, lineColor.g, lineColor.b, alpha);
+            }
+            return new Color(HintRouteColor.r, HintRouteColor.g, HintRouteColor.b, alpha);
         }
 
         public void ClearRouteHint() => DestroyContainer(RouteHintTag);
@@ -581,10 +621,18 @@ namespace Game.Subway
                 bobRT.anchoredPosition = new Vector2(0f, yBob);
             }
             
+            // Y 기준 정렬: 높은 Y(위) → 낮은 sibling(뒤), 낮은 Y(아래) → 높은 sibling(앞)
+            _sortBuffer.Clear();
             foreach (var outer in _enemyOuterRTs)
-                if (outer != null) outer.SetSiblingIndex(mapContainer.childCount - 1);
-            if (_playerMarker != null)
-                _playerMarker.SetSiblingIndex(mapContainer.childCount - 1);
+                if (outer != null) _sortBuffer.Add(outer);
+            if (_playerMarker != null) _sortBuffer.Add(_playerMarker);
+            _sortBuffer.Sort((a, b) => b.position.y.CompareTo(a.position.y)); // 내림차순
+            foreach (var rt in _sortBuffer)
+                rt.SetSiblingIndex(mapContainer.childCount - 1);
+
+            var labelsContainer = FindContainer(LabelsTag);
+            if (labelsContainer != null)
+                labelsContainer.SetSiblingIndex(mapContainer.childCount - 1);
         }
 
         // ── UI 헬퍼 ──────────────────────────────────────────────────────

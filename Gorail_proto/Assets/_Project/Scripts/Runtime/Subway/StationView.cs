@@ -35,6 +35,8 @@ namespace Game.Subway
 
         // ── 공개 API ───────────────────────────────────────────────────────
 
+        public TextMeshProUGUI Label => label;
+
         /// <summary>역명 라벨 텍스트를 설정한다.</summary>
         public void SetLabel(string text)
         {

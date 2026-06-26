@@ -8,29 +8,28 @@ using Game.Gameplay;
 namespace Game.UI
 {
     /// <summary>
-    /// [D4] 노선 범례 — 노선별 색 스와치 + 이름을 표시하고, 활성 노선은 고유색·비활성은 회색으로 칠한다.
-    /// 노선 활성 상태를 한눈에 보여주는 대시보드. SubwayNetworkData에서 자동 생성한다.
-    ///
-    /// 줌 영향 없음: 이 오브젝트를 zoom 대상(MapContent)이 아닌 PopupPanel 바로 아래에 두면
-    /// 확대/축소와 무관하게 고정 크기로 유지된다.
+    /// [D4] 노선 범례 — 노선별 스와치 + 이름을 표시하고, 활성 노선은 고유색·비활성은 회색으로 칠한다.
+    /// 패널과 스와치 프리팹은 인스펙터에서 직접 연결한다.
     /// </summary>
     public class SubwayLineLegend : MonoBehaviour
     {
         [SerializeField] private SubwayNetworkData networkData;
         [SerializeField] private TMP_FontAsset     font;
 
-        Player player => Game.Core.GameCore.Instance?.Player;
+        [Header("패널")]
+        [SerializeField] private Transform rowContainer; // 행을 담을 부모 Transform
 
-        [Header("레이아웃")]
+        [Header("스와치 프리팹")]
+        [SerializeField] private GameObject swatchPrefab; // Image + TMP_Text(호선번호) 포함
+
+        [Header("색")]
         [SerializeField] private Color inactiveColor = new Color(0.62f, 0.62f, 0.62f, 1f);
-        [SerializeField] private Color panelColor    = new Color(1f, 1f, 1f, 0.85f);
-        [SerializeField] private float rowHeight  = 30f;
-        [SerializeField] private float swatchSize = 18f;
-        [SerializeField] private float panelWidth = 160f;
+
+        Player player => Game.Core.GameCore.Instance?.Player;
 
         private readonly List<(string lineId, Color color, Image swatch)> _rows = new();
         private bool _built;
-        
+
         void Start()
         {
             if (!_built) { Build(); _built = true; }
@@ -46,62 +45,51 @@ namespace Game.UI
         void Build()
         {
             if (networkData == null || networkData.lines == null) return;
+            if (rowContainer == null) { Debug.LogWarning("[SubwayLineLegend] rowContainer가 연결되지 않았습니다."); return; }
+            if (swatchPrefab == null) { Debug.LogWarning("[SubwayLineLegend] swatchPrefab이 연결되지 않았습니다."); return; }
 
-            var selfRT = GetComponent<RectTransform>();
-            if (selfRT == null) selfRT = gameObject.AddComponent<RectTransform>();
-            // 부모(PopupPanel) 좌하단 고정
-            selfRT.anchorMin = selfRT.anchorMax = new Vector2(0f, 0f);
-            selfRT.pivot = new Vector2(0f, 0f);
-            selfRT.anchoredPosition = new Vector2(12f, 12f);
-
-            var bg = GetComponent<Image>();
-            if (bg == null) bg = gameObject.AddComponent<Image>();
-            bg.color = panelColor;
-            bg.raycastTarget = false;
-
-            int n = networkData.lines.Count;
-            selfRT.sizeDelta = new Vector2(panelWidth, n * rowHeight + 12f);
-
-            for (int i = 0; i < n; i++)
+            foreach (var line in networkData.lines)
             {
-                var line = networkData.lines[i];
                 if (line == null) continue;
 
-                var row = new GameObject("Row_" + line.lineId, typeof(RectTransform));
-                var rrt = row.GetComponent<RectTransform>();
-                rrt.SetParent(transform, false);
-                rrt.anchorMin = rrt.anchorMax = new Vector2(0f, 1f);
-                rrt.pivot = new Vector2(0f, 1f);
-                rrt.anchoredPosition = new Vector2(8f, -6f - i * rowHeight);
-                rrt.sizeDelta = new Vector2(panelWidth - 16f, rowHeight);
+                var go = Instantiate(swatchPrefab, rowContainer);
+                go.name = "Swatch_" + line.lineId;
 
-                var sw = new GameObject("Swatch", typeof(RectTransform), typeof(Image));
-                var swrt = sw.GetComponent<RectTransform>();
-                swrt.SetParent(rrt, false);
-                swrt.anchorMin = swrt.anchorMax = new Vector2(0f, 0.5f);
-                swrt.pivot = new Vector2(0f, 0.5f);
-                swrt.anchoredPosition = Vector2.zero;
-                swrt.sizeDelta = Vector2.one * swatchSize;
-                var swImg = sw.GetComponent<Image>();
-                swImg.color = line.lineColor;
-                swImg.raycastTarget = false;
+                // Image — 스와치 색
+                var img = go.GetComponent<Image>();
+                if (img != null)
+                {
+                    img.color = line.lineColor;
+                    img.raycastTarget = false;
+                }
 
-                var lab = new GameObject("Label", typeof(RectTransform));
-                var lrt = lab.GetComponent<RectTransform>();
-                lrt.SetParent(rrt, false);
-                lrt.anchorMin = new Vector2(0f, 0f);
-                lrt.anchorMax = new Vector2(1f, 1f);
-                lrt.offsetMin = new Vector2(swatchSize + 8f, 0f);
-                lrt.offsetMax = Vector2.zero;
-                var tmp = lab.AddComponent<TextMeshProUGUI>();
-                tmp.text = string.IsNullOrEmpty(line.displayName) ? line.lineId : line.displayName;
-                tmp.fontSize = 16f;
-                tmp.color = Color.black;
-                tmp.alignment = TextAlignmentOptions.MidlineLeft;
-                tmp.raycastTarget = false;
-                if (font != null) tmp.font = font;
+                // TMP_Text — 호선 번호 (자식에서 찾기)
+                var tmp = go.GetComponentInChildren<TMP_Text>(true);
+                if (tmp != null)
+                {
+                    var numMatch = System.Text.RegularExpressions.Regex.Match(
+                        string.IsNullOrEmpty(line.displayName) ? line.lineId : line.displayName, @"\d+");
+                    tmp.text = numMatch.Success ? numMatch.Value : line.lineId;
+                    tmp.raycastTarget = false;
+                    if (font != null) tmp.font = font;
+                }
 
-                _rows.Add((line.lineId, line.lineColor, swImg));
+                // TMP_Text — 호선명 라벨 (스와치 GO의 자식으로 추가)
+                var labelGO = new GameObject("LineName", typeof(RectTransform));
+                labelGO.transform.SetParent(go.transform, false);
+                var labelRT = labelGO.GetComponent<RectTransform>();
+                labelRT.anchorMin = labelRT.anchorMax = new Vector2(1f, 0.5f);
+                labelRT.pivot     = new Vector2(0f, 0.5f);
+                labelRT.anchoredPosition = new Vector2(6f, 0f);
+                labelRT.sizeDelta = new Vector2(90f, 20f);
+                var labelTmp = labelGO.AddComponent<TextMeshProUGUI>();
+                labelTmp.text = string.IsNullOrEmpty(line.displayName) ? line.lineId : line.displayName;
+                labelTmp.fontSize = 14f;
+                labelTmp.color = Color.black;
+                labelTmp.raycastTarget = false;
+                if (font != null) labelTmp.font = font;
+
+                _rows.Add((line.lineId, line.lineColor, img));
             }
         }
 
