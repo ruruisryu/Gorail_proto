@@ -4,19 +4,19 @@ using UnityEditor;
 using UnityEngine;
 
 /// <summary>
-/// 씬에 배치된 StationView 위치를 기반으로 UIBezierLine을 자동 생성한다.
+/// 씬에 배치된 StationView 위치를 기반으로 UIBezierLine(노선 구간)을 자동 생성한다.
 /// 메뉴: Subway ▶ Generate Bezier Lines
 ///
 /// 전제 조건:
 ///   - [Stations] 컨테이너 아래 역 GO들이 "Stn_<stationId>" 이름으로 배치돼 있을 것
-///   - UIBezierLine 컴포넌트가 붙고 자식 GO 2개(웨이포인트)를 가진 프리팹이 준비돼 있을 것
+///   - UIBezierLine + Image 컴포넌트가 붙은 프리팹이 준비돼 있을 것
 /// </summary>
 public class SubwayLineGeneratorWizard : ScriptableWizard
 {
     [Tooltip("씬에 있는 SubwayMapRenderer")]
     public SubwayMapRenderer mapRenderer;
 
-    [Tooltip("UIBezierLine + 자식 2개짜리 프리팹")]
+    [Tooltip("UIBezierLine + Image 프리팹")]
     public GameObject bezierLinePrefab;
 
     [Tooltip("이미 있는 [Lines] 컨테이너를 지우고 새로 생성할지 여부")]
@@ -122,6 +122,7 @@ public class SubwayLineGeneratorWizard : ScriptableWizard
 
         // ── 노선별 인접 역 쌍 순회 → UIBezierLine 생성 ──────────────
         int created = 0, skipped = 0;
+        var skippedLog = new System.Text.StringBuilder();
         foreach (var line in networkData.lines)
         {
             if (line == null) continue;
@@ -129,17 +130,19 @@ public class SubwayLineGeneratorWizard : ScriptableWizard
 
             for (int i = 0; i < stations.Count - 1; i++)
                 if (TryCreate(line, stations[i], stations[i + 1], stationRTMap, linesRT)) created++;
-                else skipped++;
+                else { skipped++; skippedLog.AppendLine($"  [{line.lineId}] {stations[i]?.stationId} - {stations[i+1]?.stationId}"); }
 
-            // 순환선 마지막↔첫 번째 구간
             if (line.isCircular && stations.Count > 1)
                 if (TryCreate(line, stations[stations.Count - 1], stations[0], stationRTMap, linesRT)) created++;
-                else skipped++;
+                else { skipped++; skippedLog.AppendLine($"  [{line.lineId}] {stations[stations.Count-1]?.stationId} - {stations[0]?.stationId}"); }
         }
+
+        if (skipped > 0)
+            Debug.LogWarning($"[SubwayLineGenerator] 역 위치 없어 스킵 {skipped}개:\n{skippedLog}");
 
         EditorUtility.DisplayDialog(
             "완료",
-            $"UIBezierLine 생성: {created}개\n역 위치 없어 스킵: {skipped}개",
+            $"노선 구간 생성: {created}개\n역 위치 없어 스킵: {skipped}개",
             "확인");
     }
 
@@ -159,32 +162,19 @@ public class SubwayLineGeneratorWizard : ScriptableWizard
         go.name = $"{line.lineId}_{nameA}-{nameB}";
 
         // UIBezierLine 메타데이터 주입
-        var bezier = go.GetComponent<UIBezierLine>();
-        if (bezier != null)
+        var seg = go.GetComponent<UIBezierLine>();
+        if (seg != null)
         {
-            bezier.stationA = a.stationId;
-            bezier.stationB = b.stationId;
-            bezier.lineId   = line.lineId;
-            bezier.color    = line.lineColor;
+            seg.stationA = a.stationId;
+            seg.stationB = b.stationId;
+            seg.lineId   = line.lineId;
+            seg.color    = line.lineColor;
         }
 
-        // 프리팹 자체를 (0,0)에 고정 — 웨이포인트 위치로만 형태 결정
+        // RectTransform: 두 역 사이 중점에 배치
         var rt = go.GetComponent<RectTransform>();
         if (rt != null)
-        {
-            rt.anchorMin = Vector2.zero;
-            rt.anchorMax = Vector2.one;
-            rt.pivot = Vector2.zero;
-            rt.anchoredPosition = Vector2.zero;
-            rt.sizeDelta        = Vector2.zero;
-        }
-
-        // 자식 웨이포인트를 각 역의 월드 위치로 이동
-        // CollectPoints()가 InverseTransformPoint를 쓰므로 월드 위치 기준이 정확함
-        if (go.transform.childCount >= 1)
-            go.transform.GetChild(0).position = rtA.position;
-        if (go.transform.childCount >= 2)
-            go.transform.GetChild(1).position = rtB.position;
+            rt.anchoredPosition = (rtA.anchoredPosition + rtB.anchoredPosition) * 0.5f;
 
         EditorUtility.SetDirty(go);
         return true;

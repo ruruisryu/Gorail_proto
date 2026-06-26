@@ -180,7 +180,7 @@ namespace Game.Subway
                 foreach (var ep in enemyPaths)
                 {
                     if (ep == null || ep.Count == 0) continue;
-                    DrawPathOverlay(ep, EnemyRouteColor, 1.2f, prev);
+                    DrawPathOverlay(ep, EnemyRouteColor, prev);
                     var end = GetStationUIPos(ep[ep.Count - 1]);
                     if (end.HasValue)
                     {
@@ -191,7 +191,7 @@ namespace Game.Subway
 
             if (hasPlayer)
             {
-                DrawPathOverlay(playerPath, RouteColor, 1.8f, prev);
+                DrawPathOverlay(playerPath, RouteColor, prev);
                 var dest = GetStationUIPos(playerPath[playerPath.Count - 1]);
                 if (dest.HasValue)
                 {
@@ -199,44 +199,28 @@ namespace Game.Subway
                     Circ("Dest",     prev, dest.Value, 34f, DestColor);
                 }
             }
-
-            for (int i = 0; i < prev.childCount; i++)
-            {
-                var ch = prev.GetChild(i);
-                if (ch.GetComponent<UIBezierLine>() == null)
-                    ch.localScale = Vector3.one * _zoomComp;
-            }
         }
 
         public void ClearChasePreview() => DestroyContainer(PreviewTag);
 
         // ── 오버레이 내부 ────────────────────────────────────────────────
 
-        void DrawSegmentOverlay(string a, string b, Color color, float widthMult, RectTransform layer)
+        void DrawSegmentOverlay(string a, string b, Color color, RectTransform layer)
         {
             if (!_segmentMap.TryGetValue((a, b), out var lines)) return;
             foreach (var orig in lines)
             {
                 if (orig == null) continue;
                 var clone = Instantiate(orig.gameObject, layer);
-                var cl = clone.GetComponent<UIBezierLine>();
-                cl.color = color;
-                cl.SetWidthScale(_zoomComp * widthMult);
+                clone.GetComponent<UIBezierLine>().color = color;
                 clone.name = "OverlaySeg";
             }
         }
 
-        void DrawPathOverlay(IReadOnlyList<string> path, Color color, float widthMult, RectTransform layer)
+        void DrawPathOverlay(IReadOnlyList<string> path, Color color, RectTransform layer)
         {
             for (int i = 0; i < path.Count - 1; i++)
-                DrawSegmentOverlay(path[i], path[i + 1], color, widthMult, layer);
-        }
-
-        void ApplyWidthScaleToContainer(RectTransform container, float scale)
-        {
-            if (container == null) return;
-            foreach (var line in container.GetComponentsInChildren<UIBezierLine>())
-                if (line != null) line.SetWidthScale(scale);
+                DrawSegmentOverlay(path[i], path[i + 1], color, layer);
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -249,20 +233,13 @@ namespace Game.Subway
             if (path == null || path.Count < 2) return;
 
             var layer = CreateContainer(RouteHintTag, mapContainer.childCount);
-            DrawPathOverlay(path, HintRouteColor, 1.5f, layer);
+            DrawPathOverlay(path, HintRouteColor, layer);
 
             var dest = GetStationUIPos(path[path.Count - 1]);
             if (dest.HasValue)
             {
                 Circ("HintRing", layer, dest.Value, 48f, new Color(0.75f, 0.92f, 1f, 0.25f));
                 Circ("HintDest", layer, dest.Value, 34f, HintDestColor);
-            }
-
-            for (int i = 0; i < layer.childCount; i++)
-            {
-                var ch = layer.GetChild(i);
-                if (ch.GetComponent<UIBezierLine>() == null)
-                    ch.localScale = Vector3.one * _zoomComp;
             }
         }
 
@@ -323,7 +300,6 @@ namespace Game.Subway
                 seg.color = active.Contains(seg.lineId)
                     ? (lineData != null ? lineData.lineColor : Color.white)
                     : inactiveLineColor;
-                seg.SetVerticesDirty();
             }
 
             var stationLineIds = new Dictionary<string, List<string>>();
@@ -385,9 +361,7 @@ namespace Game.Subway
             {
                 if (seg == null || seg.lineId != currentLineId) continue;
                 var clone = Instantiate(seg.gameObject, hlRT);
-                var cl = clone.GetComponent<UIBezierLine>();
-                cl.color = hlColor;
-                cl.SetWidthScale(_zoomComp * 2f);
+                clone.GetComponent<UIBezierLine>().color = hlColor;
             }
         }
 
