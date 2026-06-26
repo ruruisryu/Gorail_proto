@@ -16,6 +16,8 @@ namespace Game.UI
         [SerializeField] private Button inventoryButton;
         [SerializeField] private Button settingsButton;
         [SerializeField] private Button quitButton;
+        [SerializeField] private Button mapButton;
+        [SerializeField] private SubwayMapPopup mapPopup;
 
         private bool _quitOpen;
         private InputAction _inventoryAction;
@@ -38,12 +40,29 @@ namespace Game.UI
             if (inventoryButton != null) inventoryButton.onClick.AddListener(OnInventoryClick);
             if (settingsButton  != null) settingsButton.onClick.AddListener(OnSettingsClick);
             if (quitButton      != null) quitButton.onClick.AddListener(OnQuitClick);
+            if (mapButton       != null) mapButton.onClick.AddListener(OnMapClick);
+            
+            GameCore.Instance.Space.SpaceChanged += OnSpaceChanged;
         }
 
         void OnDestroy()
         {
             _inventoryAction?.Dispose();
             _settingsAction?.Dispose();
+            
+            GameCore.Instance.Space.SpaceChanged -= OnSpaceChanged;
+        }
+        
+        void OnSpaceChanged(GameSpace space)
+        {
+            mapButton.gameObject.SetActive(space != GameSpace.Subway);
+        }
+
+        void OnMapClick()
+        {
+            if (mapPopup == null) return;
+            if (mapPopup.gameObject.activeSelf) mapPopup.Hide();
+            else mapPopup.Show(2f / 3f, viewOnly: true);
         }
 
         void OnInventoryClick()

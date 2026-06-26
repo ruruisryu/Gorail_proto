@@ -26,16 +26,33 @@ namespace Game.UI
                 backgroundOverlay.onClick.AddListener(Hide);
         }
 
-        public void Show()
+        public void Show(float scale = 1f, bool viewOnly = false)
         {
             gameObject.SetActive(true);
+            var rt = GetComponent<RectTransform>();
+            if (rt != null) rt.localScale = Vector3.one * scale;
+            SetStationsInteractable(!viewOnly);
             mapRenderer?.RefreshMarkers();
         }
 
         public void Hide()
         {
-            // [D11] 닫아도 배율 리셋하지 않음 — 재오픈 시 이전 배율 유지(SubwayMapZoom.OnEnable).
+            SetStationsInteractable(true);
+            var rt = GetComponent<RectTransform>();
+            if (rt != null) rt.localScale = Vector3.one;
             gameObject.SetActive(false);
         }
+
+        void SetStationsInteractable(bool interactable)
+        {
+            var mr = mapRenderer;
+            if (mr == null) return;
+            var stationsT = mr.MapContainer != null ? mr.MapContainer.Find("[Stations]") : null;
+            if (stationsT == null) return;
+            var cg = stationsT.GetComponent<CanvasGroup>();
+            if (cg == null) cg = stationsT.gameObject.AddComponent<CanvasGroup>();
+            cg.blocksRaycasts = interactable;
+        }
+
     }
 }

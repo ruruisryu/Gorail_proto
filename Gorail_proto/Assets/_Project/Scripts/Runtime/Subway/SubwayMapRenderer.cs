@@ -89,6 +89,7 @@ namespace Game.Subway
 
         public Vector2 StationBoundsMin { get; private set; }
         public Vector2 StationBoundsMax { get; private set; }
+        public RectTransform MapContainer => mapContainer;
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // 런타임

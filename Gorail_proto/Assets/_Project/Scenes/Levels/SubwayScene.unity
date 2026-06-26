@@ -1883,6 +1883,17 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 1620121655257693615, guid: 9dd1e353f71c04f4d8f4ddaf1c98aae9, type: 3}
   m_PrefabInstance: {fileID: 8527131065457972645}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1779055897398210441 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 9001689603200095362, guid: 9dd1e353f71c04f4d8f4ddaf1c98aae9, type: 3}
+  m_PrefabInstance: {fileID: 8527131065457972645}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1779055897398210440}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 213c309827c10fd439d51b90e4e057b5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Runtime::Game.UI.SubwayMapPopup
 --- !u!114 &2832301265512343295 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 8116257050839270722, guid: 9dd1e353f71c04f4d8f4ddaf1c98aae9, type: 3}
@@ -2114,6 +2125,26 @@ PrefabInstance:
     - target: {fileID: 3561819532614426868, guid: aaa50674be34098428553c57b4fd7e49, type: 3}
       propertyPath: m_Name
       value: ToolbarHUD
+      objectReference: {fileID: 0}
+    - target: {fileID: 4615623290728817752, guid: aaa50674be34098428553c57b4fd7e49, type: 3}
+      propertyPath: mapPopup
+      value: 
+      objectReference: {fileID: 1779055897398210441}
+    - target: {fileID: 6440129467720949112, guid: aaa50674be34098428553c57b4fd7e49, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6440129467720949112, guid: aaa50674be34098428553c57b4fd7e49, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6440129467720949112, guid: aaa50674be34098428553c57b4fd7e49, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6440129467720949112, guid: aaa50674be34098428553c57b4fd7e49, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 9063170686605693639, guid: aaa50674be34098428553c57b4fd7e49, type: 3}
       propertyPath: m_Pivot.x
