@@ -67,6 +67,21 @@ namespace Game.UI
                 .SetUpdate(true);
         }
 
+        /// <summary>서서히 검게 만든다. 이후 FadeOut()으로 밝힌다.</summary>
+        public void FadeIn(float duration = -1f, Action onComplete = null)
+        {
+            if (overlay == null) { onComplete?.Invoke(); return; }
+
+            float t = duration > 0f ? duration : defaultFadeIn;
+            _tween?.Kill();
+            overlay.color = new Color(0f, 0f, 0f, 0f);
+            overlay.raycastTarget = true;
+            _tween = overlay.DOFade(1f, t)
+                .SetEase(Ease.Linear)
+                .OnComplete(() => onComplete?.Invoke())
+                .SetUpdate(true);
+        }
+
         /// <summary>즉시 검게 만든다. 이후 FadeOut()으로 밝힌다.</summary>
         public void FadeInImmediate()
         {

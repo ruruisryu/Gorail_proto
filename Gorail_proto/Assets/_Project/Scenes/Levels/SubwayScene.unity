@@ -216,6 +216,61 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f43b4714b7d1ba64e828078b14cadcf1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Game.Runtime::Game.Gameplay.WantedSystem
+--- !u!1 &264466810
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 264466812}
+  - component: {fileID: 264466811}
+  m_Layer: 0
+  m_Name: SoundManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &264466811
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 264466810}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9f9cc8c99a9fa2941a9362db99fcf888, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Runtime::Game.Core.SoundManager
+  bgmPath: BGM
+  sfxPath: SFX
+  voicePath: Voice
+  bgmSource: {fileID: 0}
+  bgmVolume: 1
+  bgmFadeDuration: 0.5
+  voiceSource: {fileID: 0}
+  voiceVolume: 1
+  voiceFadeDuration: 0.3
+  sfxVolume: 1
+  sfxPoolSize: 8
+--- !u!4 &264466812
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 264466810}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 186.90761, y: 882.1161, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &388388996 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 4855124495354593158, guid: 9dd1e353f71c04f4d8f4ddaf1c98aae9, type: 3}
@@ -2385,3 +2440,4 @@ SceneRoots:
   - {fileID: 5091338841255807284}
   - {fileID: 1720991648}
   - {fileID: 8527131065457972645}
+  - {fileID: 264466812}

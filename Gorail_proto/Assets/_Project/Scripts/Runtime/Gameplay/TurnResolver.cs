@@ -146,7 +146,40 @@ namespace Game.Gameplay
             MoveCompleted?.Invoke(player.CurrentStationId, false);
             var _core = Game.Core.GameCore.Instance;
             if (_core?.AutoDisembark == true)
-                _core.Platform?.OpenAt(player.CurrentStationId);
+            {
+                string arrivedStation = player.CurrentStationId;
+                PlayArrivalAnnouncement(arrivedStation, () => _core.Platform?.OpenAt(arrivedStation));
+            }
+        }
+
+        // ── 역 도착 안내 방송 ────────────────────────────────────────────
+
+        /// <summary>
+        /// 페이드인과 함께 안내 방송 3종을 순서대로 재생한다.
+        /// 마지막 클립이 끝나면 페이드아웃 후 onPlatformOpen을 호출한다.
+        /// </summary>
+        void PlayArrivalAnnouncement(string stationId, System.Action onPlatformOpen)
+        {
+            var fader = Game.UI.ScreenFader.Instance;
+            var sound = Game.Core.SoundManager.Instance;
+
+            // SoundManager 없으면 안내 없이 바로 진입
+            if (sound == null) { onPlatformOpen?.Invoke(); return; }
+
+            string doorClip = UnityEngine.Random.value < 0.5f
+                ? "역입니다_내리실문은오른쪽입니다"
+                : "역입니다_내리실문은왼쪽입니다";
+
+            // 보이스 큐 세팅 — 마지막 클립 완료 시 페이드아웃
+            sound.EnqueueVoice("이번역은");
+            sound.EnqueueVoice(stationId);
+            sound.EnqueueVoice(doorClip, onComplete: () => fader?.FadeOut());
+
+            // 페이드인과 보이스를 동시에 시작, 검은 화면에서 승강장 열기
+            if (fader != null)
+                fader.FadeIn(onComplete: onPlatformOpen);
+            else
+                onPlatformOpen?.Invoke();
         }
 
         /// <summary>현재 노선에 없는 역 클릭 시 이유를 구분한다.</summary>
