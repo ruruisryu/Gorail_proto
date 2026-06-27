@@ -176,6 +176,8 @@ namespace Game.UI
             var (bwd, fwd) = plat.GetTransferDirectionLabels(lineId);
             if (backwardLabel != null) backwardLabel.text = bwd != null ? $"{bwd} 방면" : "—";
             if (forwardLabel  != null) forwardLabel.text  = fwd != null ? $"{fwd} 방면" : "—";
+            backwardButton.interactable = bwd != null;
+            forwardButton.interactable  = fwd != null;
 
             backwardButton.onClick.RemoveAllListeners();
             forwardButton.onClick.RemoveAllListeners();
