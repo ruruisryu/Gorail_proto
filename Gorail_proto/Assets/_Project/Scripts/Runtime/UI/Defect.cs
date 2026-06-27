@@ -55,6 +55,7 @@ namespace Game.UI
             // 좌클릭만 (우클릭은 배경 팬용)
             if (e.button != PointerEventData.InputButton.Left) return;
 
+            Game.Core.Sfx.DefectClick();
             var screen = FindFirstObjectByType<Game.Inventory.ArtworkScreen>();
             if (screen != null) screen.Open();
             else Debug.LogWarning("[Defect] ArtworkScreen을 찾지 못함 — OutsideScene에 ArtworkScreen이 있는지 확인하세요.");

@@ -56,6 +56,11 @@ namespace Game.Inventory
         static int             s_heldRot;
         static Vector2Int      s_origOrigin;
         static int             s_origRot;
+        static int             s_gridHoverFrame = -1;   // 이번 프레임에 어떤 그리드가 호버됐나(고스트 중복 방지)
+
+        // 그리드 밖에서 커서를 따라다니는 들고 있는 아이템 고스트 (출처 뷰만 그림)
+        private RectTransform _cursorGhost;
+        private Image         _cursorGhostImg;
 
         private RectTransform _self, _gridContainer, _bag;
         private Image _bagImg;   // 패널 배경(가방 스프라이트 또는 IP 배경)
@@ -94,12 +99,19 @@ namespace Game.Inventory
             return Mathf.Max(4f, Mathf.Min(cw, ch));
         }
 
-        /// <summary>외부(공유 컨트롤러)에서 칸 크기를 강제로 지정하고 다시 그린다.</summary>
+        /// <summary>외부(공유 컨트롤러)에서 칸 크기를 강제로 지정하고 다시 그린다. 격자를 부모 중앙에 둔다.</summary>
         public void SetCellSize(float size)
         {
             cellSize = Mathf.Max(4f, size);
             _cell = cellSize;
-            if (_gridContainer != null) Rebuild();
+            if (_gridContainer != null)
+            {
+                // 컨트롤러로 칸 크기를 박을 땐 항상 부모 중앙 정렬
+                var bag = (RectTransform)_gridContainer.parent;
+                bag.anchorMin = bag.anchorMax = new Vector2(0.5f, 0.5f);
+                bag.anchoredPosition = Vector2.zero;
+                Rebuild();
+            }
         }
 
         public bool IsOpen => _open;
@@ -174,6 +186,7 @@ namespace Game.Inventory
                         s_holding = true; s_src = inventory;
                         s_heldItem = it; s_heldRot = r;
                         s_origOrigin = o; s_origRot = r;
+                        Game.Core.Sfx.ItemPick();
                     }
                 }
                 return;
@@ -182,16 +195,20 @@ namespace Game.Inventory
             // 들고 있는 중 — 커서가 이 그리드 위일 때만 이 뷰가 관여
             if (!onGrid) { HideHeldPreview(); return; }
 
-            if (mouse.rightButton.wasPressedThisFrame) s_heldRot = (s_heldRot + 1) % 4;
+            if (mouse.rightButton.wasPressedThisFrame) { s_heldRot = (s_heldRot + 1) % 4; Game.Core.Sfx.ItemRotate(); }
 
             _targetOrigin = new Vector2Int(cx, cy);
             _canPlaceNow  = inventory.CanPlaceItemAt(s_heldItem, _targetOrigin, s_heldRot);
+            s_gridHoverFrame = Time.frameCount;   // 이 그리드 위 — 고스트 대신 스냅 프리뷰
             ShowHeldPreview();
 
             if (mouse.leftButton.wasPressedThisFrame)
             {
                 if (_canPlaceNow)
+                {
                     inventory.AddPlacement(s_heldItem, _targetOrigin, s_heldRot);  // 이 격자에 놓기(다른 격자여도 OK)
+                    Game.Core.Sfx.ItemPlace();
+                }
                 else
                     s_src.AddPlacement(s_heldItem, s_origOrigin, s_origRot);         // 못 놓으면 출처로 복귀
                 ClearHeld();
@@ -200,6 +217,64 @@ namespace Game.Inventory
         }
 
         static void ClearHeld() { s_holding = false; s_src = null; s_heldItem = null; }
+
+        // 그리드 밖에서 들고 있는 아이템을 커서에 표시 (출처 뷰만, 어떤 그리드도 호버 안 됐을 때)
+        void LateUpdate()
+        {
+            bool mine = _open && s_holding && inventory != null && inventory == s_src;
+            if (!mine || s_gridHoverFrame == Time.frameCount) { HideCursorGhost(); return; }
+            ShowCursorGhost();
+        }
+
+        void EnsureCursorGhost()
+        {
+            if (_cursorGhost != null) return;
+            var root = GetComponentInParent<Canvas>()?.rootCanvas;
+            var parent = root != null ? root.transform : transform;
+            var go = new GameObject("HeldCursorGhost", typeof(RectTransform), typeof(Image));
+            _cursorGhost = (RectTransform)go.transform;
+            _cursorGhost.SetParent(parent, false);
+            _cursorGhost.anchorMin = _cursorGhost.anchorMax = new Vector2(0.5f, 0.5f);
+            _cursorGhost.pivot = new Vector2(0.5f, 0.5f);
+            _cursorGhostImg = go.GetComponent<Image>();
+            _cursorGhostImg.raycastTarget = false;
+            go.SetActive(false);
+        }
+
+        void ShowCursorGhost()
+        {
+            if (s_heldItem == null) { HideCursorGhost(); return; }
+            EnsureCursorGhost();
+
+            var rootRT = (RectTransform)_cursorGhost.parent;
+            var rootCanvas = _cursorGhost.GetComponentInParent<Canvas>()?.rootCanvas;
+            Camera cam = (rootCanvas != null && rootCanvas.renderMode != RenderMode.ScreenSpaceOverlay)
+                         ? rootCanvas.worldCamera : null;
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                rootRT, Mouse.current.position.ReadValue(), cam, out var lp);
+
+            var baseBox = s_heldItem.shape.OccupiedOffsets(0);
+            Bounds2(baseBox, out int bw0, out int bh0);
+            float artW = bw0 * _cell + (bw0 - 1) * cellGap;
+            float artH = bh0 * _cell + (bh0 - 1) * cellGap;
+
+            _cursorGhostImg.sprite = s_heldItem.sprite;
+            _cursorGhostImg.color  = s_heldItem.sprite == null
+                ? new Color(0.9f, 0.6f, 0.2f, 0.9f) : new Color(1f, 1f, 1f, 0.9f);
+            _cursorGhostImg.preserveAspect = false;
+
+            _cursorGhost.sizeDelta = new Vector2(artW, artH);
+            _cursorGhost.anchoredPosition = lp;
+            _cursorGhost.localEulerAngles = new Vector3(0f, 0f, -90f * s_heldRot);
+            _cursorGhost.SetAsLastSibling();
+            if (!_cursorGhost.gameObject.activeSelf) _cursorGhost.gameObject.SetActive(true);
+        }
+
+        void HideCursorGhost()
+        {
+            if (_cursorGhost != null && _cursorGhost.gameObject.activeSelf)
+                _cursorGhost.gameObject.SetActive(false);
+        }
 
         // ── 그리기 ──────────────────────────────────────────────
         void BuildStaticChrome()
@@ -257,11 +332,11 @@ namespace Game.Inventory
             _cell = cellSize;
             var bag = (RectTransform)_gridContainer.parent;
             if (fitToParent)
+            {
                 _cell = MaxCellForParent();
-
-            // fitToParent와 무관하게 항상 부모 중앙 (크기는 안 건드림)
-            bag.anchorMin = bag.anchorMax = new Vector2(0.5f, 0.5f);
-            bag.anchoredPosition = Vector2.zero;
+                bag.anchorMin = bag.anchorMax = new Vector2(0.5f, 0.5f);  // 부모 중앙
+                bag.anchoredPosition = Vector2.zero;
+            }
             foreach (var h in _hl) if (h != null) h.sizeDelta = new Vector2(_cell, _cell);
 
             float gw = g.Width  * _cell + (g.Width  - 1) * cellGap;

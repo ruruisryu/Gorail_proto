@@ -18,7 +18,8 @@ namespace Game.UI
         [SerializeField] private Button quitButton;
         [SerializeField] private Button mapButton;
         [SerializeField] private SubwayMapPopup mapPopup;
-
+        [SerializeField] private Game.Inventory.InventoryView inventoryPopup;
+        
         private bool _quitOpen;
         private InputAction _inventoryAction;
         private InputAction _settingsAction;
@@ -67,8 +68,8 @@ namespace Game.UI
 
         void OnInventoryClick()
         {
-            // TODO: 인벤토리 팝업 열기
-            Debug.Log("[ToolbarHud] 인벤토리 열기 (미구현)");
+            if (inventoryPopup != null) inventoryPopup.Toggle();
+            else Debug.LogWarning("[ToolbarHud] inventoryPopup 미연결");
         }
 
         void OnSettingsClick()

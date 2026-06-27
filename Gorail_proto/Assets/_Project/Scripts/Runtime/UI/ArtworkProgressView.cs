@@ -89,6 +89,8 @@ namespace Game.UI
         private bool  _finishing, _finishSuccess, _effectShown;
         private float _finishT;
 
+        private UnityEngine.AudioSource _heartbeat;   // 느린 구간 심장박동 루프
+
         ArtworkSystem Artwork => GameCore.Instance?.Artwork;
         float TotalAnimSeconds => fastSeconds + slowSeconds;
 
@@ -137,6 +139,7 @@ namespace Game.UI
             _running = true; _animT = 0f;
             _logicDone = _interrupted = _success = false;
             _finishing = _effectShown = false; _finishT = 0f;
+            Game.Core.Sfx.HeartbeatStop(_heartbeat); _heartbeat = null;
             if (successEffect != null) successEffect.SetActive(false);
             if (failEffect != null) failEffect.SetActive(false);
             _elapsedMin = 0;
@@ -169,6 +172,10 @@ namespace Game.UI
 
                 UpdateTrackerDots();
 
+                // 느려지는 구간(fastEndPercent 이후) 진입 시 심장박동 루프 시작
+                if (_heartbeat == null && _animT >= fastSeconds)
+                    _heartbeat = Game.Core.Sfx.HeartbeatStart();
+
                 if (_interrupted) { BeginFinish(false); return; }
                 if (_animT >= TotalAnimSeconds && _logicDone && _success) BeginFinish(true);
                 return;
@@ -197,6 +204,10 @@ namespace Game.UI
             _finishT = 0f;
             if (success) SetGauge(1f);   // 성공이면 게이지 100% 고정
             ClearDots();
+
+            Game.Core.Sfx.HeartbeatStop(_heartbeat); _heartbeat = null;
+            if (success) Game.Core.Sfx.ArtworkSuccess();
+            else         Game.Core.Sfx.ArtworkFail();
         }
 
         void DoClose()

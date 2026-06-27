@@ -42,6 +42,7 @@ namespace Game.UI
         [SerializeField] private float blinkSpeed = 3f;
 
         private bool _danger;   // 작품활동을 끝낸 뒤(위험 모드)
+        private bool _wasArrived;   // 직전 프레임 도착 상태(중복 재생 방지)
 
         ArtworkSystem Artwork => GameCore.Instance?.Artwork;
 
@@ -76,7 +77,8 @@ namespace Game.UI
 
             if (closest <= 0)
             {
-                // 도착 — 붉은 반짝임
+                // 도착 — 붉은 반짝임 + 진입 순간 1회 효과음
+                if (!_wasArrived) { Game.Core.Sfx.ChaserArrived(); _wasArrived = true; }
                 if (messageText != null) messageText.text = arrivedText;
                 if (glowImage != null)
                 {
@@ -86,6 +88,7 @@ namespace Game.UI
             }
             else
             {
+                _wasArrived = false;
                 if (glowImage != null) SetGlowAlpha(0f);
                 if (messageText != null)
                     messageText.text = _danger
