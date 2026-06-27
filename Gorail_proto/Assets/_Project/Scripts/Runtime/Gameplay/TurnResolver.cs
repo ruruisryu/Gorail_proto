@@ -98,6 +98,7 @@ namespace Game.Gameplay
         IEnumerator ResolveMove(List<string> path)
         {
             IsMoving = true;
+            var moveSfx = Game.Core.SoundManager.Instance?.PlaySFXLoop("지하철_이동");
 
             int dir = ResolveDirection(path);
             float wait = stepAnimSeconds;
@@ -118,6 +119,7 @@ namespace Game.Gameplay
                 {
                     _forceStop = false;
                     IsMoving   = false;
+                    Game.Core.SoundManager.Instance?.StopLoopSFX(moveSfx);
                     MoveCompleted?.Invoke(player.CurrentStationId, false);
                     yield break;
                 }
@@ -133,16 +135,19 @@ namespace Game.Gameplay
                     {
                         Debug.Log($"[TurnResolver] 검문 실패 — 게임오버 @ {player.CurrentStationId}");
                         IsMoving = false;
+                        Game.Core.SoundManager.Instance?.StopLoopSFX(moveSfx);
                         MoveCompleted?.Invoke(player.CurrentStationId, true);
                         yield break;
                     }
                 }
-
+                
+                // if (path.Count - 1 == i) Game.Core.SoundManager.Instance?.StopLoopSFX(moveSfx);
                 if (wait > 0f) yield return new WaitForSeconds(wait);
             }
 
             // 목적지 도달 — 자동하차: 도착 즉시 승강장으로 진입한다.
             IsMoving = false;
+            Game.Core.SoundManager.Instance?.StopLoopSFX(moveSfx);
             MoveCompleted?.Invoke(player.CurrentStationId, false);
             var _core = Game.Core.GameCore.Instance;
             if (_core?.AutoDisembark == true)
@@ -165,21 +170,42 @@ namespace Game.Gameplay
 
             // SoundManager 없으면 안내 없이 바로 진입
             if (sound == null) { onPlatformOpen?.Invoke(); return; }
+            
+            sound.PlaySFX("지하철_열림");
+
+            // 환승역이면 전용 브금 한 번 재생 (크로스페이드)
+            var graph = Game.Core.GameCore.Instance?.Graph?.Graph;
+            bool isTransfer = graph != null && graph.IsTransfer(stationId);
+            if (isTransfer)
+                sound.PlayBGM("환승역하차", loop: false);
 
             string doorClip = UnityEngine.Random.value < 0.5f
                 ? "역입니다_내리실문은오른쪽입니다"
                 : "역입니다_내리실문은왼쪽입니다";
 
-            // 보이스 큐 세팅 — 마지막 클립 완료 시 페이드아웃
-            sound.EnqueueVoice("이번역은");
-            sound.EnqueueVoice(stationId);
-            sound.EnqueueVoice(doorClip, onComplete: () => fader?.FadeOut());
+            void EnqueueAll()
+            {
+                sound.EnqueueVoice("이번역은");
+                sound.EnqueueVoice(stationId);
+                sound.EnqueueVoice(doorClip, onComplete: () =>
+                {
+                    onPlatformOpen?.Invoke();
+                    sound.PlaySFX("지하철_닫힘");
+                    fader?.FadeOut();
+                });
+            }
 
-            // 페이드인과 보이스를 동시에 시작, 검은 화면에서 승강장 열기
+            // 페이드인 시작
             if (fader != null)
-                fader.FadeIn(onComplete: onPlatformOpen);
+                fader.FadeIn();
             else
                 onPlatformOpen?.Invoke();
+
+            // 환승역은 브금이 1초 먼저 재생된 후 보이스 시작
+            if (isTransfer)
+                DG.Tweening.DOVirtual.DelayedCall(1.5f, EnqueueAll, ignoreTimeScale: true);
+            else
+                EnqueueAll();
         }
 
         /// <summary>현재 노선에 없는 역 클릭 시 이유를 구분한다.</summary>

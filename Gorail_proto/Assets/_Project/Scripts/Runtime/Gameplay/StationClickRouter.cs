@@ -1,5 +1,6 @@
 using UnityEngine;
 using Game.Subway;
+using Game.Core;
 
 namespace Game.Gameplay
 {
@@ -10,14 +11,14 @@ namespace Game.Gameplay
     /// </summary>
     public class StationClickRouter : MonoBehaviour
     {
-        TurnResolver turnResolver => Game.Core.GameCore.Instance?.TurnResolver;
+        TurnResolver turnResolver => GameCore.Instance?.TurnResolver;
 
         void Start()  => StationView.StationClicked += OnStationClicked;
         void OnDestroy() => StationView.StationClicked -= OnStationClicked;
 
         void OnStationClicked(string stationId)
         {
-            turnResolver?.TryMoveTo(stationId);
+            SoundManager.Instance.PlaySFX(turnResolver.TryMoveTo(stationId) ? "ui_click" : "ui_click_disabled");
         }
     }
 }

@@ -42,12 +42,19 @@ namespace Game.Core
         [SerializeField][Range(0f, 1f)] private float voiceVolume   = 1f;
         [SerializeField] private float voiceFadeDuration            = 0.3f;
 
+        [Header("BGM 덕킹 (보이스 재생 중 BGM 볼륨 감소)")]
+        [SerializeField] private bool  autoDuckBGM        = true;
+        [SerializeField][Range(0f, 1f)] private float duckVolume    = 0.7f;
+        [SerializeField] private float duckFadeIn         = 0.5f;  // 덕킹 시작까지 걸리는 시간
+        [SerializeField] private float duckFadeOut        = 0.5f;  // 복원까지 걸리는 시간
+
         [Header("SFX")]
         [SerializeField][Range(0f, 1f)] private float sfxVolume     = 1f;
         [SerializeField] private int sfxPoolSize                    = 8;
 
         private readonly List<AudioSource> _sfxPool = new();
         private Tween _bgmFadeTween;
+        private Tween _bgmDuckTween;
         private Tween _voiceFadeTween;
 
         // 클립 캐시 (이름 → AudioClip)
@@ -92,6 +99,11 @@ namespace Game.Core
                 _sfxPool.Add(CreateSFXSource());
         }
 
+        void Start()
+        {
+            SoundManager.Instance.PlayBGM("Han river loop_1"); // 시작화면 브금
+        }
+
         void OnDestroy()
         {
             _bgmFadeTween?.Kill();
@@ -112,26 +124,29 @@ namespace Game.Core
 
         // ── BGM ─────────────────────────────────────────────────────────
 
-        public void PlayBGM(string clipName, bool fade = true) =>
-            PlayBGM(Load(bgmPath, clipName), fade);
+        public void PlayBGM(string clipName, bool fade = true, bool loop = true) =>
+            PlayBGM(Load(bgmPath, clipName), fade, loop);
 
-        public void PlayBGM(AudioClip clip, bool fade = true)
+        public void PlayBGM(AudioClip clip, bool fade = true, bool loop = true)
         {
-            if (bgmSource.clip == clip && bgmSource.isPlaying) return;
+            if (bgmSource.clip == clip && bgmSource.isPlaying && bgmSource.loop == loop) return;
             _bgmFadeTween?.Kill();
+            _bgmDuckTween?.Kill();
+
+            float targetVolume = bgmVolume;
 
             if (!fade)
             {
-                SetBGMClip(clip);
-                bgmSource.volume = bgmVolume;
+                SetBGMClip(clip, loop);
+                bgmSource.volume = targetVolume;
                 return;
             }
 
             float half = bgmFadeDuration * 0.5f;
             _bgmFadeTween = DOTween.Sequence()
                 .Append(DOTween.To(() => bgmSource.volume, v => bgmSource.volume = v, 0f, half).SetEase(Ease.InQuad))
-                .AppendCallback(() => SetBGMClip(clip))
-                .Append(DOTween.To(() => bgmSource.volume, v => bgmSource.volume = v, bgmVolume, half).SetEase(Ease.OutQuad))
+                .AppendCallback(() => SetBGMClip(clip, loop))
+                .Append(DOTween.To(() => bgmSource.volume, v => bgmSource.volume = v, targetVolume, half).SetEase(Ease.OutQuad))
                 .SetUpdate(true);
         }
 
@@ -140,11 +155,30 @@ namespace Game.Core
         public void ResumeBGM() => bgmSource?.UnPause();
         public void SetBGMVolume(float v) => BGMVolume = v;
 
-        void SetBGMClip(AudioClip clip)
+        void SetBGMClip(AudioClip clip, bool loop = true)
         {
+            bgmSource.loop = loop;
             bgmSource.clip = clip;
             if (clip != null) bgmSource.Play();
             else              bgmSource.Stop();
+        }
+
+        void DuckBGM()
+        {
+            if (!autoDuckBGM || bgmSource == null || !bgmSource.isPlaying) return;
+            _bgmDuckTween?.Kill();
+            _bgmDuckTween = DOTween
+                .To(() => bgmSource.volume, v => bgmSource.volume = v, duckVolume, duckFadeIn)
+                .SetEase(Ease.InQuad).SetUpdate(true);
+        }
+
+        void RestoreBGM()
+        {
+            if (!autoDuckBGM || bgmSource == null) return;
+            _bgmDuckTween?.Kill();
+            _bgmDuckTween = DOTween
+                .To(() => bgmSource.volume, v => bgmSource.volume = v, bgmVolume, duckFadeOut)
+                .SetEase(Ease.OutQuad).SetUpdate(true);
         }
 
         // ── Voice ────────────────────────────────────────────────────────
@@ -216,6 +250,7 @@ namespace Game.Core
 
         IEnumerator VoiceQueueRoutine()
         {
+            DuckBGM();
             while (_voiceQueue.Count > 0)
             {
                 var (clip, onComplete) = _voiceQueue.Dequeue();
@@ -224,6 +259,7 @@ namespace Game.Core
                 yield return new WaitWhile(() => voiceSource.isPlaying);
                 onComplete?.Invoke();
             }
+            RestoreBGM();
             _voiceQueueCoroutine = null;
         }
 

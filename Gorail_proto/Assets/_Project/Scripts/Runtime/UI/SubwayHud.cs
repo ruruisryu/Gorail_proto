@@ -21,7 +21,19 @@ namespace Game.UI
             float w = 240f, h = 48f;
             var rect = new Rect((Screen.width - w) / 2f, Screen.height - h - 24f, w, h);
             if (GUI.Button(rect, $"🚉 하차 — {core.Player.CurrentStationId} 승강장"))
-                core.Platform?.OpenAt(core.Player.CurrentStationId);
+            {
+                SoundManager.Instance.PlaySFX("지하철_열림");
+                string stationId = core.Player.CurrentStationId;
+                var fader = ScreenFader.Instance;
+                if (fader != null)
+                    fader.Fade(onFadeOut: () =>
+                    {
+                        SoundManager.Instance.PlaySFX("지하철_닫힘");
+                        core.Platform?.OpenAt(stationId);
+                    });
+                else
+                    core.Platform?.OpenAt(stationId);
+            }
         }
     }
 }

@@ -428,6 +428,7 @@ GameObject:
   - component: {fileID: 5334126835724056917}
   - component: {fileID: 8710284843241624849}
   - component: {fileID: 764413287981191810}
+  - component: {fileID: 369401368271645056}
   m_Layer: 5
   m_Name: LineButton
   m_TagString: Untagged
@@ -636,3 +637,15 @@ MonoBehaviour:
             m_StringArgument: 
             m_BoolArgument: 0
           m_CallState: 2
+--- !u!114 &369401368271645056
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9194496305050063172}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 61705d2fdfb18ba44b5f2a8368d6169b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Runtime::Game.Core.UIButtonSFX

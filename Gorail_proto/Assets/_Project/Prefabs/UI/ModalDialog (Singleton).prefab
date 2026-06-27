@@ -356,6 +356,7 @@ GameObject:
   - component: {fileID: 7286725861795091804}
   - component: {fileID: 946165685364838160}
   - component: {fileID: 2226698498209721545}
+  - component: {fileID: 4701097015902800861}
   m_Layer: 5
   m_Name: 2
   m_TagString: Untagged
@@ -465,6 +466,18 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &4701097015902800861
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2736018327511734415}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 61705d2fdfb18ba44b5f2a8368d6169b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Runtime::Game.Core.UIButtonSFX
 --- !u!1 &3692209846006612543
 GameObject:
   m_ObjectHideFlags: 0
@@ -477,6 +490,7 @@ GameObject:
   - component: {fileID: 4775386759174265849}
   - component: {fileID: 6222491004004341893}
   - component: {fileID: 8733285285844738110}
+  - component: {fileID: 1604374858736264228}
   m_Layer: 5
   m_Name: 3
   m_TagString: Untagged
@@ -586,6 +600,18 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &1604374858736264228
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3692209846006612543}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 61705d2fdfb18ba44b5f2a8368d6169b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Runtime::Game.Core.UIButtonSFX
 --- !u!1 &5622745679716547696
 GameObject:
   m_ObjectHideFlags: 0
@@ -1098,6 +1124,7 @@ GameObject:
   - component: {fileID: 4392318619128545702}
   - component: {fileID: 6368021630647640771}
   - component: {fileID: 691547623806422658}
+  - component: {fileID: 4613999817476552285}
   m_Layer: 5
   m_Name: 1
   m_TagString: Untagged
@@ -1207,6 +1234,18 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &4613999817476552285
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8072397133685085271}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 61705d2fdfb18ba44b5f2a8368d6169b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Runtime::Game.Core.UIButtonSFX
 --- !u!1 &8667648157158723171
 GameObject:
   m_ObjectHideFlags: 0

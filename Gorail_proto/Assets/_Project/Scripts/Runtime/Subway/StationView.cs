@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Game.Core;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -89,6 +90,7 @@ namespace Game.Subway
 
         public void OnPointerEnter(PointerEventData _)
         {
+            SoundManager.Instance.PlaySFX("ui_hover");
             if (stationData != null && !string.IsNullOrEmpty(stationData.stationId))
                 StationHovered?.Invoke(stationData.stationId);
         }

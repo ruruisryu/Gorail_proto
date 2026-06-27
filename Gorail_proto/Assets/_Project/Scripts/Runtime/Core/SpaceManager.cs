@@ -33,6 +33,7 @@ namespace Game.Core
             Unload(groundSceneName);
             Load(platformSceneName);
             SetSpace(GameSpace.Platform);
+            SoundManager.Instance.PlayBGM("Han river loop_1");
         }
 
         /// <summary>승강장에서 지하철로(재탑승·반대방향·환승 후).</summary>
@@ -41,6 +42,7 @@ namespace Game.Core
             Unload(platformSceneName);
             Unload(groundSceneName);
             SetSpace(GameSpace.Subway);
+            SoundManager.Instance.PlayBGM("Han river loop_1");
         }
 
         /// <summary>승강장에서 지상으로(특별역만, §9·§10).</summary>
@@ -50,6 +52,7 @@ namespace Game.Core
             Unload(platformSceneName);
             Load(groundSceneName);
             SetSpace(GameSpace.Ground);
+            if (stationId == "동대문역사문화공원") SoundManager.Instance.PlayBGM("Atrium of glass_2");
         }
 
         void SetSpace(GameSpace s)

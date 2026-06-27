@@ -44,7 +44,8 @@ namespace Game.UI
         /// <param name="fadeOut">밝아지는 데 걸리는 시간(초). 0 이하면 기본값 사용.</param>
         /// <param name="blackOn">검은 화면을 유지하는 시간(초). 0 이하면 기본값 사용.</param>
         /// <param name="onComplete">페이드 아웃이 끝나 화면이 완전히 밝아졌을 때 호출될 콜백. null 가능.</param>
-        public void Fade(Action onBlack = null, float fadeIn = -1f, float fadeOut = -1f, float blackOn = -1f, Action onComplete = null)
+        /// <param name="onFadeOut">페이드 아웃이 시작될 때 호출될 콜백. null 가능.</param>
+        public void Fade(Action onBlack = null, float fadeIn = -1f, float fadeOut = -1f, float blackOn = -1f, Action onComplete = null, Action onFadeOut = null)
         {
             float tIn  = fadeIn  > 0f ? fadeIn  : defaultFadeIn;
             float tOut = fadeOut > 0f ? fadeOut : defaultFadeOut;
@@ -58,6 +59,7 @@ namespace Game.UI
                 .Append(overlay.DOFade(1f, tIn).SetEase(Ease.Linear))
                 .AppendCallback(() => onBlack?.Invoke())
                 .AppendInterval(tOn)
+                .AppendCallback(() => onFadeOut?.Invoke())
                 .Append(overlay.DOFade(0f, tOut).SetEase(Ease.Linear))
                 .OnComplete(() =>
                 {

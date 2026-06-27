@@ -133,6 +133,7 @@ GameObject:
   - component: {fileID: 3643887387729596137}
   - component: {fileID: 3137230818508957085}
   - component: {fileID: 8939353016520994330}
+  - component: {fileID: 9161735758467202327}
   m_Layer: 0
   m_Name: QuitButton
   m_TagString: Untagged
@@ -241,6 +242,18 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &9161735758467202327
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3870730249647414816}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 61705d2fdfb18ba44b5f2a8368d6169b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Runtime::Game.Core.UIButtonSFX
 --- !u!1 &7417493090689380534
 GameObject:
   m_ObjectHideFlags: 0
@@ -319,6 +332,7 @@ GameObject:
   - component: {fileID: 1503724484499305608}
   - component: {fileID: 4370640749204196331}
   - component: {fileID: 4033731477412549675}
+  - component: {fileID: 6841095221911209175}
   m_Layer: 0
   m_Name: MapButton
   m_TagString: Untagged
@@ -427,6 +441,18 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &6841095221911209175
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8370477098803042360}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 61705d2fdfb18ba44b5f2a8368d6169b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Runtime::Game.Core.UIButtonSFX
 --- !u!1 &8903084303135220597
 GameObject:
   m_ObjectHideFlags: 0
@@ -439,6 +465,7 @@ GameObject:
   - component: {fileID: 4486746805634079812}
   - component: {fileID: 3426831567538264840}
   - component: {fileID: 1147994370299285833}
+  - component: {fileID: 2033864678670367027}
   m_Layer: 0
   m_Name: InventoryButton
   m_TagString: Untagged
@@ -547,6 +574,18 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &2033864678670367027
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8903084303135220597}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 61705d2fdfb18ba44b5f2a8368d6169b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Runtime::Game.Core.UIButtonSFX
 --- !u!1 &9109101311023922559
 GameObject:
   m_ObjectHideFlags: 0
@@ -559,6 +598,7 @@ GameObject:
   - component: {fileID: 2265373554312782954}
   - component: {fileID: 4838000588579561995}
   - component: {fileID: 1715048825062663862}
+  - component: {fileID: 6948979358084386382}
   m_Layer: 0
   m_Name: SettingsButton
   m_TagString: Untagged
@@ -667,3 +707,15 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &6948979358084386382
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9109101311023922559}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 61705d2fdfb18ba44b5f2a8368d6169b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Runtime::Game.Core.UIButtonSFX

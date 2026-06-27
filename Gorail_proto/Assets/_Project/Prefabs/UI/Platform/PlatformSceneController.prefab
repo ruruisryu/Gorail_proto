@@ -522,6 +522,7 @@ GameObject:
   - component: {fileID: 730846506532931701}
   - component: {fileID: 6205965998131755161}
   - component: {fileID: 9200329619462026283}
+  - component: {fileID: 8191862045318150724}
   m_Layer: 5
   m_Name: BackButton
   m_TagString: Untagged
@@ -642,6 +643,18 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+--- !u!114 &8191862045318150724
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2639000779345657409}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 61705d2fdfb18ba44b5f2a8368d6169b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Runtime::Game.Core.UIButtonSFX
 --- !u!1 &2818542631391667556
 GameObject:
   m_ObjectHideFlags: 0
@@ -1158,6 +1171,7 @@ GameObject:
   - component: {fileID: 4294631554430928953}
   - component: {fileID: 4627188734383084703}
   - component: {fileID: 2466901915770072454}
+  - component: {fileID: 6844666435175675548}
   m_Layer: 5
   m_Name: ForwardButton
   m_TagString: Untagged
@@ -1314,6 +1328,18 @@ MonoBehaviour:
             m_StringArgument: 
             m_BoolArgument: 0
           m_CallState: 2
+--- !u!114 &6844666435175675548
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5474449266169935259}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 61705d2fdfb18ba44b5f2a8368d6169b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Runtime::Game.Core.UIButtonSFX
 --- !u!1 &5509966028111652476
 GameObject:
   m_ObjectHideFlags: 0
@@ -1464,6 +1490,7 @@ GameObject:
   - component: {fileID: 2325097856620523820}
   - component: {fileID: 633174841091702329}
   - component: {fileID: 5258579768961947730}
+  - component: {fileID: 1768721060324196614}
   m_Layer: 5
   m_Name: BackwardButton
   m_TagString: Untagged
@@ -1620,6 +1647,18 @@ MonoBehaviour:
             m_StringArgument: 
             m_BoolArgument: 0
           m_CallState: 2
+--- !u!114 &1768721060324196614
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5956256116317865277}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 61705d2fdfb18ba44b5f2a8368d6169b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Runtime::Game.Core.UIButtonSFX
 --- !u!1 &6933304591087733977
 GameObject:
   m_ObjectHideFlags: 0
@@ -1737,6 +1776,7 @@ GameObject:
   - component: {fileID: 4877580648025832699}
   - component: {fileID: 4168355210712200841}
   - component: {fileID: 8538283802903902257}
+  - component: {fileID: 8274336559035498248}
   m_Layer: 5
   m_Name: WayoutButton
   m_TagString: Untagged
@@ -1893,6 +1933,18 @@ MonoBehaviour:
             m_StringArgument: 
             m_BoolArgument: 0
           m_CallState: 2
+--- !u!114 &8274336559035498248
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7411151593791861712}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 61705d2fdfb18ba44b5f2a8368d6169b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Runtime::Game.Core.UIButtonSFX
 --- !u!1 &7521371856846691483
 GameObject:
   m_ObjectHideFlags: 0

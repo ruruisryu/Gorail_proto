@@ -254,6 +254,10 @@ MonoBehaviour:
   voiceSource: {fileID: 0}
   voiceVolume: 1
   voiceFadeDuration: 0.3
+  autoDuckBGM: 1
+  duckVolume: 0.5
+  duckFadeIn: 0.2
+  duckFadeOut: 0.5
   sfxVolume: 1
   sfxPoolSize: 8
 --- !u!4 &264466812
