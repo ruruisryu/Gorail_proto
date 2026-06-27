@@ -72,60 +72,8 @@ namespace Game.UI
             }
         }
 
-        void OnGUI()
-        {
-            var core = GameCore.Instance;
-            if (core == null) return;
-
-            // [추가] 작품활동 uGUI 화면이 열려 있으면 IMGUI는 그리지 않는다(겹침 방지)
-            if (artworkScreen != null && artworkScreen.IsOpen) return;
-
-            // 작품활동 진행 중에는 ArtworkProgressView(uGUI 원형 게이지)가 화면을 담당(§4)
-            if (Artwork != null && Artwork.IsActive) return;
-
-            // 배경(지상 사진/회색)은 GroundBackdrop(uGUI)이 담당. 여기선 라벨·컨트롤만.
-            GUI.Label(new Rect(0, 24f, Screen.width, 30f), "■ 지상 (Ground)");
-
-            GUILayout.BeginArea(new Rect(Screen.width / 2f - 190f, 70f, 380f, 460f), GUI.skin.box);
-            GUILayout.Label($"=== 지상 @ {core.Space?.CurrentStationId} ===");
-            GUILayout.Label($"명성 {core.Fame?.CurrentFame:0.0} · 수배도 {core.Wanted?.WantedLevel}");
-            GUILayout.Label($"추격자 {core.Trackers?.Trackers.Count ?? 0}명");
-
-            GUILayout.Space(6);
-
-            var aw = Artwork;
-            bool inProgress = aw != null && aw.IsActive;
-
-            if (inProgress)
-            {
-                // 진행 중 표시
-                GUILayout.Label($"작업 진행: {_artworkElapsed} / {_artworkTotal} 분");
-                float ratio = _artworkTotal > 0 ? (float)_artworkElapsed / _artworkTotal : 0f;
-                GUI.color = new Color(0.3f, 0.9f, 0.5f);
-                GUILayout.Box(new string('█', Mathf.RoundToInt(ratio * 20)) +
-                              new string('░', 20 - Mathf.RoundToInt(ratio * 20)));
-                GUI.color = Color.white;
-            }
-            else
-            {
-                if (!string.IsNullOrEmpty(_artworkResult))
-                    GUILayout.Label(_artworkResult);
-
-                // [변경] 상/중/하 직접 선택 → 재료 배치 화면(완성도로 등급 결정)
-                GUILayout.Label("작품활동 — 가방에서 재료를 배치해 완성도를 올리세요:");
-                if (GUILayout.Button("작품활동 시작 (재료 배치)"))
-                {
-                    if (artworkScreen != null) artworkScreen.Open();
-                    else Debug.LogWarning("[Ground] artworkScreen 미연결 — Inspector에서 " +
-                                          "GroundSceneManager.artworkScreen에 OutsideScene의 ArtworkScreen을 연결하세요.");
-                }
-            }
-
-            GUILayout.Space(10);
-            if (GUILayout.Button("지하철로 복귀")) ReturnToSubway(false);
-
-            GUILayout.EndArea();
-        }
+        // 승강장 복귀 버튼(uGUI)에서 직접 연결: OnClick → ReturnToSubway(false)
+        public void OnReturnButton() => ReturnToSubway(false);
 
         void ReturnToSubway(bool forced)
         {

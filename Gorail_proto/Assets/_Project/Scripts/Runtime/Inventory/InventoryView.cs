@@ -29,6 +29,11 @@ namespace Game.Inventory
         [Tooltip("패널 가로 위치 = 화면 비율(0=왼쪽끝, 0.5=중앙, 1=오른쪽끝). 해상도·화면비율에 안전.")]
         [Range(0f, 1f)]
         [SerializeField] private float panelAnchorX = 0.5f;
+        [Tooltip("켜면 격자를 부모(이 뷰의 RectTransform=GridArea) 중앙에 두고, 넘치면 셀 크기를 자동 축소한다. " +
+                 "작품활동 패널 격자에 권장. 끄면 cellSize 고정(기존 동작, SubwayScene 등).")]
+        [SerializeField] private bool fitToParent = false;
+        [Tooltip("fitToParent일 때 부모 안쪽 여백(px).")]
+        [SerializeField] private float fitMargin = 16f;
         [Tooltip("화면 전체를 덮는 어두운 배경(클릭 시 닫힘). 나란히 띄울 땐 끔.")]
         [SerializeField] private bool showOverlay = true;
         [Tooltip("이 패널이 단축키로 직접 열고 닫히는가. 작품활동 패널은 ArtworkScreen이 제어하므로 끔.")]
@@ -54,6 +59,7 @@ namespace Game.Inventory
 
         private RectTransform _self, _gridContainer, _bag;
         private Image _bagImg;   // 패널 배경(가방 스프라이트 또는 IP 배경)
+        private float _cell;     // 유효 셀 크기(고정 cellSize 또는 부모 맞춤 값)
         private bool _open;
         private InputAction _toggleAction;
         private Camera _cam;
@@ -65,7 +71,36 @@ namespace Game.Inventory
         private RectTransform _heldImg;
         private readonly List<RectTransform> _hl = new();
 
-        float Step => cellSize + cellGap;
+        float Step => (_cell > 0f ? _cell : cellSize) + cellGap;
+
+        /// <summary>
+        /// 이 뷰의 부모(=이 RectTransform) 안에 '스프라이트(격자+패딩)'가 들어가는 최대 칸 크기.
+        /// fit 계산의 기준이며, 공유 컨트롤러가 좌/우 값을 비교해 공통 칸 크기를 정할 때 쓴다.
+        /// </summary>
+        public float MaxCellForParent()
+        {
+            ResolveInventory();
+            var g = inventory?.Grid;
+            if (g == null) return cellSize;
+
+            var area = ((RectTransform)transform).rect;
+            // 스프라이트가 부모를 넘지 않도록: 부모 - 여백 - 패딩(양쪽)
+            float availW = area.width  - fitMargin * 2f - bagPadding * 2f;
+            float availH = area.height - fitMargin * 2f - bagPadding * 2f;
+            if (availW <= 1f || availH <= 1f) return cellSize;
+
+            float cw = (availW - (g.Width  - 1) * cellGap) / g.Width;
+            float ch = (availH - (g.Height - 1) * cellGap) / g.Height;
+            return Mathf.Max(4f, Mathf.Min(cw, ch));
+        }
+
+        /// <summary>외부(공유 컨트롤러)에서 칸 크기를 강제로 지정하고 다시 그린다.</summary>
+        public void SetCellSize(float size)
+        {
+            cellSize = Mathf.Max(4f, size);
+            _cell = cellSize;
+            if (_gridContainer != null) Rebuild();
+        }
 
         public bool IsOpen => _open;
         public event System.Action<bool> OpenChanged;
@@ -217,12 +252,23 @@ namespace Game.Inventory
             _dynamic.Clear();
 
             var g = inventory.Grid;
-            float gw = g.Width  * cellSize + (g.Width  - 1) * cellGap;
-            float gh = g.Height * cellSize + (g.Height - 1) * cellGap;
+
+            // 유효 셀 크기 결정: fitToParent면 부모에 스프라이트(격자+패딩)가 들어가게 축소 + 중앙
+            _cell = cellSize;
+            var bag = (RectTransform)_gridContainer.parent;
+            if (fitToParent)
+                _cell = MaxCellForParent();
+
+            // fitToParent와 무관하게 항상 부모 중앙 (크기는 안 건드림)
+            bag.anchorMin = bag.anchorMax = new Vector2(0.5f, 0.5f);
+            bag.anchoredPosition = Vector2.zero;
+            foreach (var h in _hl) if (h != null) h.sizeDelta = new Vector2(_cell, _cell);
+
+            float gw = g.Width  * _cell + (g.Width  - 1) * cellGap;
+            float gh = g.Height * _cell + (g.Height - 1) * cellGap;
 
             _gridContainer.sizeDelta = new Vector2(gw, gh);
             _gridContainer.anchoredPosition = new Vector2(-gw / 2f, gh / 2f);
-            var bag = (RectTransform)_gridContainer.parent;
             bag.sizeDelta = new Vector2(gw + bagPadding * 2f, gh + bagPadding * 2f);
 
             // 실루엣(작품활동) 뷰면 패널 배경을 그 IP 사진으로. 가방 뷰면 bagSprite 유지.
@@ -241,7 +287,7 @@ namespace Game.Inventory
                     img.color = cellColor; img.raycastTarget = false;
                     cell.anchorMin = cell.anchorMax = new Vector2(0f, 1f);
                     cell.pivot = new Vector2(0f, 1f);
-                    cell.sizeDelta = new Vector2(cellSize, cellSize);
+                    cell.sizeDelta = new Vector2(_cell, _cell);
                     cell.anchoredPosition = CellTopLeft(x, y);
                     var ol = cell.gameObject.AddComponent<Outline>();
                     ol.effectColor = cellLine; ol.effectDistance = new Vector2(1f, -1f);
@@ -298,10 +344,10 @@ namespace Game.Inventory
             Bounds2(rotated, out int bw,  out int bh);
             Bounds2(baseBox, out int bw0, out int bh0);
 
-            float footW = bw  * cellSize + (bw  - 1) * cellGap;
-            float footH = bh  * cellSize + (bh  - 1) * cellGap;
-            float artW  = bw0 * cellSize + (bw0 - 1) * cellGap;
-            float artH  = bh0 * cellSize + (bh0 - 1) * cellGap;
+            float footW = bw  * _cell + (bw  - 1) * cellGap;
+            float footH = bh  * _cell + (bh  - 1) * cellGap;
+            float artW  = bw0 * _cell + (bw0 - 1) * cellGap;
+            float artH  = bh0 * _cell + (bh0 - 1) * cellGap;
 
             var img = it.GetComponent<Image>();
             img.sprite = item.sprite;

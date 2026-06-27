@@ -19,6 +19,8 @@ namespace Game.Inventory
         [Header("두 격자 패널 (위치는 각자의 RectTransform 앵커로 잡는다)")]
         [SerializeField] private InventoryView bagView;        // 가방(왼쪽 영역에 배치)
         [SerializeField] private InventoryView silhouetteView; // 재료 배치(오른쪽 영역에 배치)
+        [Tooltip("두 격자에 같은 칸 크기를 박는 컨트롤러(선택).")]
+        [SerializeField] private Game.UI.ArtworkGridFitter gridFitter;
 
         private InputAction _escAct;
         private bool _open;
@@ -53,6 +55,7 @@ namespace Game.Inventory
             if (panelRoot != null) panelRoot.SetActive(true);
             bagView?.Open();
             silhouetteView?.Open();
+            if (gridFitter != null) gridFitter.Apply();   // 두 격자 같은 칸 크기로
             Debug.Log("[Artwork] 작품활동 팝업 Open()");
         }
 
