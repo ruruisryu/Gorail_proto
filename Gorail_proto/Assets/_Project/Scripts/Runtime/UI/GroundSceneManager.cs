@@ -12,6 +12,9 @@ namespace Game.UI
     /// </summary>
     public class GroundSceneManager : MonoBehaviour
     {
+        [Header("작품활동 팝업 (같은 OutsideScene 안의 ArtworkScreen 연결)")]
+        [SerializeField] private ArtworkScreen artworkScreen;
+
         private bool _returning;
         private int  _artworkElapsed;
         private int  _artworkTotal;
@@ -54,6 +57,8 @@ namespace Game.UI
             if (interrupted)
             {
                 _artworkResult = "추격자 도달 — 작품 실패!";
+                var plat = GameCore.Instance?.Platform;
+                plat?.MarkArtworkDone();
                 ReturnToSubway(true);
             }
             else
@@ -61,8 +66,9 @@ namespace Game.UI
                 _artworkResult = succeeded
                     ? $"작품 완성 +{fameGain:0.0} 명성"
                     : "작품 실패";
-                if (succeeded)
-                    GameCore.Instance?.Platform?.MarkArtworkDone();
+                // 성공·실패 모두 작품활동을 시도했으므로 나가는 곳 비활성
+                var plat = GameCore.Instance?.Platform;
+                plat?.MarkArtworkDone();
             }
         }
 
@@ -72,12 +78,12 @@ namespace Game.UI
             if (core == null) return;
 
             // [추가] 작품활동 uGUI 화면이 열려 있으면 IMGUI는 그리지 않는다(겹침 방지)
-            if (ArtworkScreen.Instance != null && ArtworkScreen.Instance.IsOpen) return;
+            if (artworkScreen != null && artworkScreen.IsOpen) return;
 
-            var prevC = GUI.color;
-            GUI.color = new Color(0.10f, 0.17f, 0.16f, 0.97f);
-            GUI.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), Texture2D.whiteTexture);
-            GUI.color = prevC;
+            // 작품활동 진행 중에는 ArtworkProgressView(uGUI 원형 게이지)가 화면을 담당(§4)
+            if (Artwork != null && Artwork.IsActive) return;
+
+            // 배경(지상 사진/회색)은 GroundBackdrop(uGUI)이 담당. 여기선 라벨·컨트롤만.
             GUI.Label(new Rect(0, 24f, Screen.width, 30f), "■ 지상 (Ground)");
 
             GUILayout.BeginArea(new Rect(Screen.width / 2f - 190f, 70f, 380f, 460f), GUI.skin.box);
@@ -108,7 +114,11 @@ namespace Game.UI
                 // [변경] 상/중/하 직접 선택 → 재료 배치 화면(완성도로 등급 결정)
                 GUILayout.Label("작품활동 — 가방에서 재료를 배치해 완성도를 올리세요:");
                 if (GUILayout.Button("작품활동 시작 (재료 배치)"))
-                    ArtworkScreen.Instance?.Open();
+                {
+                    if (artworkScreen != null) artworkScreen.Open();
+                    else Debug.LogWarning("[Ground] artworkScreen 미연결 — Inspector에서 " +
+                                          "GroundSceneManager.artworkScreen에 OutsideScene의 ArtworkScreen을 연결하세요.");
+                }
             }
 
             GUILayout.Space(10);

@@ -18,4 +18,9 @@ MonoBehaviour:
     width: 8
     height: 5
     cells: 00000001010101010000010101010101010101010101010101010101010101010101010101010101
-  background: {fileID: 0}
+  background: {fileID: 21300000, guid: ddf3045d1bd08d748af5cf097957b398, type: 3}
+  outsideBackground: {fileID: 21300000, guid: ddf3045d1bd08d748af5cf097957b398, type: 3}
+  defectSprite: {fileID: 21300000, guid: c620de393c6cc5a43bb4a2acbd91aad0, type: 3}
+  defectHighlightSprite: {fileID: 21300000, guid: a6290bfb56de76746803e26d9a62a246, type: 3}
+  defectPosition: {x: 0.82063997, y: 0.6229167}
+  defectSize: {x: 0.07457155, y: 0.28804505}

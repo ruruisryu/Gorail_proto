@@ -15,3 +15,6 @@ MonoBehaviour:
   stationId: "\uC774\uCD0C"
   displayName: "\uC774\uCD0C"
   featureType: 1
+  ipCanvas: {fileID: 11400000, guid: c91640e725a1fc7439c824864f3be6b7, type: 2}
+  outsidePhoto: {fileID: 21300000, guid: 5278f66e916f283418d3e0c85471b125, type: 3}
+  outsideBackground: {fileID: 21300000, guid: 5278f66e916f283418d3e0c85471b125, type: 3}

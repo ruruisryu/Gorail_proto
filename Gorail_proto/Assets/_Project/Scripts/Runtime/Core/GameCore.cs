@@ -32,6 +32,7 @@ namespace Game.Core
         [SerializeField] private MoneySystem        moneySystem;
         [SerializeField] private RngService         rngService;
         [SerializeField] private SubwayMapRenderer  mapRenderer;
+        [SerializeField] private Game.Inventory.InventorySystem bagInventory;
 
         public GameManager        Game         => gameManager;
         public Player             Player       => player;
@@ -48,6 +49,10 @@ namespace Game.Core
         public MoneySystem        Money        => moneySystem;
         public RngService         Rng          => rngService;
         public SubwayMapRenderer  MapRenderer  => mapRenderer;
+
+        /// <summary>영구 가방(보유 재료) 데이터. 씬을 넘나들며 유지되며, OutsideScene의
+        /// 작품활동 팝업이 드래그 원본으로 런타임 참조한다(§외부IP 작품활동 UI).</summary>
+        public Game.Inventory.InventorySystem BagInventory => bagInventory;
 
         [Header("동작 설정")]
         [SerializeField] private bool autoDisembark = true;

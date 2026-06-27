@@ -263,7 +263,6 @@ MonoBehaviour:
   bagView: {fileID: 2121795664}
   silhouetteView: {fileID: 448115881}
   bagArtworkAnchorX: 0.27
-  entryMaterialRatio: 0.3
   useDebugKey: 1
   debugKey: 21
 --- !u!114 &388388996 stripped
@@ -779,6 +778,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 065aff509618e934da4c6553dfd9d53c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Game.Runtime::Game.Gameplay.PlatformController
+  entryMaterialRatio: 0.3
 --- !u!114 &1196569274
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -846,6 +846,7 @@ MonoBehaviour:
   moneySystem: {fileID: 2087252923}
   rngService: {fileID: 1196569276}
   mapRenderer: {fileID: 388388996}
+  bagInventory: {fileID: 255488290840724886}
   autoDisembark: 1
 --- !u!114 &1196569281
 MonoBehaviour:
@@ -1776,6 +1777,38 @@ PrefabInstance:
       propertyPath: inventory
       value: 
       objectReference: {fileID: 941141046}
+    - target: {fileID: 8072163379501168180, guid: 3fde60c27c7d984449a6aca2631904a7, type: 3}
+      propertyPath: cellColor.a
+      value: 0.11764706
+      objectReference: {fileID: 0}
+    - target: {fileID: 8072163379501168180, guid: 3fde60c27c7d984449a6aca2631904a7, type: 3}
+      propertyPath: cellColor.b
+      value: 0.44313726
+      objectReference: {fileID: 0}
+    - target: {fileID: 8072163379501168180, guid: 3fde60c27c7d984449a6aca2631904a7, type: 3}
+      propertyPath: cellColor.g
+      value: 0.44313726
+      objectReference: {fileID: 0}
+    - target: {fileID: 8072163379501168180, guid: 3fde60c27c7d984449a6aca2631904a7, type: 3}
+      propertyPath: cellColor.r
+      value: 0.44313726
+      objectReference: {fileID: 0}
+    - target: {fileID: 8072163379501168180, guid: 3fde60c27c7d984449a6aca2631904a7, type: 3}
+      propertyPath: cellFilled.a
+      value: 0.19607843
+      objectReference: {fileID: 0}
+    - target: {fileID: 8072163379501168180, guid: 3fde60c27c7d984449a6aca2631904a7, type: 3}
+      propertyPath: cellFilled.b
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8072163379501168180, guid: 3fde60c27c7d984449a6aca2631904a7, type: 3}
+      propertyPath: cellFilled.g
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8072163379501168180, guid: 3fde60c27c7d984449a6aca2631904a7, type: 3}
+      propertyPath: cellFilled.r
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2420,6 +2453,42 @@ PrefabInstance:
       propertyPath: inventory
       value: 
       objectReference: {fileID: 255488290840724886}
+    - target: {fileID: 4070574502728486602, guid: 5d39df9f532d7d24da1e441fb829ad04, type: 3}
+      propertyPath: bagPadding
+      value: 130
+      objectReference: {fileID: 0}
+    - target: {fileID: 4070574502728486602, guid: 5d39df9f532d7d24da1e441fb829ad04, type: 3}
+      propertyPath: cellColor.a
+      value: 0.11764706
+      objectReference: {fileID: 0}
+    - target: {fileID: 4070574502728486602, guid: 5d39df9f532d7d24da1e441fb829ad04, type: 3}
+      propertyPath: cellColor.b
+      value: 0.4433962
+      objectReference: {fileID: 0}
+    - target: {fileID: 4070574502728486602, guid: 5d39df9f532d7d24da1e441fb829ad04, type: 3}
+      propertyPath: cellColor.g
+      value: 0.4433962
+      objectReference: {fileID: 0}
+    - target: {fileID: 4070574502728486602, guid: 5d39df9f532d7d24da1e441fb829ad04, type: 3}
+      propertyPath: cellColor.r
+      value: 0.4433962
+      objectReference: {fileID: 0}
+    - target: {fileID: 4070574502728486602, guid: 5d39df9f532d7d24da1e441fb829ad04, type: 3}
+      propertyPath: cellFilled.a
+      value: 0.19607843
+      objectReference: {fileID: 0}
+    - target: {fileID: 4070574502728486602, guid: 5d39df9f532d7d24da1e441fb829ad04, type: 3}
+      propertyPath: cellFilled.b
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4070574502728486602, guid: 5d39df9f532d7d24da1e441fb829ad04, type: 3}
+      propertyPath: cellFilled.g
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4070574502728486602, guid: 5d39df9f532d7d24da1e441fb829ad04, type: 3}
+      propertyPath: cellFilled.r
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 86e404f0970eb9940bfd088240739dd6, type: 3}
+  m_Name: IpCanvas_KoreanNationalMuseum
+  m_EditorClassIdentifier: Game.Runtime::Game.Inventory.IpCanvasData
+  ipId: koreannationalmuseum
+  displayName: "\uAD6D\uB9BD\uC911\uC559\uBC15\uBB3C\uAD00"
+  silhouette:
+    width: 8
+    height: 5
+    cells: 01010101000000000101010101010101010101010101010101010101010101010101010101010101
+  background: {fileID: 21300000, guid: 821800ca7ddeb2c41bbf5ef466010e38, type: 3}
+  outsideBackground: {fileID: 21300000, guid: 5278f66e916f283418d3e0c85471b125, type: 3}
+  defectSprite: {fileID: 21300000, guid: b7d4c902033b6de45936750d938836e0, type: 3}
+  defectHighlightSprite: {fileID: 21300000, guid: feb202c1b686b204d8ebd64d573b4b86, type: 3}
+  defectPosition: {x: 0.90141296, y: 0.43680555}
+  defectSize: {x: 0.099999964, y: 0.120000035}

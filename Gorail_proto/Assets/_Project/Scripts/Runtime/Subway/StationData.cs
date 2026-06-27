@@ -1,4 +1,5 @@
 using UnityEngine;
+using Game.Inventory;
 
 namespace Game.Subway
 {
@@ -20,6 +21,19 @@ namespace Game.Subway
 
         [Tooltip("역 기능 레이어(§10). 환승 여부는 노선 구조로 별도 결정됨.")]
         public StationFeature featureType = StationFeature.General;
+
+        [Tooltip("랜드마크역일 때 작품활동에 쓸 IP 실루엣(SO). 예: 동대문→IpCanvas_DDP. " +
+                 "일반/상점/안전역은 비워둔다. IP가 여러 개여도 ArtworkInventory는 하나로, 입장 시 이걸로 갈아끼운다.")]
+        public IpCanvasData ipCanvas;
+
+        [Tooltip("OutsideScene(지상) 기본뷰에 깔리는 실제 사진 배경(§1-1). " +
+                 "비워두면 회색으로 대체. ※ 재료배치 그리드 배경(픽셀 그림)은 IpCanvasData.background로 따로 둠.")]
+        public Sprite outsidePhoto;
+
+        [Tooltip("기본뷰에서 카메라가 좌우로 훑는 '가로로 긴' 배경 스프라이트(§1-1·§2). " +
+                 "월드 공간 SpriteRenderer에 실리며, 카메라가 이 폭 안에서 우클릭 드래그로 팬한다. " +
+                 "결함(2D)도 이 배경 위에 배치된다.")]
+        public Sprite outsideBackground;
 
         /// <summary>외부(지상) 진입 가능 역인가 — 특별역(랜드마크/상점)만(§10·§9).</summary>
         public bool AllowsOutside => featureType == StationFeature.Landmark || featureType == StationFeature.Shop;

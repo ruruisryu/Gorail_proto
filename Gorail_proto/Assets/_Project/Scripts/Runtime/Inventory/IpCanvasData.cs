@@ -26,8 +26,21 @@ namespace Game.Inventory
         public GridShape silhouette = new GridShape(7, 6, null);
 
         [Header("표시")]
-        [Tooltip("재료 배치 뷰 배경에 깔리는 IP 이미지.")]
+        [Tooltip("재료 배치 뷰 배경에 깔리는 IP 이미지(픽셀 그림 등).")]
         public Sprite background;
+
+        [Header("기본 뷰 (OutsideScene §1-1·§2)")]
+        [Tooltip("기본 뷰에서 카메라가 좌우로 훑는 가로로 긴 배경(§1-1). 결함도 이 위에 뜬다.")]
+        public Sprite outsideBackground;
+
+        [Tooltip("이 IP의 결함 평소 스프라이트(§2).")]
+        public Sprite defectSprite;
+        [Tooltip("결함 호버 시 하이라이트 스프라이트(§2).")]
+        public Sprite defectHighlightSprite;
+        [Tooltip("결함을 둘 위치 — 가로 배경 기준 정규화 좌표(0~1). (0.5,0.5)=중앙.")]
+        public Vector2 defectPosition = new Vector2(0.5f, 0.5f);
+        [Tooltip("결함 크기 — 가로 배경 기준 정규화(0~1). 예: (0.1, 0.15). 에디터 헬퍼로 잡는 걸 권장.")]
+        public Vector2 defectSize = new Vector2(0.1f, 0.12f);
 
         // ────────────────────────────────────────────────────────────
         // [추후 확장] IP별 완성도/명성 보정, 드론뷰 지원 여부 등 — 필요해지면 여기에.

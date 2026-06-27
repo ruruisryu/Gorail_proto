@@ -7,61 +7,26 @@ namespace Game.Inventory
     /// 작품활동 화면: 가방(왼쪽)과 재료 배치(오른쪽) 패널을 함께 열고 닫는다.
     /// 위치는 화면 비율(anchor)로 잡아 해상도·화면비율에 안전하다.
     ///
-    /// 지상 씬(GroundSceneManager)에서 ArtworkScreen.Instance.Open()으로 연다.
-    /// 다른 씬(additive)에서 참조하므로 싱글톤으로 노출(프로젝트의 ScreenFader.Instance와 같은 방식).
+    /// 지상 씬(OutsideScene)에 두고, 같은 씬의 GroundSceneManager가 직접 참조해
+    /// 결함 클릭/버튼으로 Open()한다. 드래그용 가방 뷰는 Open 때 영구 가방 데이터
+    /// (GameCore.BagInventory, SubwayScene)에 런타임으로 연결된다.
     /// </summary>
     public class ArtworkScreen : MonoBehaviour
     {
-        public static ArtworkScreen Instance { get; private set; }
+        [Header("팝업 패널 루트 (BG·타이틀·두 격자·완성도·버튼을 담은 한 패널)")]
+        [SerializeField] private GameObject panelRoot;
 
-        [Header("두 격자 패널")]
-        [SerializeField] private InventoryView bagView;        // 가방(작품활동 땐 왼쪽)
-        [SerializeField] private InventoryView silhouetteView; // 재료 배치(오른쪽)
+        [Header("두 격자 패널 (위치는 각자의 RectTransform 앵커로 잡는다)")]
+        [SerializeField] private InventoryView bagView;        // 가방(왼쪽 영역에 배치)
+        [SerializeField] private InventoryView silhouetteView; // 재료 배치(오른쪽 영역에 배치)
 
-        [Header("작품활동 때 가방 가로 위치(화면 비율). 실루엣 위치는 ArtworkView의 Panel Anchor X로.")]
-        [Range(0f, 1f)]
-        [SerializeField] private float bagArtworkAnchorX = 0.27f;
-
-        [Header("진입 30% 룰")]
-        [Tooltip("지상(작품활동) 진입에 필요한 최소 보유 재료 = IP 빈칸 × 이 값.")]
-        [Range(0f, 1f)]
-        [SerializeField] private float entryMaterialRatio = 0.30f;
-
-        [Header("디버그용 토글 키 (실제 트리거는 지상 씬 버튼)")]
-        [SerializeField] private bool useDebugKey = true;
-        [SerializeField] private Key debugKey = Key.G;
-
-        private InputAction _toggleAct, _escAct;
+        private InputAction _escAct;
         private bool _open;
 
         public bool IsOpen => _open;
 
-        /// <summary>보유 재료(가방 채운 칸)가 IP 빈칸의 entryMaterialRatio 이상인가 — 진입 30% 룰.</summary>
-        public bool HasEnoughMaterials() => HasEnoughMaterials(out _, out _);
-
-        /// <summary>have=보유 칸, need=필요 칸(IP 빈칸×비율). 정보가 없으면 막지 않는다(true).</summary>
-        public bool HasEnoughMaterials(out int have, out int need)
-        {
-            var bag = bagView != null && bagView.Inventory != null ? bagView.Inventory.Grid : null;
-            var ip  = silhouetteView != null && silhouetteView.Inventory != null ? silhouetteView.Inventory.Grid : null;
-            have = bag != null ? bag.FilledCellCount : 0;
-            need = ip  != null ? Mathf.CeilToInt(ip.UsableCellCount * entryMaterialRatio) : 0;
-            if (bag == null || ip == null) return true;
-            return have >= need;
-        }
-
         void Awake()
         {
-            Instance = this;
-
-            if (useDebugKey)
-            {
-                _toggleAct = new InputAction("ArtworkToggle",
-                    binding: $"<Keyboard>/{debugKey.ToString().ToLower()}");
-                _toggleAct.performed += _ => Toggle();
-                _toggleAct.Enable();
-            }
-
             // Esc로 닫기(작품활동 안 하고 빠져나갈 때)
             _escAct = new InputAction("ArtworkEsc", binding: "<Keyboard>/escape");
             _escAct.performed += _ => { if (_open) Close(); };
@@ -70,8 +35,6 @@ namespace Game.Inventory
 
         void OnDestroy()
         {
-            if (Instance == this) Instance = null;
-            _toggleAct?.Dispose();
             _escAct?.Dispose();
         }
 
@@ -79,10 +42,51 @@ namespace Game.Inventory
 
         public void Open()
         {
+            if (bagView == null || silhouetteView == null)
+            {
+                Debug.LogWarning($"[Artwork] 팝업 뷰 미연결 — bagView={(bagView != null)}, " +
+                                 $"silhouetteView={(silhouetteView != null)}. ArtworkScreen 인스펙터에서 두 뷰를 연결하세요.");
+            }
+            BindBagToPersistent();        // 드래그용 가방 뷰 → 영구 가방 데이터(다른 씬)
+            LoadCurrentStationCanvas();   // 현재 역 IP로 실루엣 교체(다른 IP면 배치 초기화)
             _open = true;
-            if (bagView != null) bagView.SetPanelAnchor(bagArtworkAnchorX); // 가방 왼쪽 비율로
+            if (panelRoot != null) panelRoot.SetActive(true);
             bagView?.Open();
             silhouetteView?.Open();
+            Debug.Log("[Artwork] 작품활동 팝업 Open()");
+        }
+
+        /// <summary>OutsideScene의 가방 뷰가 SubwayScene에 영구로 있는 가방 데이터를 가리키게 한다.
+        /// 인스펙터로는 씬을 가로질러 참조할 수 없으므로 런타임에 연결.</summary>
+        void BindBagToPersistent()
+        {
+            var core = Game.Core.GameCore.Instance;
+            if (bagView != null && core != null && core.BagInventory != null)
+                bagView.SetInventory(core.BagInventory);
+        }
+
+        /// <summary>현재 역(SpaceManager)의 StationData.ipCanvas를 실루엣에 싣는다.
+        /// 다른 IP면 LoadCanvas가 배치를 초기화하고, 같은 IP면 건드리지 않아 배치가 유지된다.
+        /// IP 정보가 없으면(디버그로 지하철에서 G 등) 기존 실루엣을 그대로 둔다.</summary>
+        void LoadCurrentStationCanvas()
+        {
+            var inv = silhouetteView != null ? silhouetteView.Inventory : null;
+            if (inv == null) return;
+
+            var canvas = ResolveCurrentStationCanvas();
+            if (canvas == null) return;        // 역 IP 미지정 — 기존 유지
+            if (inv.Canvas == canvas) return;  // 같은 IP — 배치 유지
+            inv.LoadCanvas(canvas);            // 다른 IP — 교체 + 초기화
+        }
+
+        /// <summary>현재 역의 IP 실루엣 SO(없으면 null).</summary>
+        IpCanvasData ResolveCurrentStationCanvas()
+        {
+            var core = Game.Core.GameCore.Instance;
+            string stn = core?.Space?.CurrentStationId;
+            if (string.IsNullOrEmpty(stn)) return null;
+            var station = core?.Graph?.Graph?.GetStation(stn);
+            return station != null ? station.ipCanvas : null;
         }
 
         public void Close()
@@ -90,7 +94,7 @@ namespace Game.Inventory
             _open = false;
             bagView?.Close();
             silhouetteView?.Close();
-            if (bagView != null) bagView.SetPanelAnchor(0.5f);             // 다음 TAB은 중앙
+            if (panelRoot != null) panelRoot.SetActive(false);
         }
     }
 }

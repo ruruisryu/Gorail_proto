@@ -15,3 +15,6 @@ MonoBehaviour:
   stationId: "\uB3D9\uB300\uBB38\uC5ED\uC0AC\uBB38\uD654\uACF5\uC6D0"
   displayName: "\uB3D9\uB300\uBB38\uC5ED\uC0AC\uBB38\uD654\uACF5\uC6D0"
   featureType: 1
+  ipCanvas: {fileID: 11400000, guid: 605af6a19e779a34a83127d6e93da846, type: 2}
+  outsidePhoto: {fileID: 0}
+  outsideBackground: {fileID: 21300000, guid: 5278f66e916f283418d3e0c85471b125, type: 3}

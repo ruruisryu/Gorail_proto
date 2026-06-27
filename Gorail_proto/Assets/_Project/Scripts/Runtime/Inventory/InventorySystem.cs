@@ -181,5 +181,22 @@ namespace Game.Inventory
 
         /// <summary>보유 아이템 총 점유 칸 수(진입 차단 30% 룰 등에 사용 예정).</summary>
         public int TotalOccupiedCells => Grid?.FilledCellCount ?? 0;
+
+        /// <summary>현재 작품활동 캔버스(IP 실루엣). 가방이면 null.</summary>
+        public IpCanvasData Canvas => canvasData;
+
+        /// <summary>
+        /// 작품활동 캔버스(IP 실루엣)를 갈아끼우고 배치를 초기화한다.
+        /// 새 IP역에 들어갈 때 호출 — 격자 모양이 새 IP로 바뀌고 이전 배치는 모두 비워진다.
+        /// (같은 IP면 호출부에서 걸러 호출하지 않으면 됨.)
+        /// </summary>
+        public void LoadCanvas(IpCanvasData canvas)
+        {
+            canvasData = canvas;
+            BuildBag();              // 새 실루엣으로 격자 재생성 + _placements/_nextId 초기화
+            InventoryChanged?.Invoke();
+            Debug.Log($"[Inventory] 캔버스 교체 → {(canvas != null ? canvas.displayName : "없음")} " +
+                      $"({Grid.UsableCellCount}칸), 배치 초기화");
+        }
     }
 }

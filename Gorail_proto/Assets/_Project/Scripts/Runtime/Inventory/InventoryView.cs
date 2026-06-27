@@ -53,6 +53,7 @@ namespace Game.Inventory
         static int             s_origRot;
 
         private RectTransform _self, _gridContainer, _bag;
+        private Image _bagImg;   // 패널 배경(가방 스프라이트 또는 IP 배경)
         private bool _open;
         private InputAction _toggleAction;
         private Camera _cam;
@@ -182,6 +183,7 @@ namespace Game.Inventory
             var bimg = bag.gameObject.AddComponent<Image>();
             bimg.sprite = bagSprite; bimg.preserveAspect = true; bimg.raycastTarget = true;
             bimg.color = bagSprite != null ? Color.white : new Color(0.12f, 0.12f, 0.14f, 0.92f);
+            _bagImg = bimg;
             bag.pivot = new Vector2(0.5f, 0.5f);
             bag.anchorMin = bag.anchorMax = new Vector2(panelAnchorX, 0.5f);
             bag.anchoredPosition = Vector2.zero;
@@ -222,6 +224,13 @@ namespace Game.Inventory
             _gridContainer.anchoredPosition = new Vector2(-gw / 2f, gh / 2f);
             var bag = (RectTransform)_gridContainer.parent;
             bag.sizeDelta = new Vector2(gw + bagPadding * 2f, gh + bagPadding * 2f);
+
+            // 실루엣(작품활동) 뷰면 패널 배경을 그 IP 사진으로. 가방 뷰면 bagSprite 유지.
+            if (_bagImg != null)
+            {
+                var bg = inventory.Canvas != null ? inventory.Canvas.background : bagSprite;
+                if (bg != null) { _bagImg.sprite = bg; _bagImg.color = Color.white; }
+            }
 
             for (int y = 0; y < g.Height; y++)
                 for (int x = 0; x < g.Width; x++)
@@ -338,6 +347,22 @@ namespace Game.Inventory
                 inventory.InventoryChanged += Rebuild;
                 _subscribed = true;
             }
+        }
+
+        /// <summary>런타임에 다른 InventorySystem을 물린다(씬 간 참조용).
+        /// OutsideScene의 드래그용 가방 뷰가 영구 가방 데이터(GameCore.BagInventory)를
+        /// 가리킬 때 사용 — 인스펙터로는 다른 씬 오브젝트를 참조할 수 없으므로.</summary>
+        public void SetInventory(InventorySystem inv)
+        {
+            if (inventory == inv) { ResolveInventory(); return; }
+            if (inventory != null && _subscribed)
+            {
+                inventory.InventoryChanged -= Rebuild;
+                _subscribed = false;
+            }
+            inventory = inv;
+            ResolveInventory();   // 새 대상 구독
+            Rebuild();
         }
 
         static void Bounds2(IReadOnlyList<Vector2Int> cells, out int w, out int h)

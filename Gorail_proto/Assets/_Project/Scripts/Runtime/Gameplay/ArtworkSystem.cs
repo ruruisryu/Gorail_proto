@@ -36,6 +36,14 @@ namespace Game.Gameplay
         /// <summary>틱마다 발생 (경과 분, 총 분).</summary>
         public event System.Action<int, int> ProgressTicked;
 
+        /// <summary>세션 시작 시 발생. 연출(진행 게이지)이 표시를 켜는 신호.</summary>
+        public event System.Action ArtworkStarted;
+
+        /// <summary>이번 세션의 "확정 소요 시간"(등급 최소치, 분). 진행 게이지 0~90% 구간의 기준점(§4-1).
+        /// 총 소요시간은 [확정, 최대] 사이에서 굴려지며, 확정~총량 구간이 90~100% 꼬리.</summary>
+        public int ConfirmedMinutes => _confirmedMin;
+        private int _confirmedMin;
+
         /// <summary>세션 종료 시 발생 (성공 여부, 명성 증가량, 추격자 도달로 인한 강제 실패 여부).</summary>
         public event System.Action<bool, float, bool> ArtworkFinished;
 
@@ -64,6 +72,10 @@ namespace Game.Gameplay
             var   core    = GameCore.Instance;
             string station = core?.Space?.CurrentStationId;
 
+            _confirmedMin = GradeMin(grade);   // 0~90% 구간 기준점(§4-1)
+            try { ArtworkStarted?.Invoke(); }
+            catch (System.Exception e) { Debug.LogError($"[Artwork] ArtworkStarted 구독자 예외(무시하고 진행): {e}"); }
+
             while (elapsed < total)
             {
                 int step = Mathf.Min(5, total - elapsed);
@@ -73,7 +85,7 @@ namespace Game.Gameplay
                 core?.Trackers?.AdvanceByMinutes(step);
                 elapsed += step;
 
-                ProgressTicked?.Invoke(elapsed, total);
+                ProgressTickedSafe(elapsed, total);
 
                 // 추격자 도달 체크
                 if (!string.IsNullOrEmpty(station) &&
@@ -104,6 +116,21 @@ namespace Game.Gameplay
             ArtworkGrade.Mid  => RandInt(artworkMidMinMin,  artworkMidMinMax),
             _                 => RandInt(artworkLowMinMin,  artworkLowMinMax),
         };
+
+        /// <summary>등급별 확정 소요 시간(최소치) — 게이지 0~90% 구간 기준(§4-1).</summary>
+        int GradeMin(ArtworkGrade grade) => grade switch
+        {
+            ArtworkGrade.High => artworkHighMinMin,
+            ArtworkGrade.Mid  => artworkMidMinMin,
+            _                 => artworkLowMinMin,
+        };
+
+        /// <summary>진행 이벤트 발행 — 구독자(연출) 예외가 세션 코루틴을 죽이지 않도록 격리.</summary>
+        void ProgressTickedSafe(int elapsed, int total)
+        {
+            try { ProgressTicked?.Invoke(elapsed, total); }
+            catch (System.Exception e) { Debug.LogError($"[Artwork] ProgressTicked 구독자 예외(무시): {e}"); }
+        }
 
         float RollFame(ArtworkGrade grade)
         {
