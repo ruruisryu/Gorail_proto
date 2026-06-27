@@ -1,70 +1,114 @@
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using Game.Core;
 using Game.Gameplay;
-using Game.Inventory;   // RadialGauge
 
 namespace Game.UI
 {
     /// <summary>
-    /// 작품활동 중 연출(외부IP §4) — 원형 진행 게이지 + 경과 시간 + 추격자 접근 표시.
+    /// 작품활동 중 연출(외부IP §4) — 씬에서 만든 패널을 구동.
+    /// 도넛 게이지(직접 배치한 Image를 radial-fill로 채움) + 역 이름 + 경과 시간 + 추격자 위치 점.
     ///
-    /// 게이지는 게임 시간 틱이 아니라 "연출"의 고정 실시간으로 차오른다(§5 로직/연출 분리):
-    ///   0 → 90% : fastSeconds(빠르게)   /   90 → 100% : slowSeconds(급격히 느리게, 완료 직전 긴장감)
-    /// 성패는 로직(ArtworkSystem)이 정한다:
-    ///   추격자 도달(interrupted) → 즉시 실패로 패널 닫힘
-    ///   게이지 완료 + 성공         → 패널 닫힘  (이후 결과 연출은 팀원 구현이 담당)
+    /// 게이지: 직접 배치한 도넛 Image의 크기·위치 그대로 두고 fillAmount만 채운다.
+    ///   0 → fastEndPercent : fastSeconds(균일·빠르게) / 그 이후 → 100% : slowSeconds(느리게)
+    /// 중앙 % 숫자는 게이지 값에 연동. 성패는 ArtworkSystem이 정한다(§5 로직/연출 분리).
     ///
-    /// 추격자 접근(§4-2)은 MapGraph.Distance로 가장 가까운 추격자까지의 역 수를 실시간 표시.
-    /// (좌우 점 슬라이더 아트는 기획서상 변경 가능 표기 → 확정 후 교체)
+    /// 추격자 점(§4-2): 현재 노선에서 내 좌우 trackerRange역 범위 안의 추격자를
+    /// trackerTrack(배경 슬라이더의 좌끝~우끝 영역) 위에 0~1 비율로 찍는다.
     /// </summary>
     public class ArtworkProgressView : MonoBehaviour
     {
-        [Header("표시 (한글 폰트 필요)")]
-        [SerializeField] private TMP_FontAsset font;
+        [Header("패널 (시작 시 비활성, 활동 시작 시 켜짐)")]
+        [SerializeField] private GameObject panelRoot;
 
-        [Header("원형 진행 게이지")]
-        [Tooltip("Unity 기본 Circle 스프라이트 등 흰 원. Create ▸ 2D ▸ Sprites ▸ Circle")]
-        [SerializeField] private Sprite circleSprite;
-        [SerializeField] private Color gaugeTrack = new Color(1f, 1f, 1f, 0.15f);
+        [Header("완료/실패 이펙트 (나중에 교체 가능 — 켜고/끄기만 함)")]
+        [Tooltip("성공(게이지 100%) 시 켜는 연출 오브젝트.")]
+        [SerializeField] private GameObject successEffect;
+        [Tooltip("실패(추격자 도달) 시 켜는 연출 오브젝트.")]
+        [SerializeField] private GameObject failEffect;
+        [Tooltip("이펙트를 보여줄 때까지의 지연(초). 0이면 즉시.")]
+        [SerializeField] private float effectDelay = 0f;
+        [Tooltip("이펙트를 보여준 뒤 패널을 끄기까지 유지 시간(초).")]
+        [SerializeField] private float holdSeconds = 1f;
+
+        [Header("표시")]
+        [SerializeField] private TMP_Text titleText;     // 역 이름
+        [SerializeField] private TMP_Text elapsedText;   // 경과 시간(분)
+
+        [Header("도넛 게이지 (직접 배치한 Image를 채움)")]
+        [Tooltip("내가 배치한 도넛 Image. 이 크기·위치 그대로 두고 fillAmount만 채운다.")]
+        [SerializeField] private Image gaugeFillImage;
+        [Tooltip("뒤에 깔리는 빈 링(회색 트랙). 선택 — 없으면 안 채워진 부분은 투명.")]
+        [SerializeField] private Image gaugeTrackImage;
+        [Tooltip("게이지 중앙 % 텍스트.")]
+        [SerializeField] private TMP_Text percentText;
+        [Tooltip("켜면 '76%'처럼 % 기호 포함. %를 별도 오브젝트로 뒀으면 꺼서 숫자('76')만 출력.")]
+        [SerializeField] private bool percentIncludesSign = false;
+        [Tooltip("켜면 아래 색을 fill/track 이미지에 입힌다. 끄면 이미지가 가진 색 그대로 사용.")]
+        [SerializeField] private bool overrideColors = false;
         [SerializeField] private Color gaugeFill  = new Color(0.35f, 0.85f, 0.50f, 1f);
-        [SerializeField] private float gaugeSize  = 160f;
+        [SerializeField] private Color gaugeTrack = new Color(0.80f, 0.80f, 0.80f, 1f);
 
         [Header("게이지 연출 속도(§4-1)")]
-        [Tooltip("0→이 비율까지 균일하게 빠르게 차오르는 데 걸리는 실시간(초).")]
-        [SerializeField] private float fastSeconds = 3f;
-        [Tooltip("위 비율→100%까지 느리게 차오르는 데 걸리는 실시간(초, 완료 직전 긴장감).")]
-        [SerializeField] private float slowSeconds = 4f;
-        [Tooltip("빠른 구간이 끝나는 지점(0~1). 0.80이면 0→80% 빠르게, 80→100% 느리게.")]
+        [SerializeField] private float fastSeconds = 3f;   // 0 → fastEndPercent
+        [SerializeField] private float slowSeconds = 4f;   // fastEndPercent → 100%
         [Range(0.5f, 0.95f)]
         [SerializeField] private float fastEndPercent = 0.80f;
 
-        [Header("추격자 접근 표시(§4-2)")]
-        [Tooltip("이 역 수 이내의 추격자만 표시.")]
+        [Header("추격자 위치 점(§4-2)")]
+        [Tooltip("배경 슬라이더의 좌끝~우끝에 맞춘 빈 RectTransform. 이 안에 추격자 점을 찍는다.")]
+        [SerializeField] private RectTransform trackerTrack;
+        [Tooltip("내 좌우 몇 역까지 표시할지.")]
         [SerializeField] private int trackerRange = 3;
-        [SerializeField] private Color warnColor = new Color(0.95f, 0.30f, 0.30f, 1f);
+        [SerializeField] private Sprite trackerDotSprite;   // 비우면 흰 사각
+        [SerializeField] private Color trackerDotColor = new Color(0.95f, 0.30f, 0.30f, 1f);
+        [SerializeField] private float trackerDotSize = 18f;
+        [Tooltip("점이 목표 위치로 미끄러지는 속도(클수록 빠르게 따라붙음).")]
+        [SerializeField] private float trackerSmooth = 4f;
+        [Tooltip("위아래로 둥둥 뜨는 진폭(px).")]
+        [SerializeField] private float trackerBobAmount = 6f;
+        [SerializeField] private float trackerBobSpeed = 2f;
 
-        [Header("배경 어둡게(연출 집중)")]
-        [SerializeField] private Color dimColor = new Color(0.06f, 0.09f, 0.09f, 0.96f);
+        // 추격자별 점을 유지(풀)하며 위치를 보간 → 끊김 없이 미끄러짐
+        private readonly List<GameObject> _dots = new();
+        private readonly List<float> _dotX = new();   // 현재 정규화 x
+        private readonly List<bool>  _dotShown = new();
 
-        private GameObject _ui;
-        private RadialGauge _gauge;
-        private TextMeshProUGUI _titleTxt, _elapsedTxt, _trackerTxt;
+        [Header("경과 시간(연출과 함께 부드럽게)")]
+        [Tooltip("게임이 알려준 총 소요(분)이 아직 없을 때 쓸 기본값.")]
+        [SerializeField] private int fallbackTotalMinutes = 20;
 
         private bool  _running;
         private float _animT;
         private bool  _logicDone, _interrupted, _success;
-        private int   _elapsedMin;
+        private int   _elapsedMin, _totalMin;
+
+        // 마무리(이펙트 → 유지 → 닫기) 단계
+        private bool  _finishing, _finishSuccess, _effectShown;
+        private float _finishT;
 
         ArtworkSystem Artwork => GameCore.Instance?.Artwork;
         float TotalAnimSeconds => fastSeconds + slowSeconds;
 
         void Start()
         {
-            Debug.Log($"[ArtworkProgress] Start 실행 (Artwork={(Artwork != null ? "있음" : "없음")})");
-            BuildUI();
-            _ui.SetActive(false);
+            // 배치한 도넛 Image를 radial-fill로 설정(크기·위치는 그대로)
+            if (gaugeFillImage != null)
+            {
+                gaugeFillImage.type          = Image.Type.Filled;
+                gaugeFillImage.fillMethod    = Image.FillMethod.Radial360;
+                gaugeFillImage.fillOrigin    = (int)Image.Origin360.Top;
+                gaugeFillImage.fillClockwise = true;
+                gaugeFillImage.fillAmount    = 0f;
+                if (overrideColors) gaugeFillImage.color = gaugeFill;
+            }
+            else Debug.LogWarning("[ArtworkProgress] Gauge Fill Image 미연결 — 도넛이 채워지지 않습니다.");
+
+            if (gaugeTrackImage != null && overrideColors) gaugeTrackImage.color = gaugeTrack;
+
+            if (panelRoot != null) panelRoot.SetActive(false);
 
             var aw = Artwork;
             if (aw != null)
@@ -72,9 +116,8 @@ namespace Game.UI
                 aw.ArtworkStarted  += OnStarted;
                 aw.ProgressTicked  += OnTicked;
                 aw.ArtworkFinished += OnFinished;
-                Debug.Log("[ArtworkProgress] ArtworkSystem 이벤트 구독 완료");
             }
-            else Debug.LogWarning("[ArtworkProgress] GameCore.Artwork 없음 — 진행 게이지가 표시되지 않습니다.");
+            else Debug.LogWarning("[ArtworkProgress] GameCore.Artwork 없음 — 진행 게이지 표시 안 됨.");
         }
 
         void OnDestroy()
@@ -90,58 +133,91 @@ namespace Game.UI
 
         void OnStarted()
         {
-            _ui.SetActive(true);
-            _running     = true;
-            _animT       = 0f;
-            _logicDone   = false;
-            _interrupted = false;
-            _success     = false;
-            _elapsedMin  = 0;
+            if (panelRoot != null) panelRoot.SetActive(true);
+            _running = true; _animT = 0f;
+            _logicDone = _interrupted = _success = false;
+            _finishing = _effectShown = false; _finishT = 0f;
+            if (successEffect != null) successEffect.SetActive(false);
+            if (failEffect != null) failEffect.SetActive(false);
+            _elapsedMin = 0;
 
-            _titleTxt.text   = ResolveTitle();
-            _elapsedTxt.text = "0분 경과";
-            _trackerTxt.text = "";
-            _gauge.SetValue(0f, "0%");
-            Debug.Log("[ArtworkProgress] 진행 게이지 표시 시작");
+            if (titleText != null) titleText.text = ResolveTitle();
+            if (elapsedText != null) elapsedText.text = "0분";
+            SetGauge(0f);
         }
 
-        // 게임 시간(분)은 경과 시간 텍스트에만 사용(§4-1 ③). 게이지 속도와는 무관.
-        void OnTicked(int elapsed, int total) => _elapsedMin = elapsed;
+        void OnTicked(int elapsed, int total) { _elapsedMin = elapsed; _totalMin = total; }
 
         void OnFinished(bool succeeded, float fameGain, bool interrupted)
         {
-            _logicDone   = true;
+            _logicDone = true;
             _interrupted = interrupted;
-            _success     = succeeded && !interrupted;
-            // 실제 닫기는 Update가 연출 타이밍에 맞춰 처리(성공이면 게이지 100% 후).
+            _success = succeeded && !interrupted;
         }
 
         void Update()
         {
-            if (!_running) return;
+            if (_running)
+            {
+                _animT += Time.deltaTime;
+                float fill = CurveFill(_animT);
+                SetGauge(fill);
 
-            // ── 게이지: 고정 실시간 연출(§4-1) ──
-            _animT += Time.deltaTime;
-            float fill = CurveFill(_animT);
-            _gauge.SetValue(fill, $"{fill:P0}");
-            _elapsedTxt.text = $"{_elapsedMin}분 경과";
+                // 경과 시간: 게이지 채움에 비례해 부드럽게 (게임 틱처럼 5분씩 튀지 않게)
+                int total = _totalMin > 0 ? _totalMin : fallbackTotalMinutes;
+                if (elapsedText != null) elapsedText.text = $"{Mathf.FloorToInt(fill * total)}분";
 
-            // ── 추격자 접근(§4-2) ──
-            UpdateTrackerText();
+                UpdateTrackerDots();
 
-            // ── 종료 판정 ──
-            if (_interrupted) { EndShow("추격자 도달 → 실패"); return; }
-            if (_animT >= TotalAnimSeconds && _logicDone && _success) EndShow("게이지 완료 → 성공");
+                if (_interrupted) { BeginFinish(false); return; }
+                if (_animT >= TotalAnimSeconds && _logicDone && _success) BeginFinish(true);
+                return;
+            }
+
+            if (_finishing)
+            {
+                _finishT += Time.deltaTime;
+                if (!_effectShown && _finishT >= effectDelay)
+                {
+                    var fx = _finishSuccess ? successEffect : failEffect;
+                    if (fx != null) fx.SetActive(true);
+                    _effectShown = true;
+                }
+                if (_finishT >= effectDelay + holdSeconds) DoClose();
+            }
         }
 
-        void EndShow(string why)
+        // 게이지 완료/추격자 도달 → 이펙트 보여줄 마무리 단계로
+        void BeginFinish(bool success)
         {
             _running = false;
-            _ui.SetActive(false);
-            Debug.Log($"[ArtworkProgress] 진행 게이지 종료 ({why})");
+            _finishing = true;
+            _finishSuccess = success;
+            _effectShown = false;
+            _finishT = 0f;
+            if (success) SetGauge(1f);   // 성공이면 게이지 100% 고정
+            ClearDots();
         }
 
-        /// <summary>경과 연출 시간을 게이지 채움(0~1)으로. 0→fastEndPercent는 fastSeconds(균일), 그 이후는 slowSeconds(§4-1).</summary>
+        void DoClose()
+        {
+            _finishing = false;
+            if (successEffect != null) successEffect.SetActive(false);
+            if (failEffect != null) failEffect.SetActive(false);
+            if (panelRoot != null) panelRoot.SetActive(false);
+        }
+
+        void SetGauge(float fill01)
+        {
+            fill01 = Mathf.Clamp01(fill01);
+            if (gaugeFillImage != null) gaugeFillImage.fillAmount = fill01;
+            if (percentText != null)
+            {
+                int pct = Mathf.RoundToInt(fill01 * 100f);
+                percentText.text = percentIncludesSign ? $"{pct}%" : pct.ToString();
+            }
+        }
+
         float CurveFill(float t)
         {
             if (fastSeconds <= 0f) return 1f;
@@ -152,107 +228,121 @@ namespace Game.UI
             return 1f;
         }
 
-        /// <summary>가장 가까운 추격자까지의 역 수를 실시간 표시. 도달 시 경고(§4-1⑤·§4-2).</summary>
-        void UpdateTrackerText()
-        {
-            var core   = GameCore.Instance;
-            var graph  = core?.Graph?.Graph;
-            var list   = core?.Trackers?.Trackers;
-            string me  = core?.Space?.CurrentStationId;
-            if (graph == null || list == null || string.IsNullOrEmpty(me)) { _trackerTxt.text = ""; return; }
-
-            int closest = int.MaxValue;
-            for (int i = 0; i < list.Count; i++)
-            {
-                int d = graph.Distance(list[i].StationId, me);
-                if (d >= 0 && d < closest) closest = d;
-            }
-
-            if (closest == int.MaxValue || closest > trackerRange)
-            {
-                _trackerTxt.text  = "추격자 접근 없음";
-                _trackerTxt.color = new Color(1f, 1f, 1f, 0.6f);
-            }
-            else if (closest <= 0)
-            {
-                _trackerTxt.text  = "⚠ 추격자 현재 역 도착! 최대한 빨리 승강장으로 복귀하세요";
-                _trackerTxt.color = warnColor;
-            }
-            else
-            {
-                _trackerTxt.text  = $"추격자 {closest}역 접근 중";
-                _trackerTxt.color = closest <= 1 ? warnColor : new Color(1f, 0.85f, 0.4f, 1f);
-            }
-        }
-
-        /// <summary>진행 중 타이틀 = 현재 역 IP명(없으면 역명).</summary>
         string ResolveTitle()
         {
             var core = GameCore.Instance;
-            var st = core?.Graph?.Graph?.GetStation(core?.Space?.CurrentStationId);
-            if (st == null) return "작품 활동 중";
-            if (st.ipCanvas != null && !string.IsNullOrEmpty(st.ipCanvas.displayName))
-                return st.ipCanvas.displayName;
-            return string.IsNullOrEmpty(st.displayName) ? "작품 활동 중" : st.displayName;
+            string stn = core?.Space?.CurrentStationId;
+            var st = core?.Graph?.Graph?.GetStation(stn);
+            return st != null ? st.displayName : (stn ?? "");
         }
 
-        // ── UI 생성 ──────────────────────────────────────────────
-        void BuildUI()
+        // ── 추격자 점(§4-2): 점을 유지하며 목표 위치로 미끄러지고 위아래로 둥둥 ──
+        void UpdateTrackerDots()
         {
-            // 부모 Canvas 밑에 전체화면 UI를 깐다(이 컴포넌트가 일반 Transform 위에 있어도 안전).
-            var canvas = GetComponentInParent<Canvas>();
-            Transform parent = canvas != null ? canvas.transform : transform;
-            if (canvas == null)
-                Debug.LogWarning("[ArtworkProgress] 부모에 Canvas가 없습니다 — ArtworkCanvas 밑에 두세요.");
+            if (trackerTrack == null) return;
 
-            _ui = NewUI("ArtworkProgress", parent, out var root);
-            root.anchorMin = Vector2.zero; root.anchorMax = Vector2.one;
-            root.pivot = new Vector2(0.5f, 0.5f);
-            root.offsetMin = root.offsetMax = Vector2.zero;
-            root.anchoredPosition = Vector2.zero;
-            root.localScale = Vector3.one;
+            var core = GameCore.Instance;
+            var graph = core?.Graph?.Graph;
+            var trackers = core?.Trackers?.Trackers;
+            string me   = core?.Space?.CurrentStationId;
+            string line = core?.Player?.CurrentLineId;
+            if (graph == null || trackers == null || string.IsNullOrEmpty(me) || string.IsNullOrEmpty(line))
+            {
+                HideAllDots();
+                return;
+            }
 
-            var dim = _ui.AddComponent<Image>();
-            dim.color = dimColor; dim.raycastTarget = true;
+            // 현재 노선에서 내 앞/뒤 trackerRange역 수집(좌=뒤, 우=앞)
+            var fwd = new List<string>();
+            var bwd = new List<string>();
+            string cur = me;
+            for (int i = 0; i < trackerRange; i++)
+            {
+                var (_, f) = graph.GetLineNeighbors(line, cur);
+                if (string.IsNullOrEmpty(f)) break; cur = f; fwd.Add(f);
+            }
+            cur = me;
+            for (int i = 0; i < trackerRange; i++)
+            {
+                var (b, _) = graph.GetLineNeighbors(line, cur);
+                if (string.IsNullOrEmpty(b)) break; cur = b; bwd.Add(b);
+            }
 
-            _titleTxt = NewText("Title", root, 30, new Vector2(0.5f, 0.5f), new Vector2(0, gaugeSize * 0.5f + 70f));
-            _titleTxt.text = "작품 활동 중";
+            int n = trackers.Count;
+            EnsureDotPool(n);
 
-            var gGO = NewUI("Gauge", root, out var grt);
-            grt.anchorMin = grt.anchorMax = new Vector2(0.5f, 0.5f);
-            grt.anchoredPosition = Vector2.zero;
-            _gauge = gGO.AddComponent<RadialGauge>();
-            _gauge.Build(circleSprite, gaugeTrack, gaugeFill, gaugeSize, font, 30f);
+            // 프레임레이트 독립 보간 계수
+            float k = 1f - Mathf.Exp(-trackerSmooth * Time.deltaTime);
 
-            _elapsedTxt = NewText("Elapsed", root, 22, new Vector2(0.5f, 0.5f), new Vector2(0, -(gaugeSize * 0.5f + 44f)));
-            _elapsedTxt.text = "0분 경과";
+            for (int i = 0; i < n; i++)
+            {
+                string sid = trackers[i].StationId;
+                int signed; bool inRange = true;
+                if (sid == me) signed = 0;
+                else
+                {
+                    int fi = fwd.IndexOf(sid);
+                    int bi = bwd.IndexOf(sid);
+                    if (fi >= 0) signed =  (fi + 1);
+                    else if (bi >= 0) signed = -(bi + 1);
+                    else { signed = 0; inRange = false; }   // 좌우 범위 밖
+                }
 
-            _trackerTxt = NewText("Tracker", root, 22, new Vector2(0.5f, 0f), new Vector2(0, 60f));
-            _trackerTxt.text = "";
+                var go = _dots[i];
+                if (!inRange) { if (go.activeSelf) go.SetActive(false); _dotShown[i] = false; continue; }
+
+                float targetNx = 0.5f + (float)signed / (2f * trackerRange);   // 0~1
+
+                if (!_dotShown[i])           // 막 나타남 → 순간이동(미끄러짐 시작점 고정)
+                {
+                    _dotX[i] = targetNx;
+                    go.SetActive(true);
+                    _dotShown[i] = true;
+                }
+                else
+                {
+                    _dotX[i] = Mathf.Lerp(_dotX[i], targetNx, k);   // 미끄러지듯
+                }
+
+                var rt = (RectTransform)go.transform;
+                rt.anchorMin = rt.anchorMax = new Vector2(Mathf.Clamp01(_dotX[i]), 0.5f);
+                float bob = Mathf.Sin(Time.time * trackerBobSpeed + i * 1.7f) * trackerBobAmount;
+                rt.anchoredPosition = new Vector2(0f, bob);
+            }
+
+            // 추격자가 줄었으면 남는 점 숨김
+            for (int i = n; i < _dots.Count; i++) { if (_dots[i].activeSelf) _dots[i].SetActive(false); _dotShown[i] = false; }
         }
 
-        GameObject NewUI(string name, Transform parent, out RectTransform rt)
+        void EnsureDotPool(int n)
         {
-            var go = new GameObject(name, typeof(RectTransform));
-            go.transform.SetParent(parent, false);
-            rt = (RectTransform)go.transform;
-            return go;
+            while (_dots.Count < n)
+            {
+                var go = new GameObject("TrackerDot", typeof(RectTransform), typeof(Image));
+                var rt = (RectTransform)go.transform;
+                rt.SetParent(trackerTrack, false);
+                rt.pivot = new Vector2(0.5f, 0.5f);
+                rt.sizeDelta = new Vector2(trackerDotSize, trackerDotSize);
+                var img = go.GetComponent<Image>();
+                img.sprite = trackerDotSprite;
+                img.color = trackerDotColor;
+                img.raycastTarget = false;
+                go.SetActive(false);
+                _dots.Add(go);
+                _dotX.Add(0.5f);
+                _dotShown.Add(false);
+            }
         }
 
-        TextMeshProUGUI NewText(string name, Transform parent, float size, Vector2 anchor, Vector2 pos)
+        void HideAllDots()
         {
-            var go = NewUI(name, parent, out var rt);
-            rt.anchorMin = rt.anchorMax = anchor;
-            rt.pivot = new Vector2(0.5f, 0.5f);
-            rt.sizeDelta = new Vector2(700, size + 12);
-            rt.anchoredPosition = pos;
-            var t = go.AddComponent<TextMeshProUGUI>();
-            if (font != null) t.font = font;
-            t.fontSize = size;
-            t.alignment = TextAlignmentOptions.Center;
-            t.color = Color.white;
-            t.raycastTarget = false;
-            return t;
+            for (int i = 0; i < _dots.Count; i++)
+            {
+                if (_dots[i] != null && _dots[i].activeSelf) _dots[i].SetActive(false);
+                if (i < _dotShown.Count) _dotShown[i] = false;
+            }
         }
+
+        void ClearDots() => HideAllDots();
     }
 }

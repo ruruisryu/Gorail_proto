@@ -1,4 +1,5 @@
 using UnityEngine;
+using Game.Core;
 
 namespace Game.UI
 {
@@ -7,8 +8,8 @@ namespace Game.UI
     /// 결함 정보(스프라이트·하이라이트·위치)는 IpCanvasData에 들어 있고,
     /// 현재 IP는 GroundBaseView.CurrentIp(역 ipCanvas ?? 기본 IP)에서 받는다.
     ///
-    /// → 씬의 Defect 오브젝트는 ipId·스프라이트를 비워두면 되고, 위치도 데이터의
-    ///   정규화 좌표(defectPosition)로 런타임에 잡힌다. IP당 결함 1개 기준.
+    /// 이미 작품활동을 완료한 역(쿨타임)이면 결함을 숨긴다(§6). 작품활동이 끝나면
+    /// 즉시 다시 판정해 그 자리에서 결함이 사라지게 한다.
     /// </summary>
     public class DefectController : MonoBehaviour
     {
@@ -17,23 +18,42 @@ namespace Game.UI
         [Tooltip("구성·배치할 단일 결함.")]
         [SerializeField] private Defect defect;
 
-        void Start() => Refresh();
+        Game.Gameplay.ArtworkSystem Artwork => GameCore.Instance?.Artwork;
+
+        void Start()
+        {
+            var aw = Artwork;
+            if (aw != null) aw.ArtworkFinished += OnArtworkFinished;
+            Refresh();
+        }
+
+        void OnDestroy()
+        {
+            var aw = Artwork;
+            if (aw != null) aw.ArtworkFinished -= OnArtworkFinished;
+        }
+
+        void OnArtworkFinished(bool succeeded, float fameGain, bool interrupted) => Refresh();
 
         public void Refresh()
         {
             if (defect == null) { Debug.LogWarning("[DefectController] Defect 미연결."); return; }
             var ip = view != null ? view.CurrentIp : null;
 
-            if (ip == null || ip.defectSprite == null)
+            // 이미 작품활동 완료한 역이면 결함 숨김(쿨타임, §6)
+            string stn = GameCore.Instance?.Space?.CurrentStationId;
+            bool done = GameCore.Instance?.Platform != null && GameCore.Instance.Platform.IsArtworkDone(stn);
+
+            if (done || ip == null || ip.defectSprite == null)
             {
                 defect.gameObject.SetActive(false);
-                Debug.Log($"[DefectController] IP='{(ip != null ? ip.ipId : "null")}' — 결함 데이터 없음, 숨김");
+                Debug.Log($"[DefectController] 결함 숨김 (완료={done}, IP='{(ip != null ? ip.ipId : "null")}')");
                 return;
             }
 
             defect.Configure(ip.defectSprite, ip.defectHighlightSprite, ip.ipId);
 
-            // 위치+크기를 정규화 앵커 사각형으로 적용 (배경 크기 계산 불필요·해상도 독립)
+            // 위치+크기를 정규화 앵커 사각형으로 적용
             var rt = (RectTransform)defect.transform;
             Vector2 half = ip.defectSize * 0.5f;
             rt.anchorMin = ip.defectPosition - half;

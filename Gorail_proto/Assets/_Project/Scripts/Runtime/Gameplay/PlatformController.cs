@@ -15,6 +15,8 @@ namespace Game.Gameplay
         [Header("작품활동 진입 30% 룰(§1-3) — 필요 재료 = 역 IP 빈칸 × 이 값")]
         [Range(0f, 1f)]
         [SerializeField] private float entryMaterialRatio = 0.30f;
+        [Tooltip("역에 ipCanvas가 없을 때 30% 룰 기준이 될 폴백 IP(국중박/NMK). GroundBaseView의 Default Ip와 같게.")]
+        [SerializeField] private Game.Inventory.IpCanvasData defaultIp;
 
         Player         player         => Game.Core.GameCore.Instance?.Player;
         MapGraph       Graph          => Game.Core.GameCore.Instance?.Graph?.Graph;
@@ -33,6 +35,10 @@ namespace Game.Gameplay
             if (!string.IsNullOrEmpty(CurrentStation))
                 _artworkDoneStations.Add(CurrentStation);
         }
+
+        /// <summary>해당 역이 이미 작품활동을 완료했는지(쿨타임 중). Day 변경 시 초기화.</summary>
+        public bool IsArtworkDone(string station) =>
+            !string.IsNullOrEmpty(station) && _artworkDoneStations.Contains(station);
 
         // 지상에 나갔다 돌아온 경우 탑승·환승 모두 1500원(§자원기획서)
         private bool _cameFromGround;
@@ -121,26 +127,32 @@ namespace Game.Gameplay
         public (string backward, string forward) GetTransferDirectionLabels(string lineId)
             => Graph?.GetLineNeighbors(lineId, CurrentStation) ?? (null, null);
 
+        /// <summary>현재 역에서 작품활동 진입에 필요한 재료(30% 룰)를 갖췄는지.
+        /// UI에서 차단 팝업(§1-3)을 띄울 때도 이 값을 쓸 수 있다.</summary>
+        public bool HasEntryMaterials()
+        {
+            var station = Graph?.GetStation(CurrentStation);
+            var canvas  = (station != null && station.ipCanvas != null) ? station.ipCanvas : defaultIp;
+            var bag     = Game.Core.GameCore.Instance?.BagInventory;
+            if (canvas == null || bag?.Grid == null) return true;   // 판정 불가 — 막지 않음
+
+            int have = bag.Grid.FilledCellCount;
+            int need = Mathf.CeilToInt(canvas.TotalCells * entryMaterialRatio);
+            return have >= need;
+        }
+
         /// <summary>④ 지상으로 — 특별역만(§9·§10). 지상 공간(OutsideScene)으로.</summary>
          public bool GoOutside()
         {
             if (!CanGoOutside) { Debug.Log($"[Platform] {CurrentStation}은 특별역이 아니라 지상 진입 불가"); return false; }
 
             // 진입 30% 룰(§1-3): 보유 재료(영구 가방 채운 칸)가 이 역 IP 빈칸의 30% 미만이면 진입 불가.
-            // 이 시점엔 OutsideScene(작품활동 UI)이 아직 없으므로 가방 데이터와 역 IP만으로 판정한다.
-            var station = Graph?.GetStation(CurrentStation);
-            var canvas  = station != null ? station.ipCanvas : null;
-            var bag     = Game.Core.GameCore.Instance?.BagInventory;
-            if (canvas != null && bag?.Grid != null)
+            if (!HasEntryMaterials())
             {
-                int have = bag.Grid.FilledCellCount;
-                int need = Mathf.CeilToInt(canvas.TotalCells * entryMaterialRatio);
-                if (have < need)
-                {
-                    Debug.Log($"[Platform] 재료 부족({have}/{need}칸) — IP 빈칸의 {entryMaterialRatio:P0} 이상 있어야 작품활동 진입 가능");
-                    return false;
-                }
+                Debug.Log($"[Platform] 재료 부족 — IP 빈칸의 {entryMaterialRatio:P0} 이상 있어야 작품활동 진입 가능 (진입 차단)");
+                return false;
             }
+
             _cameFromGround = true;
             string stn = CurrentStation;
             Game.UI.ScreenFader.Instance?.Fade(onBlack: () =>

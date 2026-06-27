@@ -21,6 +21,8 @@ namespace Game.Inventory
         [SerializeField] private InventoryView silhouetteView; // 재료 배치(오른쪽 영역에 배치)
         [Tooltip("두 격자에 같은 칸 크기를 박는 컨트롤러(선택).")]
         [SerializeField] private Game.UI.ArtworkGridFitter gridFitter;
+        [Tooltip("역에 IP가 없을 때 실루엣 폴백 IP(예: 국중박/NMK). GroundBaseView의 Default Ip와 같게.")]
+        [SerializeField] private IpCanvasData defaultIp;
 
         private InputAction _escAct;
         private bool _open;
@@ -71,25 +73,34 @@ namespace Game.Inventory
         /// <summary>현재 역(SpaceManager)의 StationData.ipCanvas를 실루엣에 싣는다.
         /// 다른 IP면 LoadCanvas가 배치를 초기화하고, 같은 IP면 건드리지 않아 배치가 유지된다.
         /// IP 정보가 없으면(디버그로 지하철에서 G 등) 기존 실루엣을 그대로 둔다.</summary>
+        private string _lastStationId;
+
         void LoadCurrentStationCanvas()
         {
             var inv = silhouetteView != null ? silhouetteView.Inventory : null;
             if (inv == null) return;
 
+            string stn = Game.Core.GameCore.Instance?.Space?.CurrentStationId;
             var canvas = ResolveCurrentStationCanvas();
-            if (canvas == null) return;        // 역 IP 미지정 — 기존 유지
-            if (inv.Canvas == canvas) return;  // 같은 IP — 배치 유지
-            inv.LoadCanvas(canvas);            // 다른 IP — 교체 + 초기화
+            if (canvas == null) return;        // IP·기본IP 둘 다 없음 — 기존 유지
+
+            bool stationChanged = stn != _lastStationId;
+            _lastStationId = stn;
+
+            // 다른 역이면 같은 IP여도 초기화. 같은 역 재방문 + 같은 IP면 배치 유지.
+            if (stationChanged || inv.Canvas != canvas)
+                inv.LoadCanvas(canvas);
         }
 
-        /// <summary>현재 역의 IP 실루엣 SO(없으면 null).</summary>
+        /// <summary>현재 역의 IP 실루엣 SO. 역에 IP가 없으면 기본 IP(국중박)로 폴백.</summary>
         IpCanvasData ResolveCurrentStationCanvas()
         {
             var core = Game.Core.GameCore.Instance;
             string stn = core?.Space?.CurrentStationId;
-            if (string.IsNullOrEmpty(stn)) return null;
+            if (string.IsNullOrEmpty(stn)) return defaultIp;
             var station = core?.Graph?.Graph?.GetStation(stn);
-            return station != null ? station.ipCanvas : null;
+            var ip = station != null ? station.ipCanvas : null;
+            return ip != null ? ip : defaultIp;
         }
 
         public void Close()

@@ -47,6 +47,7 @@ namespace Game.UI
         // ── 경고 메시지 ───────────────────────────────────────────────────
         [Header("경고 (외부IP 작품 후 재진입 시도)")] [SerializeField]
         private string dangerWarning = "지금 밖으로 나가면 위험할 것 같다...";
+        private string cannotWorkWarning = "지금 상태로는 작품활동을 할 수 없어.";
 
         // ── 내부 ─────────────────────────────────────────────────────────
         private string _pendingLineId;
@@ -94,6 +95,13 @@ namespace Game.UI
             if (!plat.CanGoOutside)
             {
                 MoveNotificationHud.Instance.ShowPopUp(dangerWarning, new Vector2(0, -350));
+                return;
+            }
+
+            // 재료 부족(IP 빈칸의 30% 미만) — 작품활동 진입 차단(§1-3)
+            if (!plat.HasEntryMaterials())
+            {
+                MoveNotificationHud.Instance.ShowPopUp(cannotWorkWarning, new Vector2(0, -350));
                 return;
             }
 

@@ -15,6 +15,16 @@ namespace Game.UI
         [Header("작품활동 팝업 (같은 OutsideScene 안의 ArtworkScreen 연결)")]
         [SerializeField] private ArtworkScreen artworkScreen;
 
+        [Header("승강장 복귀 버튼 (실패 시 빨강 강조 §5-2)")]
+        [Tooltip("복귀 버튼의 Image. 실패 시 빨강 스프라이트로 교체.")]
+        [SerializeField] private UnityEngine.UI.Image returnButtonImage;
+        [Tooltip("평상시 스프라이트(씬 진입 시 복원). 비우면 복원 안 함.")]
+        [SerializeField] private Sprite returnNormalSprite;
+        [Tooltip("실패 시 빨강 강조 스프라이트.")]
+        [SerializeField] private Sprite returnFailSprite;
+        [Tooltip("성공 시 파랑 강조 스프라이트(선택, §5-1). 비우면 평상시 유지.")]
+        [SerializeField] private Sprite returnSuccessSprite;
+
         private bool _returning;
         private int  _artworkElapsed;
         private int  _artworkTotal;
@@ -27,6 +37,10 @@ namespace Game.UI
         {
             _returning     = false;
             _artworkResult = "";
+
+            // 복귀 버튼 평상시 스프라이트로 복원
+            if (returnButtonImage != null && returnNormalSprite != null)
+                returnButtonImage.sprite = returnNormalSprite;
 
             var aw = Artwork;
             if (aw != null)
@@ -54,21 +68,23 @@ namespace Game.UI
 
         void OnArtworkFinished(bool succeeded, float fameGain, bool interrupted)
         {
-            if (interrupted)
+            bool failed = interrupted || !succeeded;
+
+            if (failed)
             {
+                // 실패(추격자 도달 등): 결함 그대로 유지(MarkArtworkDone 호출 안 함),
+                // 자동 복귀 없음 — 빨강 복귀 버튼을 플레이어가 눌러 복귀(§5-2).
                 _artworkResult = "추격자 도달 — 작품 실패!";
-                var plat = GameCore.Instance?.Platform;
-                plat?.MarkArtworkDone();
-                ReturnToSubway(true);
+                if (returnButtonImage != null && returnFailSprite != null)
+                    returnButtonImage.sprite = returnFailSprite;
             }
             else
             {
-                _artworkResult = succeeded
-                    ? $"작품 완성 +{fameGain:0.0} 명성"
-                    : "작품 실패";
-                // 성공·실패 모두 작품활동을 시도했으므로 나가는 곳 비활성
-                var plat = GameCore.Instance?.Platform;
-                plat?.MarkArtworkDone();
+                // 성공: 해당 역 작품완료 기록(쿨타임 → 결함 숨김), 파랑 강조(선택).
+                _artworkResult = $"작품 완성 +{fameGain:0.0} 명성";
+                GameCore.Instance?.Platform?.MarkArtworkDone();
+                if (returnButtonImage != null && returnSuccessSprite != null)
+                    returnButtonImage.sprite = returnSuccessSprite;
             }
         }
 
