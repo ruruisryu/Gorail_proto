@@ -140,7 +140,7 @@ namespace Game.UI
                 else if (core.Space != null) core.Space.EnterPlatform(station);
 
                 if (core.Inspection != null && !string.IsNullOrEmpty(station))
-                    core.Inspection.ResolveAt(station);
+                    core.Inspection.RequestInspection(station);   // 연출 → 끝나면 InspectionView가 판정 적용
             });
         }
     }

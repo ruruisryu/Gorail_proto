@@ -130,14 +130,22 @@ namespace Game.Gameplay
                 // (3) 같은 역 검문 — 도착역은 항상, 중간역은 토글(§8-1)
                 if (isArrival || inspectMid)
                 {
-                    bool gameOver = Game.Core.GameCore.Instance?.Inspection?.ResolveAt(player.CurrentStationId) ?? false;
-                    if (gameOver)
+                    var insp = Game.Core.GameCore.Instance?.Inspection;
+                    if (insp != null)
                     {
-                        Debug.Log($"[TurnResolver] 검문 실패 — 게임오버 @ {player.CurrentStationId}");
-                        IsMoving = false;
-                        Game.Core.SoundManager.Instance?.StopLoopSFX(moveSfx);
-                        MoveCompleted?.Invoke(player.CurrentStationId, true);
-                        yield break;
+                        insp.RequestInspection(player.CurrentStationId);
+                        // 검문 연출이 시작됐으면 끝날 때까지 대기(게이지 공개)
+                        if (insp.IsInspecting)
+                            yield return new WaitWhile(() => insp.IsInspecting);
+
+                        if (insp.LastGameOver)
+                        {
+                            Debug.Log($"[TurnResolver] 검문 실패 — 게임오버 @ {player.CurrentStationId}");
+                            IsMoving = false;
+                            Game.Core.SoundManager.Instance?.StopLoopSFX(moveSfx);
+                            MoveCompleted?.Invoke(player.CurrentStationId, true);
+                            yield break;
+                        }
                     }
                 }
                 
