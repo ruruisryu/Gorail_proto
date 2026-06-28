@@ -91,6 +91,12 @@ namespace Game.UI
 
         private UnityEngine.AudioSource _heartbeat;   // 느린 구간 심장박동 루프
 
+        /// <summary>진행 패널이 완전히 닫힌 순간(연출·유지 끝). 복귀 버튼 재활성화 등에 사용.</summary>
+        public event System.Action ProgressClosed;
+
+        /// <summary>게이지 연출(진행 또는 마무리 유지)이 화면에 떠 있는 중인지.</summary>
+        public bool IsShowing => _running || _finishing;
+
         ArtworkSystem Artwork => GameCore.Instance?.Artwork;
         float TotalAnimSeconds => fastSeconds + slowSeconds;
 
@@ -216,6 +222,7 @@ namespace Game.UI
             if (successEffect != null) successEffect.SetActive(false);
             if (failEffect != null) failEffect.SetActive(false);
             if (panelRoot != null) panelRoot.SetActive(false);
+            ProgressClosed?.Invoke();
         }
 
         void SetGauge(float fill01)

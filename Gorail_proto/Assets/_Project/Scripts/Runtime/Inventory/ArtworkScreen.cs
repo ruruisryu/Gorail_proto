@@ -37,11 +37,6 @@ namespace Game.Inventory
             _escAct.Enable();
         }
 
-        void OnDestroy()
-        {
-            _escAct?.Dispose();
-        }
-
         public void Toggle() { if (_open) Close(); else Open(); }
 
         public void Open()
@@ -74,6 +69,9 @@ namespace Game.Inventory
         /// 다른 IP면 LoadCanvas가 배치를 초기화하고, 같은 IP면 건드리지 않아 배치가 유지된다.
         /// IP 정보가 없으면(디버그로 지하철에서 G 등) 기존 실루엣을 그대로 둔다.</summary>
         private string _lastStationId;
+        private bool   _suppressSave;       // 복원/로드 중 저장 피드백 방지
+        private bool   _subscribed;
+        private Game.Inventory.InventorySystem _watchedInv;
 
         void LoadCurrentStationCanvas()
         {
@@ -84,12 +82,48 @@ namespace Game.Inventory
             var canvas = ResolveCurrentStationCanvas();
             if (canvas == null) return;        // IP·기본IP 둘 다 없음 — 기존 유지
 
-            bool stationChanged = stn != _lastStationId;
             _lastStationId = stn;
 
-            // 다른 역이면 같은 IP여도 초기화. 같은 역 재방문 + 같은 IP면 배치 유지.
-            if (stationChanged || inv.Canvas != canvas)
-                inv.LoadCanvas(canvas);
+            // 배치 변경 저장을 잠시 끄고, 마스크 적용 + 저장된 배치 복원
+            _suppressSave = true;
+            inv.LoadCanvas(canvas);            // IP 마스크 적용(+ 기존 배치 초기화)
+
+            var plat  = Game.Core.GameCore.Instance?.Platform;
+            var saved = plat?.GetSilhouette(stn);
+            if (saved != null)
+                for (int i = 0; i < saved.Count; i++)
+                    if (saved[i].item != null)
+                        inv.AddPlacement(saved[i].item, saved[i].origin, saved[i].rotation);
+            _suppressSave = false;
+
+            // 이 실루엣 인벤토리의 변경을 구독해 역별로 저장(씬마다 인벤토리가 새로 생기므로 재구독)
+            if (_watchedInv != inv)
+            {
+                if (_watchedInv != null) _watchedInv.InventoryChanged -= OnSilhouetteChanged;
+                _watchedInv = inv;
+                _watchedInv.InventoryChanged += OnSilhouetteChanged;
+            }
+        }
+
+        void OnSilhouetteChanged()
+        {
+            if (_suppressSave) return;
+            var plat = Game.Core.GameCore.Instance?.Platform;
+            var inv  = _watchedInv;
+            if (plat == null || inv == null) return;
+
+            var list = new System.Collections.Generic.List<Game.Gameplay.PlatformController.SilhouettePlacement>();
+            foreach (var p in inv.Placements)
+                if (p.item != null)
+                    list.Add(new Game.Gameplay.PlatformController.SilhouettePlacement
+                    { item = p.item, origin = p.origin, rotation = p.rotation });
+
+            plat.SaveSilhouette(_lastStationId, list);
+        }
+
+        void OnDestroy()
+        {
+            if (_watchedInv != null) _watchedInv.InventoryChanged -= OnSilhouetteChanged;
         }
 
         /// <summary>현재 역의 IP 실루엣 SO. 역에 IP가 없으면 기본 IP(국중박)로 폴백.</summary>

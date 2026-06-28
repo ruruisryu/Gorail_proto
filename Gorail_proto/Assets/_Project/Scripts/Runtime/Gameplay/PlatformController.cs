@@ -29,11 +29,36 @@ namespace Game.Gameplay
         public bool   CameFromGround  => _cameFromGround;
         private readonly HashSet<string> _artworkDoneStations = new();
 
-        /// <summary>현재 역을 작품활동 완료 역으로 기록. GroundSceneManager가 성공·실패 모두 호출.</summary>
+        // 역별 재료배치(실루엣) 영속 저장 — OutsideScene이 언로드돼도 유지. ItemData는 에셋이라 참조 보관 OK.
+        public struct SilhouettePlacement { public Game.Inventory.ItemData item; public Vector2Int origin; public int rotation; }
+        private readonly Dictionary<string, List<SilhouettePlacement>> _silhouette = new();
+
+        /// <summary>현재 역을 작품활동 완료 역으로 기록. GroundSceneManager가 성공 시 호출.</summary>
         public void MarkArtworkDone()
         {
             if (!string.IsNullOrEmpty(CurrentStation))
+            {
                 _artworkDoneStations.Add(CurrentStation);
+                _silhouette.Remove(CurrentStation);   // 성공 → 재료 소모, 배치 초기화
+            }
+        }
+
+        /// <summary>역의 실루엣 배치를 저장(빈 목록이면 제거).</summary>
+        public void SaveSilhouette(string station, List<SilhouettePlacement> placements)
+        {
+            if (string.IsNullOrEmpty(station)) return;
+            if (placements == null || placements.Count == 0) _silhouette.Remove(station);
+            else _silhouette[station] = placements;
+        }
+
+        /// <summary>역의 저장된 실루엣 배치(없으면 null).</summary>
+        public IReadOnlyList<SilhouettePlacement> GetSilhouette(string station)
+            => (!string.IsNullOrEmpty(station) && _silhouette.TryGetValue(station, out var l)) ? l : null;
+
+        /// <summary>역의 실루엣 배치 저장 제거.</summary>
+        public void ClearSilhouette(string station)
+        {
+            if (!string.IsNullOrEmpty(station)) _silhouette.Remove(station);
         }
 
         /// <summary>해당 역이 이미 작품활동을 완료했는지(쿨타임 중). Day 변경 시 초기화.</summary>

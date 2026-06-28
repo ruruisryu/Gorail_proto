@@ -44,7 +44,10 @@ namespace Game.Inventory
 
         [Header("색")]
         [SerializeField] private Color overlayColor = new Color(0f, 0f, 0f, 0.55f);
-        [SerializeField] private Color cellColor    = new Color(1f, 1f, 1f, 0.10f);
+        [Tooltip("빈 칸 색(어둡게). 배경 사진 위에 깔려 그리드를 가라앉힌다.")]
+        [SerializeField] private Color emptyCellColor  = new Color(0f, 0f, 0f, 0.50f);
+        [Tooltip("아이템이 있는 칸 색(상대적으로 밝게).")]
+        [SerializeField] private Color filledCellColor = new Color(1f, 1f, 1f, 0.18f);
         [SerializeField] private Color cellLine     = new Color(1f, 1f, 1f, 0.35f);
         [SerializeField] private Color okColor      = new Color(0.30f, 0.90f, 0.40f, 0.55f);
         [SerializeField] private Color noColor      = new Color(0.90f, 0.30f, 0.30f, 0.55f);
@@ -359,7 +362,8 @@ namespace Game.Inventory
                     if (!g.IsUsable(x, y)) continue;
                     var cell = NewUI($"Cell_{x}_{y}", _gridContainer);
                     var img = cell.gameObject.AddComponent<Image>();
-                    img.color = cellColor; img.raycastTarget = false;
+                    img.color = g.OccupantAt(x, y) >= 0 ? filledCellColor : emptyCellColor;
+                    img.raycastTarget = false;
                     cell.anchorMin = cell.anchorMax = new Vector2(0f, 1f);
                     cell.pivot = new Vector2(0f, 1f);
                     cell.sizeDelta = new Vector2(_cell, _cell);

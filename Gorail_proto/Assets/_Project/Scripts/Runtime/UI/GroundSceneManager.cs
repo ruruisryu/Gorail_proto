@@ -24,6 +24,10 @@ namespace Game.UI
         [SerializeField] private Sprite returnFailSprite;
         [Tooltip("성공 시 파랑 강조 스프라이트(선택, §5-1). 비우면 평상시 유지.")]
         [SerializeField] private Sprite returnSuccessSprite;
+        [Tooltip("복귀 버튼(작품활동 중 비활성화). 비우면 returnButtonImage에서 자동 탐색.")]
+        [SerializeField] private UnityEngine.UI.Button returnButton;
+        [Tooltip("진행 게이지 뷰. 패널이 닫힐 때 복귀 버튼을 다시 켠다(로직보다 연출이 늦게 끝나므로).")]
+        [SerializeField] private ArtworkProgressView progressView;
 
         private bool _returning;
         private int  _artworkElapsed;
@@ -33,31 +37,55 @@ namespace Game.UI
         GameTimeSystem GameTime => GameCore.Instance?.GameTime;
         ArtworkSystem  Artwork  => GameCore.Instance?.Artwork;
 
-        void OnEnable()
+        void Start()
         {
             _returning     = false;
             _artworkResult = "";
 
-            // 복귀 버튼 평상시 스프라이트로 복원
+            // 복귀 버튼 자동 탐색(같은 오브젝트 → 부모 순) + 평상시 스프라이트/활성화 복원
+            if (returnButton == null && returnButtonImage != null)
+                returnButton = returnButtonImage.GetComponent<UnityEngine.UI.Button>()
+                            ?? returnButtonImage.GetComponentInParent<UnityEngine.UI.Button>();
+            if (returnButton == null)
+                Debug.LogWarning("[Ground] Return Button 미연결 — 인스펙터에서 복귀 버튼(Button)을 연결하세요. (작품활동 중 비활성화가 안 됩니다)");
+
             if (returnButtonImage != null && returnNormalSprite != null)
                 returnButtonImage.sprite = returnNormalSprite;
+            SetReturnInteractable(true);
 
             var aw = Artwork;
             if (aw != null)
             {
+                aw.ArtworkStarted  += OnArtworkStarted;
                 aw.ProgressTicked  += OnProgressTicked;
                 aw.ArtworkFinished += OnArtworkFinished;
             }
+            else Debug.LogWarning("[Ground] GameCore.Artwork 없음 — 작품활동 이벤트 구독 실패.");
+
+            if (progressView != null) progressView.ProgressClosed += OnProgressClosed;
         }
 
-        void OnDisable()
+        void OnDestroy()
         {
             var aw = Artwork;
             if (aw != null)
             {
+                aw.ArtworkStarted  -= OnArtworkStarted;
                 aw.ProgressTicked  -= OnProgressTicked;
                 aw.ArtworkFinished -= OnArtworkFinished;
             }
+            if (progressView != null) progressView.ProgressClosed -= OnProgressClosed;
+        }
+
+        // 게이지 패널이 완전히 닫혔을 때(연출 끝) 복귀 버튼 재활성화
+        void OnProgressClosed() => SetReturnInteractable(true);
+
+        // 작품활동 중에는 승강장 복귀 버튼 비활성화
+        void OnArtworkStarted() => SetReturnInteractable(false);
+
+        void SetReturnInteractable(bool on)
+        {
+            if (returnButton != null) returnButton.interactable = on;
         }
 
         void OnProgressTicked(int elapsed, int total)
@@ -70,6 +98,7 @@ namespace Game.UI
         {
             bool failed = interrupted || !succeeded;
 
+            // 버튼 재활성화는 연출이 끝났을 때(OnProgressClosed)에서 처리.
             if (failed)
             {
                 // 실패(추격자 도달 등): 결함 그대로 유지(MarkArtworkDone 호출 안 함),
