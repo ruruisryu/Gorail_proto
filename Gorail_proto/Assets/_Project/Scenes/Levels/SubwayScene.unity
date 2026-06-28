@@ -147,7 +147,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &161813150
 RectTransform:
   m_ObjectHideFlags: 0
@@ -622,7 +622,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 5d5673149f224274982cc8df684980ce, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 769162812dc5be343b0d45a34cdbce9e, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -844,7 +844,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1681608979
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1092,14 +1092,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.8962264, g: 0.8529205, b: 0.7694019, a: 1}
+  m_Color: {r: 0.8018868, g: 0.7991266, b: 0.76784444, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 4215dabb38ccfad469c93e9594afd386, type: 3}
+  m_Sprite: {fileID: 21300000, guid: c806261d1565de24aa9ddeb35e7f3f54, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -1145,8 +1145,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 773, y: -40}
-  m_SizeDelta: {x: 600, y: 120}
+  m_AnchoredPosition: {x: 1054, y: -40}
+  m_SizeDelta: {x: 432.3225, y: 86.9002}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &1786846724
 GameObject:
@@ -1781,9 +1781,45 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3137230818508957085, guid: aaa50674be34098428553c57b4fd7e49, type: 3}
+      propertyPath: m_Color.b
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3137230818508957085, guid: aaa50674be34098428553c57b4fd7e49, type: 3}
+      propertyPath: m_Color.g
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3137230818508957085, guid: aaa50674be34098428553c57b4fd7e49, type: 3}
+      propertyPath: m_Color.r
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3426831567538264840, guid: aaa50674be34098428553c57b4fd7e49, type: 3}
+      propertyPath: m_Color.b
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3426831567538264840, guid: aaa50674be34098428553c57b4fd7e49, type: 3}
+      propertyPath: m_Color.g
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3426831567538264840, guid: aaa50674be34098428553c57b4fd7e49, type: 3}
+      propertyPath: m_Color.r
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 3561819532614426868, guid: aaa50674be34098428553c57b4fd7e49, type: 3}
       propertyPath: m_Name
       value: ToolbarHUD
+      objectReference: {fileID: 0}
+    - target: {fileID: 4370640749204196331, guid: aaa50674be34098428553c57b4fd7e49, type: 3}
+      propertyPath: m_Color.b
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4370640749204196331, guid: aaa50674be34098428553c57b4fd7e49, type: 3}
+      propertyPath: m_Color.g
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4370640749204196331, guid: aaa50674be34098428553c57b4fd7e49, type: 3}
+      propertyPath: m_Color.r
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4615623290728817752, guid: aaa50674be34098428553c57b4fd7e49, type: 3}
       propertyPath: mapPopup
@@ -1793,6 +1829,18 @@ PrefabInstance:
       propertyPath: inventoryPopup
       value: 
       objectReference: {fileID: 7202616829188060493}
+    - target: {fileID: 4838000588579561995, guid: aaa50674be34098428553c57b4fd7e49, type: 3}
+      propertyPath: m_Color.b
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4838000588579561995, guid: aaa50674be34098428553c57b4fd7e49, type: 3}
+      propertyPath: m_Color.g
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4838000588579561995, guid: aaa50674be34098428553c57b4fd7e49, type: 3}
+      propertyPath: m_Color.r
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6440129467720949112, guid: aaa50674be34098428553c57b4fd7e49, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -2407,6 +2455,10 @@ PrefabInstance:
     - target: {fileID: 8316696534107118981, guid: 9dd1e353f71c04f4d8f4ddaf1c98aae9, type: 3}
       propertyPath: m_Name
       value: SubwaySceneUI
+      objectReference: {fileID: 0}
+    - target: {fileID: 8316696534107118981, guid: 9dd1e353f71c04f4d8f4ddaf1c98aae9, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
