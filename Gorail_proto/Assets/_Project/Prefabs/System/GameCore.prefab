@@ -1,0 +1,229 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &1147196057902432870
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7257311815054540621}
+  - component: {fileID: 5399493432369750626}
+  - component: {fileID: 2174014481725295224}
+  - component: {fileID: 3120204715699761553}
+  - component: {fileID: 726760219929950945}
+  - component: {fileID: 850496437660888592}
+  - component: {fileID: 2627726969183117724}
+  - component: {fileID: 8351209301335750494}
+  - component: {fileID: 8331558675695352023}
+  - component: {fileID: 4808980853098186069}
+  - component: {fileID: 6242092793665169361}
+  - component: {fileID: 4656095095721380025}
+  - component: {fileID: 6372546987161890763}
+  m_Layer: 0
+  m_Name: GameCore
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7257311815054540621
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1147196057902432870}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5399493432369750626
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1147196057902432870}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0cbbe3990a191d044a936189a07b9edf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Runtime::Game.Core.GameCore
+  gameManager: {fileID: 2174014481725295224}
+  player: {fileID: 0}
+  artworkSystem: {fileID: 0}
+  fameSystem: {fileID: 0}
+  wantedSystem: {fileID: 0}
+  trackerManager: {fileID: 0}
+  inspection: {fileID: 0}
+  graphProvider: {fileID: 3120204715699761553}
+  spaceManager: {fileID: 6242092793665169361}
+  platformController: {fileID: 2627726969183117724}
+  turnResolver: {fileID: 0}
+  gameTimeSystem: {fileID: 0}
+  moneySystem: {fileID: 0}
+  rngService: {fileID: 8331558675695352023}
+  mapRenderer: {fileID: 0}
+  bagInventory: {fileID: 0}
+  autoDisembark: 1
+--- !u!114 &2174014481725295224
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1147196057902432870}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 967989c941bb19f47b5a4cdb75a962a6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Runtime::Game.Core.GameManager
+--- !u!114 &3120204715699761553
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1147196057902432870}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6158b39bab6b42e49833319e753e4920, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Runtime::Game.Subway.MapGraphProvider
+  networkData: {fileID: 11400000, guid: 489797380090f734a9d774c4957d3a08, type: 2}
+--- !u!114 &726760219929950945
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1147196057902432870}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b116732cd83fbb142afc2a7dadcf04af, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Runtime::Game.Gameplay.DebugMover
+  playerLocation: {fileID: 11400000, guid: 9934aafba853f2f41a44f6b3a053de5f, type: 2}
+  startStationId: "\uC2DC\uCCAD"
+  startLineIdOverride: 
+  destinationStationId: 
+--- !u!114 &850496437660888592
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1147196057902432870}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b5aa8afad4e14d04e9c6022adc826e26, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Runtime::Game.Gameplay.StationClickRouter
+--- !u!114 &2627726969183117724
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1147196057902432870}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 065aff509618e934da4c6553dfd9d53c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Runtime::Game.Gameplay.PlatformController
+  entryMaterialRatio: 0.3
+  defaultIp: {fileID: 0}
+--- !u!114 &8351209301335750494
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1147196057902432870}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 57ac29256de8578469ae37463cca024b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Runtime::Game.Gameplay.DebugPanel
+  debugMover: {fileID: 726760219929950945}
+  show: 1
+--- !u!114 &8331558675695352023
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1147196057902432870}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5cb8876909349e34dbd3822dcccfec74, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Runtime::Game.Gameplay.RngService
+  useFixedSeed: 1
+  seed: 12345
+--- !u!114 &4808980853098186069
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1147196057902432870}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0884048ba6f1fd84faa507f39200253f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Runtime::Game.Gameplay.MapActivationView
+--- !u!114 &6242092793665169361
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1147196057902432870}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cb8dbdfd5c2cf9b45bdedd3a5e281f6f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Runtime::Game.Core.SpaceManager
+  platformSceneName: PlatformScene
+  groundSceneName: OutsideScene
+  subwayMapRoot: {fileID: 0}
+--- !u!114 &4656095095721380025
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1147196057902432870}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 25e8be601ba77f74ea99177c95e196d2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Runtime::Game.UI.SubwayHud
+  buttonSize: {x: 240, y: 48}
+  bottomMargin: 24
+  buttonColor: {r: 0.1, g: 0.1, b: 0.1, a: 0.8980392}
+  textColor: {r: 1, g: 1, b: 1, a: 1}
+  fontSize: 18
+  font: {fileID: 11400000, guid: 4f45d0460d49c2349bfdc3652d1871d0, type: 2}
+--- !u!114 &6372546987161890763
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1147196057902432870}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bffe241a0c9f931418ccab6956241460, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Runtime::Game.UI.StatusHud
+  bodyFont: {fileID: 11400000, guid: 031ecbaef987c2f4c83b486d3808d1a5, type: 2}
+  titleFont: {fileID: 11400000, guid: 36d784d7d8d7f914283cca7bc6a11b01, type: 2}
+  toastSeconds: 2.2
