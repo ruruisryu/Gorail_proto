@@ -24,3 +24,6 @@ MonoBehaviour:
   defectHighlightSprite: {fileID: 21300000, guid: a6290bfb56de76746803e26d9a62a246, type: 3}
   defectPosition: {x: 0.82063997, y: 0.6229167}
   defectSize: {x: 0.07457155, y: 0.28804505}
+  viewYawLeft: -10
+  viewYawRight: 20
+  model3D: {fileID: 5508747138057498881, guid: 180514b8001507b4a98892718e6bba03, type: 3}

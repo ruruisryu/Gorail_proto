@@ -51,5 +51,14 @@ namespace Game.Inventory
 
         /// <summary>빈칸 전체 칸 수. 채움률·진입 차단(보유 칸수 &lt; 전체×30%) 계산에 사용.</summary>
         public int TotalCells => silhouette != null ? silhouette.CellCount() : 0;
+
+        [Header("외부 씬 3D 시야 한계(도, 정면=0 기준)")]
+        [Tooltip("좌측 한계(음수). 예: -25")]
+        public float viewYawLeft = -30f;
+        [Tooltip("우측 한계(양수). 예: 40")]
+        public float viewYawRight = 30f;
+
+        [Tooltip("이 IP의 3D 모델 프리팹. 비우면 2D 배경 폴백.")]
+        public GameObject model3D;
     }
 }
