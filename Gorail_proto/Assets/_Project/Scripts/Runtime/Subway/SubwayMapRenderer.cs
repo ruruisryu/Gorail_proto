@@ -225,22 +225,27 @@ namespace Game.Subway
 
         // ── 오버레이 내부 ────────────────────────────────────────────────
 
-        void DrawSegmentOverlay(string a, string b, Color color, RectTransform layer)
+        // lineId가 지정되면 해당 노선 세그먼트 하나만, null이면 첫 번째만 그린다.
+        void DrawSegmentOverlay(string a, string b, Color color, RectTransform layer, string lineId = null)
         {
             if (!_segmentMap.TryGetValue((a, b), out var lines)) return;
-            foreach (var orig in lines)
-            {
-                if (orig == null) continue;
-                var clone = Instantiate(orig.gameObject, layer);
-                clone.GetComponent<UIBezierLine>().color = color;
-                clone.name = "OverlaySeg";
-            }
+            UIBezierLine orig = null;
+            if (lineId != null)
+                orig = lines.Find(l => l != null && l.lineId == lineId);
+            orig ??= lines.Find(l => l != null); // fallback: 첫 번째
+            if (orig == null) return;
+            var clone = Instantiate(orig.gameObject, layer);
+            clone.GetComponent<UIBezierLine>().color = color;
+            clone.name = "OverlaySeg";
         }
 
         void DrawPathOverlay(IReadOnlyList<string> path, Color color, RectTransform layer)
         {
             for (int i = 0; i < path.Count - 1; i++)
-                DrawSegmentOverlay(path[i], path[i + 1], color, layer);
+            {
+                string segLine = Graph?.GetConnectingLineId(path[i], path[i + 1]);
+                DrawSegmentOverlay(path[i], path[i + 1], color, layer, segLine);
+            }
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -259,8 +264,9 @@ namespace Game.Subway
             Color lastSegColor = HintDestColor;
             for (int i = 0; i < path.Count - 1; i++)
             {
+                string segLine = Graph?.GetConnectingLineId(path[i], path[i + 1]);
                 var segColor = GetSegmentLineColor(path[i], path[i + 1], 1f);
-                DrawSegmentOverlay(path[i], path[i + 1], segColor, layer);
+                DrawSegmentOverlay(path[i], path[i + 1], segColor, layer, segLine);
                 if (i == path.Count - 2) lastSegColor = segColor;
             }
 
