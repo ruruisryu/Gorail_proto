@@ -26,6 +26,15 @@ namespace Game.UI
         [SerializeField] private Sprite returnSuccessSprite;
         [Tooltip("복귀 버튼(작품활동 중 비활성화). 비우면 returnButtonImage에서 자동 탐색.")]
         [SerializeField] private UnityEngine.UI.Button returnButton;
+        [Header("복귀 버튼 호버 하이라이트 (상태별 오버레이)")]
+        [Tooltip("복귀 버튼의 ButtonHoverHighlight. 비우면 returnButtonImage에서 자동 탐색.")]
+        [SerializeField] private ButtonHoverHighlight returnHover;
+        [Tooltip("평상시 호버 하이라이트.")]
+        [SerializeField] private Sprite returnNormalHighlight;
+        [Tooltip("실패(빨강) 상태 호버 하이라이트.")]
+        [SerializeField] private Sprite returnFailHighlight;
+        [Tooltip("성공(파랑) 상태 호버 하이라이트.")]
+        [SerializeField] private Sprite returnSuccessHighlight;
         [Tooltip("진행 게이지 뷰. 패널이 닫힐 때 복귀 버튼을 다시 켠다(로직보다 연출이 늦게 끝나므로).")]
         [SerializeField] private ArtworkProgressView progressView;
 
@@ -49,8 +58,11 @@ namespace Game.UI
             if (returnButton == null)
                 Debug.LogWarning("[Ground] Return Button 미연결 — 인스펙터에서 복귀 버튼(Button)을 연결하세요. (작품활동 중 비활성화가 안 됩니다)");
 
-            if (returnButtonImage != null && returnNormalSprite != null)
-                returnButtonImage.sprite = returnNormalSprite;
+            if (returnHover == null && returnButtonImage != null)
+                returnHover = returnButtonImage.GetComponent<ButtonHoverHighlight>()
+                           ?? returnButtonImage.GetComponentInParent<ButtonHoverHighlight>();
+
+            SetReturnVisual(returnNormalSprite, returnNormalHighlight);
             SetReturnInteractable(true);
 
             var aw = Artwork;
@@ -104,17 +116,22 @@ namespace Game.UI
                 // 실패(추격자 도달 등): 결함 그대로 유지(MarkArtworkDone 호출 안 함),
                 // 자동 복귀 없음 — 빨강 복귀 버튼을 플레이어가 눌러 복귀(§5-2).
                 _artworkResult = "추격자 도달 — 작품 실패!";
-                if (returnButtonImage != null && returnFailSprite != null)
-                    returnButtonImage.sprite = returnFailSprite;
+                SetReturnVisual(returnFailSprite, returnFailHighlight);
             }
             else
             {
                 // 성공: 해당 역 작품완료 기록(쿨타임 → 결함 숨김), 파랑 강조(선택).
                 _artworkResult = $"작품 완성 +{fameGain:0.0} 명성";
                 GameCore.Instance?.Platform?.MarkArtworkDone();
-                if (returnButtonImage != null && returnSuccessSprite != null)
-                    returnButtonImage.sprite = returnSuccessSprite;
+                SetReturnVisual(returnSuccessSprite, returnSuccessHighlight);
             }
+        }
+
+        // 복귀 버튼 본체 스프라이트 + 호버 하이라이트(오버레이) 스프라이트를 함께 교체(상태 일치 유지)
+        void SetReturnVisual(Sprite main, Sprite highlight)
+        {
+            if (returnButtonImage != null && main != null) returnButtonImage.sprite = main;
+            if (returnHover != null && highlight != null) returnHover.SetHighlightSprite(highlight);
         }
 
         // 승강장 복귀 버튼(uGUI)에서 직접 연결: OnClick → ReturnToSubway(false)
