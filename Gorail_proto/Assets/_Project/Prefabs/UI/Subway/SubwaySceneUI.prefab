@@ -1111,6 +1111,7 @@ GameObject:
   - component: {fileID: 7573180131815698583}
   - component: {fileID: 8010108420690665854}
   - component: {fileID: 8116257050839270722}
+  - component: {fileID: 3219228008722663386}
   m_Layer: 0
   m_Name: SubwaySceneUI
   m_TagString: Untagged
@@ -1216,6 +1217,28 @@ MonoBehaviour:
   m_EditorClassIdentifier: Game.Runtime::Game.UI.SubwaySceneController
   subwayMapPopup: {fileID: 9001689603200095362}
   subwayMapButton: {fileID: 0}
+--- !u!114 &3219228008722663386
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8316696534107118981}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ea66fda316610044d88f619e4a65d98a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Runtime::Game.UI.RouteInfoTooltip
+  mapRenderer: {fileID: 4855124495354593158}
+  font: {fileID: 11400000, guid: 4f45d0460d49c2349bfdc3652d1871d0, type: 2}
+  tooltipSize: {x: 160, y: 88}
+  stationOffset: {x: 80, y: 0}
+  bgColor: {r: 0.7735849, g: 0.7735849, b: 0.7735849, a: 1}
+  textColor: {r: 0, g: 0, b: 0, a: 1}
+  subTextColor: {r: 0.37818015, g: 1, b: 0, a: 1}
+  fontSize: 18
+  subFontSize: 18
+  sortOrder: 14
 --- !u!1001 &5464301007646621
 PrefabInstance:
   m_ObjectHideFlags: 0
