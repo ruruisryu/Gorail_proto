@@ -159,19 +159,24 @@ namespace Game.Gameplay
             if (stations.Count == 0) return null;
 
             string playerStn = player.CurrentStationId;
+            var occupied = new System.Collections.Generic.HashSet<string>(_trackers.Select(t => t.StationId));
 
             var inRange = stations
-                .Where(s => s != playerStn)
+                .Where(s => s != playerStn && !occupied.Contains(s))
                 .Where(s => { int d = Graph.Distance(playerStn, s); return d >= firstSpawnMinBehind && d <= firstSpawnMaxBehind; })
                 .ToList();
 
             if (inRange.Count > 0)
                 return inRange[RandInt(0, inRange.Count)];
 
-            return stations
+            // 빈 역 우선, 없으면 점유 역도 허용
+            var fallback = stations
                 .Where(s => s != playerStn)
-                .OrderByDescending(s => { int d = Graph.Distance(playerStn, s); return d == int.MaxValue ? -1 : d; })
-                .FirstOrDefault() ?? stations[0];
+                .OrderBy(s => occupied.Contains(s) ? 1 : 0)
+                .ThenByDescending(s => { int d = Graph.Distance(playerStn, s); return d == int.MaxValue ? -1 : d; })
+                .FirstOrDefault();
+
+            return fallback ?? stations[0];
         }
 
         List<Tracker> PickByDistanceBands(List<Tracker> pool, int count)
