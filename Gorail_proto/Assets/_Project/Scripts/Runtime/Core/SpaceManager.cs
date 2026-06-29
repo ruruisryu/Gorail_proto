@@ -1,3 +1,4 @@
+using Game.UI;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -61,6 +62,7 @@ namespace Game.Core
             Load(groundSceneName);
             SetSpace(GameSpace.Ground);
             if (stationId == "동대문역사문화공원") SoundManager.Instance.PlayBGM("Atrium of glass_2");
+            MoveNotificationHud.Instance.ShowPopUp("좌우 우클릭 패닝을 통해 결함을 찾으세요.", new Vector2(0, 350));
         }
 
         void SetSpace(GameSpace s)
