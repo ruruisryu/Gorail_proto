@@ -16,6 +16,8 @@ namespace Game.UI
         [SerializeField] private Button      disembarkButton;
         [SerializeField] private TMP_Text    label;
 
+        string _announcedStation;
+
         void Start()
         {
             if (disembarkButton != null)
@@ -52,7 +54,11 @@ namespace Game.UI
         }
 
         void OnSpaceChanged(GameSpace _) => Refresh();
-        void OnMoveCompleted(string _, bool __) => Refresh();
+        void OnMoveCompleted(string stationId, bool __)
+        {
+            _announcedStation = stationId; // 도착 역은 자동하차 여부 무관하게 기록
+            Refresh();
+        }
 
         void Refresh()
         {
@@ -74,19 +80,30 @@ namespace Game.UI
             var core = GameCore.Instance;
             if (core == null) return;
 
-            SoundManager.Instance?.PlaySFX("지하철_열림");
             string stationId = core.Player?.CurrentStationId;
             if (string.IsNullOrEmpty(stationId)) return;
 
-            var fader = ScreenFader.Instance;
-            if (fader != null)
-                fader.Fade(onFadeOut: () =>
-                {
-                    SoundManager.Instance?.PlaySFX("지하철_닫힘");
-                    core.Platform?.OpenAt(stationId);
-                });
+            bool firstClick = !core.AutoDisembark && _announcedStation != stationId;
+            if (firstClick && core.TurnResolver != null)
+            {
+                // 자동하차 OFF + 이 역에서 처음 클릭: 안내방송 전체 시퀀스
+                _announcedStation = stationId;
+                core.TurnResolver.TriggerArrivalAnnouncement(stationId);
+            }
             else
-                core.Platform?.OpenAt(stationId);
+            {
+                // 자동하차 ON이지만 수동 하차(잘못 탄 경우 등): SFX만 재생하고 바로 진입
+                SoundManager.Instance?.PlaySFX("지하철_열림");
+                var fader = ScreenFader.Instance;
+                if (fader != null)
+                    fader.Fade(onFadeOut: () =>
+                    {
+                        SoundManager.Instance?.PlaySFX("지하철_닫힘");
+                        core.Platform?.OpenAt(stationId);
+                    });
+                else
+                    core.Platform?.OpenAt(stationId);
+            }
         }
     }
 }

@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.InputSystem;
 using Game.Core;
+using UnityEngine.SceneManagement;
 
 namespace Game.UI
 {
@@ -19,8 +20,8 @@ namespace Game.UI
         [SerializeField] private Button mapButton;
         [SerializeField] private SubwayMapPopup mapPopup;
         [SerializeField] private Game.Inventory.InventoryView inventoryPopup;
+        [SerializeField] private GameObject settingsPanel;
         
-        private bool _quitOpen;
         private InputAction _inventoryAction;
         private InputAction _settingsAction;
 
@@ -30,7 +31,7 @@ namespace Game.UI
             _settingsAction  = new InputAction("Settings",  binding: "<Keyboard>/escape");
 
             _inventoryAction.performed += _ => OnInventoryClick();
-            _settingsAction.performed  += _ => { if (!_quitOpen) OnSettingsClick(); };
+            _settingsAction.performed  += _ => OnSettingsClick();
 
             _inventoryAction.Enable();
             _settingsAction.Enable();
@@ -75,24 +76,17 @@ namespace Game.UI
 
         void OnSettingsClick()
         {
-            // TODO: 설정 팝업 열기
-            Debug.Log("[ToolbarHud] 설정 열기 (미구현)");
+            settingsPanel.SetActive(!settingsPanel.activeSelf);
         }
 
         void OnQuitClick()
         {
-            _quitOpen = true;
             ModalDialog.Show("게임을 종료하시겠습니까?",
                 ("예", () =>
                 {
-                    _quitOpen = false;
-#if UNITY_EDITOR
-                    UnityEditor.EditorApplication.isPlaying = false;
-#else
-                    Application.Quit();
-#endif
+                    SceneManager.LoadScene("StartScene");
                 }),
-                ("아니오", () => { _quitOpen = false; }));
+                ("아니오", () => { }));
         }
     }
 }

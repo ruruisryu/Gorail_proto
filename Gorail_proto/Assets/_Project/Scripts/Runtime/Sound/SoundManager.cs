@@ -66,22 +66,53 @@ namespace Game.Core
 
         // ── 볼륨 프로퍼티 ────────────────────────────────────────────────
 
+        // ── PlayerPrefs 키 ───────────────────────────────────────────────
+        const string KeyMaster = "Vol_Master";
+        const string KeyBGM    = "Vol_BGM";
+        const string KeySFX    = "Vol_SFX";
+        const string KeyVoice  = "Vol_Voice";
+
+        public float MasterVolume
+        {
+            get => AudioListener.volume;
+            set
+            {
+                AudioListener.volume = Mathf.Clamp01(value);
+                PlayerPrefs.SetFloat(KeyMaster, AudioListener.volume);
+            }
+        }
+
         public float BGMVolume
         {
             get => bgmVolume;
-            set { bgmVolume = Mathf.Clamp01(value); if (bgmSource) bgmSource.volume = bgmVolume; }
+            set
+            {
+                bgmVolume = Mathf.Clamp01(value);
+                if (bgmSource) bgmSource.volume = bgmVolume;
+                PlayerPrefs.SetFloat(KeyBGM, bgmVolume);
+            }
         }
 
         public float VoiceVolume
         {
             get => voiceVolume;
-            set { voiceVolume = Mathf.Clamp01(value); if (voiceSource) voiceSource.volume = voiceVolume; }
+            set
+            {
+                voiceVolume = Mathf.Clamp01(value);
+                if (voiceSource) voiceSource.volume = voiceVolume;
+                PlayerPrefs.SetFloat(KeyVoice, voiceVolume);
+            }
         }
 
         public float SFXVolume
         {
             get => sfxVolume;
-            set { sfxVolume = Mathf.Clamp01(value); foreach (var s in _sfxPool) s.volume = sfxVolume; }
+            set
+            {
+                sfxVolume = Mathf.Clamp01(value);
+                foreach (var s in _sfxPool) s.volume = sfxVolume;
+                PlayerPrefs.SetFloat(KeySFX, sfxVolume);
+            }
         }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -91,6 +122,12 @@ namespace Game.Core
             if (Instance != null && Instance != this) { Destroy(gameObject); return; }
             Instance = this;
             DontDestroyOnLoad(gameObject);
+
+            // 저장된 볼륨 설정 복원
+            AudioListener.volume = PlayerPrefs.GetFloat(KeyMaster, 1f);
+            bgmVolume            = PlayerPrefs.GetFloat(KeyBGM,    bgmVolume);
+            sfxVolume            = PlayerPrefs.GetFloat(KeySFX,    sfxVolume);
+            voiceVolume          = PlayerPrefs.GetFloat(KeyVoice,  voiceVolume);
 
             bgmSource   = EnsureSource(bgmSource,   loop: true,  volume: bgmVolume);
             voiceSource = EnsureSource(voiceSource,  loop: false, volume: voiceVolume);

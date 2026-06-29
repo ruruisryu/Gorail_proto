@@ -169,6 +169,10 @@ namespace Game.Gameplay
             }
         }
 
+        /// <summary>수동 하차 시 안내방송 + 페이드 연출 후 승강장 진입. SubwayHud가 호출한다.</summary>
+        public void TriggerArrivalAnnouncement(string stationId)
+            => PlayArrivalAnnouncement(stationId, () => Game.Core.GameCore.Instance?.Platform?.OpenAt(stationId));
+
         // ── 역 도착 안내 방송 ────────────────────────────────────────────
 
         /// <summary>

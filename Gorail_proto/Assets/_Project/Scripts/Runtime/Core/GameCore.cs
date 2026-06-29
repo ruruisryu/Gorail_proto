@@ -84,6 +84,7 @@ namespace Game.Core
             fameSystem?.Initialize();
             if (gameTimeSystem != null) gameTimeSystem.DayEnded    += OnDayEnded;
             if (turnResolver   != null) turnResolver.MoveCompleted += OnMoveCompleted;
+            autoDisembark = PlayerPrefs.GetInt("AutoDisembark", 1) == 1;
 
             if (PlayerPrefs.GetInt("LoadSave", 0) == 1)
             {
