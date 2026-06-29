@@ -196,19 +196,20 @@ namespace Game.Gameplay
                 sound.PlayBGM("환승역하차", loop: false);
 
             string doorClip = UnityEngine.Random.value < 0.5f
-                ? "역입니다_내리실문은오른쪽입니다"
-                : "역입니다_내리실문은왼쪽입니다";
+                ? "내리실문은오른쪽입니다"
+                : "내리실문은왼쪽입니다";
 
             void EnqueueAll()
             {
                 sound.EnqueueVoice("이번역은");
                 sound.EnqueueVoice(stationId);
-                sound.EnqueueVoice(doorClip, onComplete: () =>
+                sound.EnqueueVoice("역입니다", onComplete: () =>
                 {
                     onPlatformOpen?.Invoke();
                     sound.PlaySFX("지하철_닫힘");
                     fader?.FadeOut();
                 });
+                sound.EnqueueVoice(doorClip);
             }
 
             // 페이드인 시작
