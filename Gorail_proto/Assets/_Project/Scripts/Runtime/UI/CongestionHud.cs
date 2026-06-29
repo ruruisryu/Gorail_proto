@@ -2,6 +2,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using Game.Core;
+using UnityEngine.Serialization;
 
 namespace Game.UI
 {
@@ -12,6 +13,8 @@ namespace Game.UI
     /// </summary>
     public class CongestionHud : MonoBehaviour
     {
+        [SerializeField] private RectTransform congestionRoot;
+        
         [System.Serializable]
         public struct LevelBox
         {
@@ -28,7 +31,11 @@ namespace Game.UI
 
         [SerializeField] private Color numActiveColor;
         [SerializeField] private Color numInactiveColor;
-
+        
+        [SerializeField] private SubwayMapPopup mapPopup;
+    
+        
+        private Vector3 _originPosition;
         private int _currentLevel = 1;
         public int CongestionLevel
         {
@@ -42,6 +49,11 @@ namespace Game.UI
             var core = GameCore.Instance;
             if (core?.Space != null)
                 core.Space.SpaceChanged += OnSpaceChanged;
+            
+            _originPosition = congestionRoot.anchoredPosition;
+            
+            mapPopup.OnClose += OnMapPopupClose;
+            mapPopup.OnOpen += OnMapPopupOpen;
         }
 
         void OnDestroy()
@@ -49,6 +61,19 @@ namespace Game.UI
             var core = GameCore.Instance;
             if (core?.Space != null)
                 core.Space.SpaceChanged -= OnSpaceChanged;
+            
+            mapPopup.OnClose -= OnMapPopupClose;
+            mapPopup.OnOpen -= OnMapPopupOpen;
+        }
+        
+        void OnMapPopupClose()
+        {
+            congestionRoot.anchoredPosition = _originPosition + Vector3.up * 80f;
+        }
+        
+        void OnMapPopupOpen()
+        {
+            congestionRoot.anchoredPosition = _originPosition;
         }
 
         void OnSpaceChanged(GameSpace space)

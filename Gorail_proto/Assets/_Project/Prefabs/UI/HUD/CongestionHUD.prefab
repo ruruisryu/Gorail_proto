@@ -967,6 +967,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b463b76fc2cd37b4781df3590e7c162b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Game.Runtime::Game.UI.CongestionHud
+  congestionRoot: {fileID: 7274567347885388921}
   levels:
   - root: {fileID: 7171860519964694705}
     bg: {fileID: 2342958175416445437}
@@ -994,6 +995,7 @@ MonoBehaviour:
     labelTxt: {fileID: 6403604794028692061}
   numActiveColor: {r: 0, g: 0, b: 0, a: 1}
   numInactiveColor: {r: 0.3, g: 0.3, b: 0.3, a: 1}
+  mapPopup: {fileID: 0}
 --- !u!223 &3053422821137852248
 Canvas:
   m_ObjectHideFlags: 0

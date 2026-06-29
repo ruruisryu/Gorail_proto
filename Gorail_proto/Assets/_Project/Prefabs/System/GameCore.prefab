@@ -19,8 +19,6 @@ GameObject:
   - component: {fileID: 8331558675695352023}
   - component: {fileID: 4808980853098186069}
   - component: {fileID: 6242092793665169361}
-  - component: {fileID: 4656095095721380025}
-  - component: {fileID: 6372546987161890763}
   m_Layer: 0
   m_Name: GameCore
   m_TagString: Untagged
@@ -146,7 +144,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1147196057902432870}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 57ac29256de8578469ae37463cca024b, type: 3}
   m_Name: 
@@ -194,36 +192,3 @@ MonoBehaviour:
   platformSceneName: PlatformScene
   groundSceneName: OutsideScene
   subwayMapRoot: {fileID: 0}
---- !u!114 &4656095095721380025
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1147196057902432870}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 25e8be601ba77f74ea99177c95e196d2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Game.Runtime::Game.UI.SubwayHud
-  buttonSize: {x: 240, y: 48}
-  bottomMargin: 24
-  buttonColor: {r: 0.1, g: 0.1, b: 0.1, a: 0.8980392}
-  textColor: {r: 1, g: 1, b: 1, a: 1}
-  fontSize: 18
-  font: {fileID: 11400000, guid: 4f45d0460d49c2349bfdc3652d1871d0, type: 2}
---- !u!114 &6372546987161890763
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1147196057902432870}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bffe241a0c9f931418ccab6956241460, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Game.Runtime::Game.UI.StatusHud
-  bodyFont: {fileID: 11400000, guid: 031ecbaef987c2f4c83b486d3808d1a5, type: 2}
-  titleFont: {fileID: 11400000, guid: 36d784d7d8d7f914283cca7bc6a11b01, type: 2}
-  toastSeconds: 2.2

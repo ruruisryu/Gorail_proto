@@ -44,6 +44,7 @@ namespace Game.UI
             if (mapButton       != null) mapButton.onClick.AddListener(OnMapClick);
             
             GameCore.Instance.Space.SpaceChanged += OnSpaceChanged;
+            OnSpaceChanged(GameCore.Instance.Space.Current);
         }
 
         void OnDestroy()
@@ -63,7 +64,7 @@ namespace Game.UI
         {
             if (mapPopup == null) return;
             if (mapPopup.gameObject.activeSelf) mapPopup.Hide();
-            else mapPopup.Show(2f / 3f, viewOnly: true);
+            else mapPopup.Show(3f / 4f, viewOnly: true);
         }
 
         void OnInventoryClick()

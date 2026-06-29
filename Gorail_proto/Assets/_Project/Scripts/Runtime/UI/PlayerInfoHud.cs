@@ -12,6 +12,8 @@ namespace Game.UI
     /// </summary>
     public class PlayerInfoHud : MonoBehaviour
     {
+        [SerializeField] private RectTransform playerInfoRoot;
+        
         [Header("명성")]
         [Tooltip("단계별 링 Image (인덱스 0=1단계 색, 1=2단계 색, …). 각각 Filled/Radial360/Top으로 설정.")]
         [SerializeField] private Image[]         fameRings;
@@ -40,11 +42,15 @@ namespace Game.UI
         [SerializeField] private float timeCountDuration  = 0.4f;
         [SerializeField] private float deltaRisePx        = 24f;
         [SerializeField] private float deltaFadeDuration  = 0.9f;
+        
+        [SerializeField] private SubwayMapPopup mapPopup;
 
         private System.Action<float>         _onFame;
         private System.Action<int>           _onWanted;
         private System.Action<int, int, int> _onTime;
         private System.Action<int>           _onMoney;
+
+        private Vector3 _originPosition;
 
         private int   _displayedMoney;
         private Tween _moneyTween;
@@ -85,6 +91,12 @@ namespace Game.UI
                 if (core.GameTime != null) core.GameTime.TimeChanged   += _onTime;
                 if (core.Money    != null) core.Money.MoneyChanged     += _onMoney;
             }
+            
+            _originPosition = playerInfoRoot.anchoredPosition;
+            
+            mapPopup.OnClose += OnMapPopupClose;
+            mapPopup.OnOpen += OnMapPopupOpen;
+            
             Refresh();
         }
 
@@ -100,6 +112,19 @@ namespace Game.UI
             if (core.Wanted   != null) core.Wanted.WantedChanged   -= _onWanted;
             if (core.GameTime != null) core.GameTime.TimeChanged   -= _onTime;
             if (core.Money    != null) core.Money.MoneyChanged     -= _onMoney;
+                        
+            mapPopup.OnClose -= OnMapPopupClose;
+            mapPopup.OnOpen -= OnMapPopupOpen;
+        }
+        
+        void OnMapPopupClose()
+        {
+            playerInfoRoot.anchoredPosition = _originPosition + Vector3.up * 80f;
+        }
+        
+        void OnMapPopupOpen()
+        {
+            playerInfoRoot.anchoredPosition = _originPosition;
         }
 
         void Refresh()

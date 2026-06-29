@@ -34,7 +34,7 @@ namespace Game.Gameplay
         MoneySystem       Money       => Game.Core.GameCore.Instance?.Money;
 
         /// <summary>현재 이동(코루틴) 진행 중인지. 이동 중 추가 입력 무시용.</summary>
-        public bool IsMoving { get; private set; }
+        public bool IsMoving { get; private set; } = false;
 
         private bool _forceStop;
 
@@ -43,6 +43,9 @@ namespace Game.Gameplay
 
         /// <summary>이동 요청이 거부됐을 때 발생. UI 알림용.</summary>
         public event System.Action<MoveRejectedReason> MoveRejected;
+
+        /// <summary>이동이 시작될 때 발생.</summary>
+        public event System.Action MoveStarted;
 
         /// <summary>한 역 해소가 끝날 때마다 발생(연출·계측용). (도달한 역, 스텝 i, 총 k)</summary>
         public event System.Action<string, int, int> StepResolved;
@@ -98,6 +101,7 @@ namespace Game.Gameplay
         IEnumerator ResolveMove(List<string> path)
         {
             IsMoving = true;
+            MoveStarted?.Invoke();
             var moveSfx = Game.Core.SoundManager.Instance?.PlaySFXLoop("지하철_이동");
 
             int dir = ResolveDirection(path);

@@ -1,3 +1,4 @@
+using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -21,25 +22,37 @@ namespace Game.UI
 
         Button      _button;
         TMP_Text    _label;
+        GameObject  _canvasGO;
 
         void Awake()
         {
             BuildUI();
+        }
+
+        void Start() => StartCoroutine(LateInit());
+
+        IEnumerator LateInit()
+        {
+            yield return new WaitUntil(() =>
+                GameCore.Instance != null &&
+                !string.IsNullOrEmpty(GameCore.Instance.Player?.CurrentStationId));
             SubscribeEvents(true);
+            Refresh();
         }
 
         void OnDestroy()
         {
             SubscribeEvents(false);
+            if (_canvasGO != null) Destroy(_canvasGO);
         }
 
         // ── UI 생성 ──────────────────────────────────────────────────────
 
         void BuildUI()
         {
-            // 전용 Canvas (sort order 15)
-            var canvasGO = new GameObject("[SubwayHud]");
-            canvasGO.transform.SetParent(transform, false);
+            // 전용 Canvas (sort order 15) — 중첩 Canvas 방지를 위해 루트에 생성
+            _canvasGO = new GameObject("[SubwayHud]");
+            var canvasGO = _canvasGO;
 
             var canvas = canvasGO.AddComponent<Canvas>();
             canvas.renderMode  = RenderMode.ScreenSpaceOverlay;
@@ -99,14 +112,9 @@ namespace Game.UI
             }
             if (core.TurnResolver != null)
             {
-                if (subscribe) core.TurnResolver.MoveCompleted += OnMoveCompleted;
-                else           core.TurnResolver.MoveCompleted -= OnMoveCompleted;
+                if (subscribe) { core.TurnResolver.MoveStarted  += Refresh; core.TurnResolver.MoveCompleted += OnMoveCompleted; }
+                else           { core.TurnResolver.MoveStarted  -= Refresh; core.TurnResolver.MoveCompleted -= OnMoveCompleted; }
             }
-        }
-
-        void Start()
-        {
-            Refresh();
         }
 
         void OnSpaceChanged(GameSpace _) => Refresh();
@@ -117,11 +125,12 @@ namespace Game.UI
             var core = GameCore.Instance;
             if (_button == null || core == null) return;
 
-            bool inSubway  = core.Space?.Current == GameSpace.Subway;
-            bool isMoving  = core.TurnResolver?.IsMoving ?? false;
+            bool inSubway   = core.Space?.Current == GameSpace.Subway;
+            bool isMoving   = core.TurnResolver?.IsMoving ?? false;
             bool hasStation = !string.IsNullOrEmpty(core.Player?.CurrentStationId);
+            bool visible    = inSubway && !isMoving && hasStation;
 
-            _button.gameObject.SetActive(inSubway && !isMoving && hasStation);
+            _button.gameObject.SetActive(visible);
 
             if (_label != null && hasStation)
                 _label.text = $"하차 — {core.Player.CurrentStationId} 승강장";

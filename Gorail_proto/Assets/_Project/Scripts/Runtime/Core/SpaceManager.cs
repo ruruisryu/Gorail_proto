@@ -18,11 +18,19 @@ namespace Game.Core
         [Tooltip("지하철 공간일 때만 보일 노선도 루트(승강장/지상에선 숨김).")]
         [SerializeField] private GameObject subwayMapRoot;
 
+        Game.UI.SubwayMapPopup _mapPopup;
+
         public GameSpace Current { get; private set; } = GameSpace.Subway;
         /// <summary>현재 승강장/지상이 속한 역 ID(어느 역에서 내렸는가).</summary>
         public string CurrentStationId { get; private set; }
 
         public event System.Action<GameSpace> SpaceChanged;
+
+        void Awake()
+        {
+            if (subwayMapRoot != null)
+                _mapPopup = subwayMapRoot.GetComponent<Game.UI.SubwayMapPopup>();
+        }
 
         void Start() => SetSpace(GameSpace.Subway); // 시작은 지하철 공간(SpaceChanged 발행 → 색 등 초기 반영)
 
@@ -65,7 +73,8 @@ namespace Game.Core
 
         void ApplyVisibility()
         {
-            if (subwayMapRoot != null) subwayMapRoot.SetActive(Current == GameSpace.Subway);
+            if (Current != GameSpace.Subway) _mapPopup?.Hide();
+            else _mapPopup?.Show();
         }
 
         void Load(string sceneName)

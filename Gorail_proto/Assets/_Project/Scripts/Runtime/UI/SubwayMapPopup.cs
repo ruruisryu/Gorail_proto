@@ -9,6 +9,9 @@ namespace Game.UI
         [SerializeField] private Button backgroundOverlay;
         [SerializeField] private SubwayMapZoom mapZoom;
 
+        public event System.Action OnClose;
+        public event System.Action OnOpen;
+
         Game.Subway.SubwayMapRenderer mapRenderer => Game.Core.GameCore.Instance?.MapRenderer;
 
         private CanvasGroup canvasGroup;
@@ -25,7 +28,7 @@ namespace Game.UI
             if (backgroundOverlay != null)
                 backgroundOverlay.onClick.AddListener(Hide);
         }
-
+        
         public void Show(float scale = 1f, bool viewOnly = false)
         {
             gameObject.SetActive(true);
@@ -33,6 +36,7 @@ namespace Game.UI
             if (rt != null) rt.localScale = Vector3.one * scale;
             SetStationsInteractable(!viewOnly);
             mapRenderer?.RefreshMarkers();
+            if (scale > 0.95f) OnOpen?.Invoke();
         }
 
         public void Hide()
@@ -41,6 +45,7 @@ namespace Game.UI
             var rt = GetComponent<RectTransform>();
             if (rt != null) rt.localScale = Vector3.one;
             gameObject.SetActive(false);
+            OnClose?.Invoke();
         }
 
         void SetStationsInteractable(bool interactable)
