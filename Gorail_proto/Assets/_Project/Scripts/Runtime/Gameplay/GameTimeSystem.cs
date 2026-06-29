@@ -68,5 +68,13 @@ namespace Game.Gameplay
         }
 
         public string FormatTime() => $"{Hour:00}:{Minute:00}";
+
+        public void Restore(int day, int hour, int minute)
+        {
+            Day    = day;
+            Hour   = hour;
+            Minute = minute;
+            TimeChanged?.Invoke(Day, Hour, Minute);
+        }
     }
 }

@@ -128,6 +128,16 @@ namespace Game.Gameplay
             SyncMarkers();
         }
 
+        public void Restore(System.Collections.Generic.IEnumerable<Game.Core.SaveData.TrackerEntry> entries, float debt)
+        {
+            _trackers.Clear();
+            if (entries != null)
+                foreach (var e in entries)
+                    _trackers.Add(new Tracker(e.stationId, e.lineId));
+            _debt = debt;
+            SyncMarkers();
+        }
+
         // ── 검문 연동 (⑧ InspectionSystem이 사용) ────────────────────────
 
         public bool HasTrackerAt(string stationId) =>

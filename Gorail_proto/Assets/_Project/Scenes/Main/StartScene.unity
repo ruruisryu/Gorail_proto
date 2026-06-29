@@ -607,6 +607,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2969287378414803391, guid: 88058396daa7cce4b997bfb7f83960d9, type: 3}
+      propertyPath: m_SortingOrder
+      value: 1002
+      objectReference: {fileID: 0}
     - target: {fileID: 3139792590531934827, guid: 88058396daa7cce4b997bfb7f83960d9, type: 3}
       propertyPath: m_AnchorMax.y
       value: 1
@@ -1036,6 +1040,7 @@ GameObject:
   - component: {fileID: 1386597550}
   - component: {fileID: 1386597549}
   - component: {fileID: 1386597552}
+  - component: {fileID: 1386597553}
   m_Layer: 0
   m_Name: LoadGameButton
   m_TagString: Untagged
@@ -1168,6 +1173,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 61705d2fdfb18ba44b5f2a8368d6169b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Game.Runtime::Game.Core.UIButtonSFX
+--- !u!114 &1386597553
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1386597547}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 78d218a452bd2f646987182b90c6971b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Runtime::Game.UI.ContinueButton
+  gameSceneName: SubwayScene
+  gameBgm: Han river loop_1
 --- !u!1 &1490475427
 GameObject:
   m_ObjectHideFlags: 0
@@ -1469,7 +1488,7 @@ Canvas:
   m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 1000
   m_TargetDisplay: 0
 --- !u!224 &1632522498
 RectTransform:

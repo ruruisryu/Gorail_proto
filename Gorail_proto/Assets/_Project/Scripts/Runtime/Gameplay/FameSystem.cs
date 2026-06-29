@@ -25,6 +25,9 @@ namespace Game.Gameplay
         private int _totalMinutesAtLastArtwork;
         private int _prevTotalMinutes;
 
+        public int LastArtworkMinutes => _totalMinutesAtLastArtwork;
+        public int PrevTotalMinutes   => _prevTotalMinutes;
+
         /// <summary>GameTimeSystem.Initialize() 이후에 GameCore에서 명시적으로 호출해야 한다.</summary>
         public void Initialize()
         {
@@ -73,6 +76,14 @@ namespace Game.Gameplay
             float clamped = Mathf.Max(0f, value);
             if (Mathf.Approximately(clamped, CurrentFame)) return;
             CurrentFame = clamped;
+            FameChanged?.Invoke(CurrentFame);
+        }
+
+        public void Restore(float fame, int lastArtworkMinutes, int prevMinutes)
+        {
+            CurrentFame                = fame;
+            _totalMinutesAtLastArtwork = lastArtworkMinutes;
+            _prevTotalMinutes          = prevMinutes;
             FameChanged?.Invoke(CurrentFame);
         }
 

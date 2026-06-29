@@ -40,5 +40,11 @@ namespace Game.Gameplay
             CurrentMoney += amount;
             MoneyChanged?.Invoke(CurrentMoney);
         }
+
+        public void Restore(int money)
+        {
+            CurrentMoney = money;
+            MoneyChanged?.Invoke(CurrentMoney);
+        }
     }
 }

@@ -99,6 +99,20 @@ namespace Game.Gameplay
 
         public bool HasVisitedLine(string lineId) => _activeLines.Contains(lineId);
 
+        public void Restore(Game.Core.SaveData d)
+        {
+            CurrentStationId = d.stationId;
+            CurrentLineId    = d.lineId;
+            Direction        = d.direction;
+            DirectionLocked  = d.directionLocked;
+            _activeLines.Clear();
+            if (d.activeLines != null)
+                foreach (var l in d.activeLines) _activeLines.Add(l);
+            SyncLocation();
+            StateChanged?.Invoke();
+            ActiveLinesChanged?.Invoke();
+        }
+
         void SyncLocation()
         {
             if (locationData != null) locationData.currentStationId = CurrentStationId;

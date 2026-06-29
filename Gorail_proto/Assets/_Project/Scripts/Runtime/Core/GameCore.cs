@@ -82,13 +82,67 @@ namespace Game.Core
             gameTimeSystem?.Initialize();
             moneySystem?.Initialize();
             fameSystem?.Initialize();
-            if (gameTimeSystem != null) gameTimeSystem.DayEnded += OnDayEnded;
+            if (gameTimeSystem != null) gameTimeSystem.DayEnded    += OnDayEnded;
+            if (turnResolver   != null) turnResolver.MoveCompleted += OnMoveCompleted;
+
+            if (PlayerPrefs.GetInt("LoadSave", 0) == 1)
+            {
+                PlayerPrefs.DeleteKey("LoadSave");
+                LoadGame();
+            }
         }
 
         void OnDestroy()
         {
-            if (gameTimeSystem != null) gameTimeSystem.DayEnded -= OnDayEnded;
+            if (gameTimeSystem != null) gameTimeSystem.DayEnded    -= OnDayEnded;
+            if (turnResolver   != null) turnResolver.MoveCompleted -= OnMoveCompleted;
         }
+
+        void OnMoveCompleted(string _, bool __) => SaveGame();
+
+        // ── 세이브 / 로드 ────────────────────────────────────────────────
+
+        public void SaveGame()
+        {
+            if (player == null) return;
+            if (gameManager?.IsGameOver == true) return;
+            var d = new SaveData
+            {
+                stationId       = player.CurrentStationId,
+                lineId          = player.CurrentLineId,
+                direction       = player.Direction,
+                directionLocked = player.DirectionLocked,
+                activeLines     = new System.Collections.Generic.List<string>(player.ActiveLines),
+                day             = gameTimeSystem?.Day    ?? 1,
+                hour            = gameTimeSystem?.Hour   ?? 7,
+                minute          = gameTimeSystem?.Minute ?? 0,
+                money           = moneySystem?.CurrentMoney ?? 0,
+                fame            = fameSystem?.CurrentFame   ?? 0f,
+                fameLastArtworkMinutes = fameSystem?.LastArtworkMinutes ?? 0,
+                famePrevMinutes        = fameSystem?.PrevTotalMinutes   ?? 0,
+                trackerDebt = trackerManager?.ChaseDebt ?? 0f,
+                artworkDoneStations = platformController != null
+                    ? new System.Collections.Generic.List<string>(platformController.GetArtworkDoneStations())
+                    : new System.Collections.Generic.List<string>(),
+            };
+            if (trackerManager != null)
+                foreach (var t in trackerManager.Trackers)
+                    d.trackers.Add(new SaveData.TrackerEntry { stationId = t.StationId, lineId = t.LineId });
+            SaveSystem.Save(d);
+        }
+
+        public void LoadGame()
+        {
+            var d = SaveSystem.Load();
+            if (d == null) return;
+            gameTimeSystem?.Restore(d.day, d.hour, d.minute);
+            moneySystem?.Restore(d.money);
+            fameSystem?.Restore(d.fame, d.fameLastArtworkMinutes, d.famePrevMinutes);
+            player?.Restore(d);
+            trackerManager?.Restore(d.trackers, d.trackerDebt);
+            platformController?.Restore(d.artworkDoneStations);
+        }
+
 
         void OnDayEnded(int endedDay)
         {
@@ -103,6 +157,7 @@ namespace Game.Core
                     DayTransitionOnBlack?.Invoke(nextDay, station);
                     platformController?.OpenAt(station);
                     gameTimeSystem?.BeginNextDay();
+                    SaveGame();
                 },
                 onComplete: () =>
                 {

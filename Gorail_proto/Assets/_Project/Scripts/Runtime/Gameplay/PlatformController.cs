@@ -107,6 +107,7 @@ namespace Game.Gameplay
         {
             if (_cameFromGround) Money?.TrySpend(Money.boardingCost);
             _cameFromGround    = false;
+            GameCore.Instance?.SaveGame();
             if (spaceManager != null) spaceManager.EnterSubway();
         }
 
@@ -118,6 +119,7 @@ namespace Game.Gameplay
             trackerManager?.AdvanceByMinutes(GameTime.minutesReboard);
             if (_cameFromGround) Money?.TrySpend(Money.boardingCost);
             _cameFromGround    = false;
+            GameCore.Instance?.SaveGame();
             if (spaceManager != null) spaceManager.EnterSubway();
         }
 
@@ -127,6 +129,7 @@ namespace Game.Gameplay
             if (player == null) return;
             if (direction == player.Direction) ContinueForward();
             else ReverseDirection();
+            player.LockDirection(direction);
         }
 
         /// <summary>③ 환승 — 노선 변경(환승역만, §2-2) 후 지하철로. 활성 노선 누적(§5-3).</summary>
@@ -144,6 +147,7 @@ namespace Game.Gameplay
             // 환승으로 새로 활성화된 노선도 현재 수배도 상한까지 채운다(§5-3).
             if (trackerManager != null) trackerManager.OnPlayerDisembark();
             if (direction != 0 && player != null) player.LockDirection(direction);
+            GameCore.Instance?.SaveGame();
             if (spaceManager != null) spaceManager.EnterSubway();
             return true;
         }
@@ -164,6 +168,16 @@ namespace Game.Gameplay
             int have = bag.Grid.FilledCellCount;
             int need = Mathf.CeilToInt(canvas.TotalCells * entryMaterialRatio);
             return have >= need;
+        }
+
+        public System.Collections.Generic.IReadOnlyCollection<string> GetArtworkDoneStations()
+            => _artworkDoneStations;
+
+        public void Restore(System.Collections.Generic.IEnumerable<string> artworkDone)
+        {
+            _artworkDoneStations.Clear();
+            if (artworkDone != null)
+                foreach (var s in artworkDone) _artworkDoneStations.Add(s);
         }
 
         /// <summary>④ 지상으로 — 특별역만(§9·§10). 지상 공간(OutsideScene)으로.</summary>

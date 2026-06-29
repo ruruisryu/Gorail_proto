@@ -93,6 +93,7 @@ namespace Game.Gameplay
                 {
                     Debug.Log($"[Artwork] 추격자 도달({station}) → 작품 강제 실패 ({elapsed}/{total}분)");
                     _coroutine = null;
+                    GameCore.Instance?.SaveGame();
                     ArtworkFinished?.Invoke(false, 0f, true);
                     yield break;
                 }
@@ -105,6 +106,7 @@ namespace Game.Gameplay
             if (fame > 0f) Fame?.OnArtworkCompleted(fame);
 
             _coroutine = null;
+            GameCore.Instance?.SaveGame();
             ArtworkFinished?.Invoke(true, fame, false);
 
             Debug.Log($"[Artwork] {grade} 성공 +{fame:0.0} 명성 {elapsed}분 소요");

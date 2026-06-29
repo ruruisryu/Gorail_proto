@@ -35,7 +35,7 @@ namespace Game.Core
         [Header("BGM")]
         [SerializeField] private AudioSource bgmSource;
         [SerializeField][Range(0f, 1f)] private float bgmVolume     = 1f;
-        [SerializeField] private float bgmFadeDuration              = 0.5f;
+        [SerializeField] private float bgmFadeDuration              = 1f;
 
         [Header("Voice")]
         [SerializeField] private AudioSource voiceSource;
