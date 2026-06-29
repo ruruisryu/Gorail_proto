@@ -101,7 +101,7 @@ namespace Game.Core
 
         void Start()
         {
-            //SoundManager.Instance.PlayBGM("Han river loop_1"); // 시작화면 브금
+            SoundManager.Instance.PlayBGM("Han river loop_1"); // 시작화면 브금
         }
 
         void OnDestroy()

@@ -64,9 +64,9 @@ namespace Game.Subway
         /// <summary>lineId → color 함수로 모든 링을 한 번에 업데이트한다.</summary>
         public void ApplyLineRingColors(System.Func<string, Color> colorForLine)
         {
-            foreach (var lr in lineRings)
-                if (lr.ring != null)
-                    lr.ring.color = colorForLine(lr.lineId);
+            //foreach (var lr in lineRings)
+            //    if (lr.ring != null)
+            //        lr.ring.color = colorForLine(lr.lineId);
         }
 
         /// <summary>이 뷰가 가진 lineId 목록 (colorRing 기준).</summary>

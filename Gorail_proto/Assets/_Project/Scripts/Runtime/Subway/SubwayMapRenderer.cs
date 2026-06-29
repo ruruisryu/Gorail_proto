@@ -24,6 +24,12 @@ namespace Game.Subway
         [Header("색")]
         [SerializeField] private Color inactiveLineColor = new Color(0.62f, 0.62f, 0.62f, 1f);
 
+        [Header("경로 힌트")]
+        [SerializeField] private float hintLineSaturation      = 0.3f; // 0=회색, 1=원색
+        [SerializeField] private float hintStationSize         = 14f;  // 일반역
+        [SerializeField] private float hintTransferStationSize = 22f;  // 환승/특별역
+        [SerializeField] private Color hintStationColor        = new Color(0.75f, 0.92f, 1f, 0.85f);
+
         // ── 마커 아이콘 ──────────────────────────────────────────────────
         [Header("마커 프리팹 (비우면 원형 폴백)")]
         [SerializeField] private GameObject playerMarkerPrefab;
@@ -265,11 +271,23 @@ namespace Game.Subway
             for (int i = 0; i < path.Count - 1; i++)
             {
                 string segLine = Graph?.GetConnectingLineId(path[i], path[i + 1]);
-                var segColor = GetSegmentLineColor(path[i], path[i + 1], 1f);
+                var segColor = Desaturate(GetSegmentLineColor(path[i], path[i + 1], 1f), hintLineSaturation);
                 DrawSegmentOverlay(path[i], path[i + 1], segColor, layer, segLine);
                 if (i == path.Count - 2) lastSegColor = segColor;
             }
 
+            // 중간 역 하이라이트 (출발역 제외, 도착역 제외)
+            var graph = Game.Core.GameCore.Instance?.Graph?.Graph;
+            for (int i = 1; i < path.Count - 1; i++)
+            {
+                var stnPos = GetStationUIPos(path[i]);
+                if (!stnPos.HasValue) continue;
+                bool isSpecial = graph != null && (graph.IsTransfer(path[i]) || graph.GetStation(path[i])?.featureType != StationFeature.General);
+                float size = isSpecial ? hintTransferStationSize : hintStationSize;
+                Circ("HintStn", layer, stnPos.Value, size, Desaturate(GetSegmentLineColor(path[i - 1], path[i], 1f), hintLineSaturation));
+            }
+
+            // 도착역 하이라이트
             var dest = GetStationUIPos(path[path.Count - 1]);
             if (dest.HasValue)
             {
@@ -277,6 +295,14 @@ namespace Game.Subway
                 Circ("HintRing", layer, dest.Value, 48f, ringColor);
                 Circ("HintDest", layer, dest.Value, 34f, lastSegColor);
             }
+        }
+
+        static Color Desaturate(Color c, float saturation)
+        {
+            Color.RGBToHSV(c, out float h, out float s, out float v);
+            var result = Color.HSVToRGB(h, s * saturation, v);
+            result.a = c.a;
+            return result;
         }
 
         /// <summary>두 역을 잇는 구간의 노선 색을 반환한다. 구간이 없으면 폴백 색.</summary>

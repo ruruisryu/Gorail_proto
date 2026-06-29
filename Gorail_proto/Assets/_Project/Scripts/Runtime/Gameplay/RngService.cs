@@ -20,7 +20,11 @@ namespace Game.Gameplay
 
         void Awake()
         {
+#if UNITY_EDITOR
             Reseed(useFixedSeed ? seed : System.Environment.TickCount);
+#else
+            Reseed(System.Environment.TickCount);
+#endif
         }
 
         /// <summary>시드를 다시 설정해 난수열을 초기화(재현 시작점).</summary>
