@@ -52,14 +52,15 @@ namespace Game.Subway
         private static readonly Color TrackerFallbackColor = new Color(0.95f, 0.18f, 0.18f);
 
         // ── 컨테이너 태그 ────────────────────────────────────────────────
-        private const string LinesTag     = "[Lines]";
-        private const string StationsTag  = "[Stations]";
-        private const string LabelsTag    = "[Labels]";
-        private const string PreviewTag   = "[Preview]";
-        private const string FxTag        = "[Fx]";
-        private const string PlayerTag    = "[Player]";
-        private const string LineHLTag    = "[LineHL]";
-        private const string RouteHintTag = "[RouteHint]";
+        private const string LinesTag       = "[Lines]";
+        private const string StationsTag   = "[Stations]";
+        private const string LabelsTag     = "[Labels]";
+        private const string PreviewTag    = "[Preview]";
+        private const string FxTag         = "[Fx]";
+        private const string PlayerTag     = "[Player]";
+        private const string LineHLTag     = "[LineHL]";
+        private const string RouteHintTag  = "[RouteHint]";
+        private const string StationHLTag  = "[StationHL]";
 
         private static readonly Color RouteColor      = new Color(1f, 0.85f, 0.10f, 0.95f);
         private static readonly Color DestRingColor   = new Color(1f, 0.85f, 0.10f, 0.45f);
@@ -139,7 +140,8 @@ namespace Game.Subway
                 if (child.name == LinesTag    || child.name == StationsTag ||
                     child.name == LabelsTag   || child.name == PreviewTag  ||
                     child.name == FxTag       || child.name == PlayerTag   ||
-                    child.name == LineHLTag   || child.name == RouteHintTag) continue;
+                    child.name == LineHLTag   || child.name == RouteHintTag ||
+                    child.name == StationHLTag) continue;
                 if (Application.isPlaying) Destroy(child.gameObject);
                 else DestroyImmediate(child.gameObject);
             }
@@ -317,6 +319,61 @@ namespace Game.Subway
         }
 
         public void ClearRouteHint() => DestroyContainer(RouteHintTag);
+
+        // ── 역 타입 하이라이트 ────────────────────────────────────────────
+
+        public enum StationHighlightType { Transfer, Landmark }
+
+        [Header("역 타입 하이라이트")]
+        [SerializeField] private float hintTypeScale       = 1.4f;
+        [SerializeField] private Color hintTypeInnerColor  = new Color(1f, 0.90f, 0.15f, 0.85f);
+        [SerializeField] private Color hintTypeOuterColor  = new Color(1f, 0.90f, 0.15f, 0.30f);
+        [SerializeField] private float hintTypeInnerSize   = 26f;
+        [SerializeField] private float hintTypeOuterSize   = 38f;
+
+        private readonly List<(RectTransform rt, Vector3 origScale)> _scaledStations = new();
+
+        public void ShowStationTypeHighlight(StationHighlightType type)
+        {
+            ClearStationTypeHighlight();
+            var graph = Game.Core.GameCore.Instance?.Graph?.Graph;
+            if (graph == null) return;
+
+            // 스테이션 컨테이너 바로 아래에 레이어 삽입
+            var stationsRT = FindContainer(StationsTag);
+            int insertIdx  = stationsRT != null ? stationsRT.GetSiblingIndex() : 0;
+            var layer      = CreateContainer(StationHLTag, insertIdx);
+
+            foreach (var kv in _stationViewMap)
+            {
+                string id  = kv.Key;
+                bool match = type == StationHighlightType.Transfer
+                    ? graph.IsTransfer(id)
+                    : graph.GetStation(id)?.featureType == StationFeature.Landmark;
+                if (!match) continue;
+
+                var pos = GetStationUIPos(id);
+                if (!pos.HasValue) continue;
+
+                Circ("StnHLRing", layer, pos.Value, hintTypeOuterSize, hintTypeOuterColor);
+                Circ("StnHL",     layer, pos.Value, hintTypeInnerSize, hintTypeInnerColor);
+
+                var rt = kv.Value.GetComponent<RectTransform>();
+                if (rt != null)
+                {
+                    _scaledStations.Add((rt, rt.localScale));
+                    rt.localScale = rt.localScale * hintTypeScale;
+                }
+            }
+        }
+
+        public void ClearStationTypeHighlight()
+        {
+            foreach (var (rt, orig) in _scaledStations)
+                if (rt != null) rt.localScale = orig;
+            _scaledStations.Clear();
+            DestroyContainer(StationHLTag);
+        }
 
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // [H6] 연출 오버레이 레이어
