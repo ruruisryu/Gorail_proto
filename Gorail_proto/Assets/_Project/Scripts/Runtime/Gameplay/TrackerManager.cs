@@ -217,14 +217,10 @@ namespace Game.Gameplay
             if (enemyLocations != null)
             {
                 enemyLocations.enemyStationIds = _trackers
-                    .Where(t => IsLineVisible(t.LineId))
                     .Select(t => t.StationId)
                     .ToList();
             }
             if (mapRenderer != null) mapRenderer.RefreshMarkers();
         }
-
-        bool IsLineVisible(string lineId) =>
-            player != null && !string.IsNullOrEmpty(lineId) && player.HasVisitedLine(lineId);
     }
 }

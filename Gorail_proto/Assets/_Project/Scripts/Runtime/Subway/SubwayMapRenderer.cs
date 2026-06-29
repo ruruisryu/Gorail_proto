@@ -453,7 +453,7 @@ namespace Game.Subway
             _stationViews.Clear();
             _stationViewMap.Clear();
             _stationRTMap.Clear();
-            foreach (var v in stationsRT.GetComponentsInChildren<StationView>())
+            foreach (var v in stationsRT.GetComponentsInChildren<StationView>(true))
             {
                 if (v == null) continue;
 
